@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmacy Management System — Detailed Interactive Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #06090e;
+  --bg-surface: #0b111a;
+  --bg-card: #101924;
+  --bg-card-hover: #162232;
+  --glass-bg: rgba(13, 20, 31, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-hover: rgba(56, 189, 248, 0.45);
+  
+  --text-main: #ffffff;
+  --text-muted: #cbd5e1;
+  --text-dim: #94a3b8;
+  
+  --accent-cyan: #38bdf8;
+  --accent-emerald: #34d399;
+  --accent-amber: #fbbf24;
+  --accent-purple: #c084fc;
+  --accent-rose: #f472b6;
+  --accent-indigo: #818cf8;
+  
+  --admin: #fbbf24;
+  --pharmacist: #34d399;
+  --cashier: #38bdf8;
+  --patient: #c084fc;
+  --supplier: #f472b6;
+  --delivery: #818cf8;
+  
+  --clinical: #10b981;
+  --inventory: #f59e0b;
+  --commerce: #06b6d4;
+  --operations: #8b5cf6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; }
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Glass Header */
+.topbar {
+  height: 72px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  flex: 0 0 auto;
+  z-index: 20;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(52, 211, 153, 0.2));
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.brand-title span {
+  background: linear-gradient(135deg, #38bdf8, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.version-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* Filter Pills */
+.filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  margin-left: 12px;
+}
+
+.filter-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(52, 211, 153, 0.3));
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(56, 189, 248, 0.3);
+}
+
+.filter-btn .dot-count {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.15);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Toolbar Controls */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box input {
+  height: 38px;
+  width: 230px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  border-radius: 10px;
+  padding: 0 36px 0 36px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-box input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+  background: rgba(15, 23, 42, 0.95);
+  width: 270px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-shortcut {
+  position: absolute;
+  right: 10px;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  pointer-events: none;
+}
+
+.btn-action {
+  height: 38px;
+  padding: 0 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(30, 41, 59, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0284c7, #0d9488);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0369a1, #0f766e);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.6);
+}
+
+/* Viewport Canvas */
+.main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--bg-base);
+  background-image: 
+    radial-gradient(circle at 50% 10%, rgba(56, 189, 248, 0.1) 0%, transparent 65%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+}
+
+#svgWrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  cursor: grab;
+  user-select: none;
+}
+
+#svgWrap.dragging { cursor: grabbing; }
+svg { display: block; }
+
+/* HIGH CONTRAST SVG Visual Styles */
+.layer rect {
+  fill: rgba(11, 17, 26, 0.88);
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1.5;
+  rx: 16;
+}
+
+.layer-title {
+  fill: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.layer-badge-bg {
+  fill: rgba(56, 189, 248, 0.2);
+  stroke: rgba(56, 189, 248, 0.5);
+  stroke-width: 1;
+  rx: 6;
+}
+
+.layer-badge-text {
+  fill: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.layer-note {
+  fill: #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.group rect {
+  fill: rgba(15, 23, 42, 0.55);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  rx: 14;
+}
+
+.group-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.group-note {
+  font-size: 11.5px;
+  fill: #cbd5e1;
+  font-weight: 500;
+}
+
+/* Node Card Styling */
+.node {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.node rect {
+  fill: #0f172a;
+  stroke: #475569;
+  stroke-width: 1.5;
+  rx: 10;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.4));
+}
+
+.node .title {
+  fill: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+}
+
+.node .sub {
+  fill: #cbd5e1;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+}
+
+.badge {
+  fill: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.node:hover rect {
+  stroke: var(--accent-cyan);
+  fill: #1e293b;
+  filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.5));
+  cursor: pointer;
+}
+
+.node.selected rect {
+  stroke: var(--accent-cyan);
+  stroke-width: 2.5;
+  fill: #1e293b;
+  filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.7));
+}
+
+.node.dim { opacity: 0.15; }
+
+/* Custom Node Themes */
+.node.user rect { stroke-width: 2; }
+.node.role-admin rect { stroke: var(--admin); }
+.node.role-pharmacist rect { stroke: var(--pharmacist); }
+.node.role-cashier rect { stroke: var(--cashier); }
+.node.role-patient rect { stroke: var(--patient); }
+.node.role-supplier rect { stroke: var(--supplier); }
+.node.role-delivery rect { stroke: var(--delivery); }
+
+.node.domain-clinical rect { stroke: var(--clinical); }
+.node.domain-inventory rect { stroke: var(--inventory); }
+.node.domain-commerce rect { stroke: var(--commerce); }
+.node.domain-operations rect { stroke: var(--operations); }
+
+.node.data rect { fill: #0d1520; stroke: #64748b; }
+.node.ext rect { fill: #0b111a; stroke: #475569; }
+
+/* Edge Connections */
+.edge {
+  fill: none;
+  stroke: #64748b;
+  stroke-width: 1.8;
+  marker-end: url(#arrow);
+  opacity: 0.65;
+  transition: all 0.3s ease;
+  pointer-events: stroke;
+}
+
+.edge:hover {
+  stroke: var(--accent-cyan);
+  stroke-width: 2.8;
+  opacity: 0.95;
+  cursor: pointer;
+}
+
+.edge.user { stroke-width: 2.5; opacity: 0.8; }
+.edge.role { stroke-width: 2.5; stroke-dasharray: 8 5; opacity: 0.9; }
+.edge.domain { stroke-width: 2.2; opacity: 0.8; }
+
+.edge.active {
+  stroke: var(--accent-cyan);
+  stroke-width: 3.2;
+  opacity: 1;
+  filter: url(#glow);
+}
+
+.edge.dim { opacity: 0.05; }
+
+.edge-label {
+  fill: #e2e8f0;
+  font-size: 10.5px;
+  font-weight: 700;
+  pointer-events: none;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.edge-label.active {
+  fill: #ffffff;
+  font-weight: 800;
+}
+
+/* Floating Diagram Help Banner */
+.diagram-help {
+  position: absolute;
+  left: 24px;
+  top: 24px;
+  z-index: 10;
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.diagram-help .pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* Floating Legend Panel */
+.legend {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  z-index: 10;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  flex-wrap: wrap;
+  max-width: calc(100% - 240px);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.legend span:hover { color: #ffffff; }
+
+.legend i {
+  display: inline-block;
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: #64748b;
+}
+
+.legend i.role {
+  border-top: 2px dashed #94a3b8;
+  height: 0;
+  background: none;
+}
+
+.legend i.active { background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.admin { background: var(--admin); box-shadow: 0 0 8px var(--admin); }
+.pharmacist { background: var(--pharmacist); box-shadow: 0 0 8px var(--pharmacist); }
+.cashier { background: var(--cashier); box-shadow: 0 0 8px var(--cashier); }
+.patient { background: var(--patient); box-shadow: 0 0 8px var(--patient); }
+.supplier { background: var(--supplier); box-shadow: 0 0 8px var(--supplier); }
+.delivery { background: var(--delivery); box-shadow: 0 0 8px var(--delivery); }
+
+.domain-key {
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px solid var(--glass-border);
+  display: flex;
+  gap: 12px;
+}
+
+.domain-key b { font-size: 11px; font-weight: 700; }
+
+/* Floating Zoom Controls */
+.zoom {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.zoom button {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.zoom button:hover {
+  border-color: var(--glass-border-hover);
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--accent-cyan);
+}
+
+/* Sliding Drawer Details Panel */
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(720px, 95vw);
+  background: rgba(11, 17, 26, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.7);
+  transform: translateX(102%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open { transform: translateX(0); }
+
+.drawer-head {
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.drawer-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(52, 211, 153, 0.2));
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.drawer-head .grow { flex: 1; }
+
+.drawer-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+}
+
+.drawer-desc {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.close {
+  border: 1px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text-main);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.close:hover {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(11, 17, 26, 0.6);
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab:hover { color: #ffffff; background: rgba(255, 255, 255, 0.08); }
+
+.tab.active {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #ffffff;
+}
+
+.drawer-body {
+  overflow-y: auto;
+  padding: 20px 24px 32px;
+  flex: 1;
+}
+
+.tabpane { display: none; }
+.tabpane.active { display: block; }
+
+/* Stat Cards in Drawer */
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 12px 14px;
+}
+
+.stat b {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.stat span {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  margin: 22px 0 12px;
+}
+
+.feature-list, .parts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.feature, .part {
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.part strong {
+  display: block;
+  color: #ffffff;
+  font-size: 13px;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.part span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* Flow Step Boxes inside Drawer */
+.flow {
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.flowrow {
+  display: grid;
+  grid-template-columns: 1fr 32px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.flowbox {
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.85);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.flowarrow {
+  text-align: center;
+  color: var(--accent-cyan);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.tech {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.75);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.conn {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.2);
+  transform: translateY(-1px);
+}
+
+.access-map { display: grid; gap: 10px; }
+
+.access-row {
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #cbd5e1;
+}
+
+.access-row strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.access-row .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 10.5px;
+  border: 1px solid var(--glass-border);
+  border-radius: 99px;
+  padding: 3px 9px;
+  color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.flow-badge {
+  display: inline-block;
+  border: 1px solid var(--glass-border);
+  border-radius: 99px;
+  padding: 4px 9px;
+  font-size: 10.5px;
+  color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.15);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+/* Access Matrix Overlay */
+.matrix-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 12, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.matrix-overlay.open { display: flex; }
+
+.matrix {
+  width: min(1180px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  background: rgba(11, 17, 26, 0.96);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7);
+  padding: 28px;
+}
+
+.matrix-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.matrix h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.matrix p {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.matrix table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  margin-top: 16px;
+}
+
+.matrix th, .matrix td {
+  border: 1px solid var(--glass-border);
+  padding: 12px;
+  text-align: center;
+}
+
+.matrix th {
+  background: rgba(15, 23, 42, 0.95);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+}
+
+.matrix td:first-child, .matrix th:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: rgba(15, 23, 42, 0.98);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.yes { font-weight: 800; color: #34d399; }
+.partial { font-weight: 800; color: #fbbf24; }
+.no { color: #94a3b8; }
+
+.matrix-close {
+  border: 1px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--text-main);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.matrix-close:hover {
+  border-color: #f43f5e;
+  color: #f43f5e;
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%) translateY(80px);
+  padding: 12px 20px;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 120;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 1200px) {
+  .filter-pills { display: none; }
+  .search-box input { width: 180px; }
+  .legend { max-width: 60%; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">💊</div>
+    <div class="brand-text">
+      <div class="brand-title">PHARMACY <span style="color: var(--accent-cyan)">ARCHITECTURE</span></div>
+    </div>
+    <span class="version-badge">v2.0 LIVE</span>
+  </div>
+  
+  <div class="filter-pills">
+    <button class="filter-btn active" data-filter="all">All <span class="dot-count">53</span></button>
+    <button class="filter-btn" data-filter="role">👥 Roles</button>
+    <button class="filter-btn" data-filter="clinical">🩺 Clinical</button>
+    <button class="filter-btn" data-filter="inventory">📦 Inventory</button>
+    <button class="filter-btn" data-filter="commerce">🛍️ Commerce</button>
+    <button class="filter-btn" data-filter="operations">⚡ Operations</button>
+    <button class="filter-btn" data-filter="infra">💾 Data &amp; Infra</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input id="search" placeholder="Search module, role, feature…" aria-label="Search architecture">
+      <span class="search-shortcut">/</span>
+    </div>
+    <button id="matrixBtn" class="btn-action btn-primary"><span>⚡</span> Access Matrix</button>
+    <button id="connectBtn" class="btn-action"><span>🔗</span> Connections</button>
+    <button id="fitBtn" class="btn-action"><span>🎯</span> Fit</button>
+    <button id="resetBtn" class="btn-action"><span>🔄</span> Reset</button>
+  </div>
+</header>
+
+<main class="main">
+<div id="viewport" class="viewport">
+<div id="svgWrap">
+<svg id="arch" width="2400" height="1750" viewBox="0 0 2400 1750" role="img" aria-label="Pharmacy Architecture Diagram">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"></path>
+  </marker>
+  <marker id="arrowActive" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L0,6 L9,3 z" fill="#38bdf8"></path>
+  </marker>
+  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="3" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+
+<!-- Layer frames with high contrast text -->
+<g class="layer"><rect x="20" y="18" width="2360" height="150"></rect>
+  <rect x="38" y="32" width="75" height="22" class="layer-badge-bg"></rect>
+  <text class="layer-badge-text" x="48" y="47">LAYER 1</text>
+  <text class="layer-title" x="125" y="49">USERS &amp; CLIENT CHANNELS</text>
+  <text class="layer-note" x="38" y="72">People and store devices enter through web dashboards, mobile apps, POS terminals, and partner API channels.</text>
+</g>
+
+<g class="layer"><rect x="20" y="186" width="2360" height="122"></rect>
+  <rect x="38" y="200" width="75" height="22" class="layer-badge-bg"></rect>
+  <text class="layer-badge-text" x="48" y="215">LAYER 2</text>
+  <text class="layer-title" x="125" y="217">API GATEWAY + IDENTITY CONTROL</text>
+  <text class="layer-note" x="38" y="240">One secure front door: authentication, MFA verification, RBAC policy checks, token validation, rate limiting, and correlation tracking.</text>
+</g>
+
+<g class="layer"><rect x="20" y="326" width="2360" height="284"></rect>
+  <rect x="38" y="340" width="75" height="22" class="layer-badge-bg"></rect>
+  <text class="layer-badge-text" x="48" y="355">LAYER 3</text>
+  <text class="layer-title" x="125" y="357">ROLE WORKSPACES — CLEAR USER-TO-SYSTEM ISOLATION</text>
+  <text class="layer-note" x="38" y="380">Each role workspace isolates features and maps exclusively to allowed domain APIs. Click any role to trace its authorization tree.</text>
+</g>
+
+<g class="layer"><rect x="20" y="628" width="2360" height="440"></rect>
+  <rect x="38" y="642" width="75" height="22" class="layer-badge-bg"></rect>
+  <text class="layer-badge-text" x="48" y="657">LAYER 4</text>
+  <text class="layer-title" x="125" y="659">DOMAIN APIs &amp; PHARMACY BUSINESS SERVICES</text>
+  <text class="layer-note" x="38" y="677">Four encapsulated business domains: Clinical, Inventory, Commerce, and Operations. Follow columns vertically to trace domain flows.</text>
+</g>
+
+<g class="layer"><rect x="20" y="1080" width="2360" height="150"></rect>
+  <rect x="38" y="1094" width="75" height="22" class="layer-badge-bg"></rect>
+  <text class="layer-badge-text" x="48" y="1109">LAYER 5</text>
+  <text class="layer-title" x="125" y="1111">DATA, CACHE, SEARCH &amp; ASYNC INFRASTRUCTURE</text>
+  <text class="layer-note" x="38" y="1131">Shared persistence, distributed caching, full-text search, event streaming, private object storage, and immutable audit logs.</text>
+</g>
+
+<g class="layer"><rect x="20" y="1250" width="2360" height="440"></rect>
+  <rect x="38" y="1264" width="75" height="22" class="layer-badge-bg"></rect>
+  <text class="layer-badge-text" x="48" y="1279">LAYER 6</text>
+  <text class="layer-title" x="125" y="1281">EXTERNAL INTEGRATIONS &amp; CLOUD PLATFORM</text>
+  <text class="layer-note" x="38" y="1301">Third-party PSPs, GST tax portals, national eRx networks, messaging providers, logistics partners, and cloud infrastructure.</text>
+</g>
+
+<g id="groups"></g>
+<g id="edges"></g>
+<g id="particles"></g>
+<g id="nodes"></g>
+</svg>
+</div>
+
+<div class="diagram-help">
+  <span class="pulse-dot"></span>
+  <b>INTERACTIVE SYSTEM TRACER</b> • Click any node to trace connection pathways &amp; view detailed component specs
+</div>
+
+<div class="legend">
+  <span><i></i> Service Flow</span>
+  <span><i class="role"></i> Role Scope</span>
+  <span><i class="active"></i> Active Path</span>
+  <span><b class="dot admin"></b> Admin</span>
+  <span><b class="dot pharmacist"></b> Pharmacist</span>
+  <span><b class="dot cashier"></b> Cashier</span>
+  <span><b class="dot patient"></b> Patient</span>
+  <span><b class="dot supplier"></b> Supplier</span>
+  <span><b class="dot delivery"></b> Delivery</span>
+  <span class="domain-key">
+    <b style="color:var(--clinical)">Clinical</b>
+    <b style="color:var(--inventory)">Inventory</b>
+    <b style="color:var(--commerce)">Commerce</b>
+    <b style="color:var(--operations)">Operations</b>
+  </span>
+</div>
+
+<div class="zoom">
+  <button id="zoomOut" title="Zoom Out ( - )">−</button>
+  <button id="zoomReset" title="Reset Zoom">100%</button>
+  <button id="zoomIn" title="Zoom In ( + )">+</button>
+</div>
+
+<div id="toast" class="toast"><span>✨</span> <span id="toastText">Ready</span></div>
+</div>
+
+<aside id="drawer" class="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div id="drawerIcon" class="drawer-icon-box">💊</div>
+    <div class="grow">
+      <div id="drawerTitle" class="drawer-title">Component</div>
+      <div id="drawerDesc" class="drawer-desc"></div>
+    </div>
+    <button id="closeBtn" class="close" aria-label="Close drawer">✕</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="architecture">Inside Logic</button>
+    <button class="tab" data-tab="access">Access Map</button>
+    <button class="tab" data-tab="data">Data &amp; Security</button>
+  </div>
+  <div class="drawer-body">
+    <section id="tab-overview" class="tabpane active"></section>
+    <section id="tab-architecture" class="tabpane"></section>
+    <section id="tab-access" class="tabpane"></section>
+    <section id="tab-data" class="tabpane"></section>
+  </div>
+</aside>
+
+<div id="matrixOverlay" class="matrix-overlay" aria-hidden="true">
+  <div class="matrix">
+    <div class="matrix-head">
+      <div>
+        <h2>Role Access Matrix</h2>
+        <p>✓ = Authorized · ~ = Approval / Scoped · — = Restricted. Click any module to open specs.</p>
+      </div>
+      <button id="matrixClose" class="matrix-close">✕ Close</button>
+    </div>
+    <div id="matrixContent"></div>
+  </div>
+</div>
+</main>
+</div>
+<script>
+(() => {
+'use strict';
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('arch'),wrap=document.getElementById('svgWrap'),edgesG=document.getElementById('edges'),nodesG=document.getElementById('nodes'),groupsG=document.getElementById('groups'),viewport=document.getElementById('viewport'),drawer=document.getElementById('drawer'),search=document.getElementById('search'),connectBtn=document.getElementById('connectBtn'),toast=document.getElementById('toast');
+
+const nodes=[
+// Users / clients
+{id:'admin',title:'👑 Admin / Owner',sub:'web dashboard',x:60,y:62,w:340,h:72,c:'user',role:'admin',d:'Full operational control over store, branches, staff, finance, pricing, reports and compliance.',f:['Staff & roles','Branches & permissions','Price / tax rules','Dashboards / KPIs','Audit / compliance','System settings'],parts:['Admin dashboard','User & role manager','Branch manager','Configuration center'],in:['Login + MFA'],out:['Policies','Approved changes','Reports'],tech:'Web dashboard → Gateway → Admin workspace → domain APIs.',sec:'MFA, privileged RBAC, approval controls, audit trail.',entities:['User','Role','Branch','Permission','Setting']},
+{id:'pharmacist',title:'🩺 Pharmacist',sub:'dispensing portal',x:450,y:62,w:340,h:72,c:'user',role:'pharmacist',d:'Clinical and dispensing user who validates prescriptions, checks safety, dispenses medicines and manages refills.',f:['Prescription verification','Drug interaction checks','Dispensing','Controlled drugs','Refills','Patient counselling'],parts:['Prescription queue','Dispensing screen','Clinical alerts','Medication history'],in:['Prescription','Patient'],out:['Dispense event','Safety decision'],tech:'Web portal → Gateway → Pharmacist workspace → Clinical + Inventory APIs.',sec:'Clinical RBAC, prescription traceability, override logging.',entities:['Prescription','Patient','Medicine','Batch','Dispense']},
+{id:'cashier',title:'💳 Cashier / Billing Staff',sub:'POS terminal',x:840,y:62,w:340,h:72,c:'user',role:'cashier',d:'Counter operator for scanning, cart creation, invoice generation, payments, discounts, refunds and shift reconciliation.',f:['Barcode scanning','POS cart','GST invoice','UPI/card/cash','Returns/refunds','Shift closing'],parts:['POS terminal','Barcode scanner','Receipt printer','Offline queue'],in:['Cart','Customer','Payment'],out:['Invoice','Payment event','Stock reduction'],tech:'POS → Gateway → Cashier workspace → Commerce + Inventory APIs.',sec:'Transaction audit, shift controls, signed payment callbacks.',entities:['Sale','Invoice','Payment','Return','Shift']},
+{id:'patient',title:'📱 Patient / Customer',sub:'mobile + web app',x:1230,y:62,w:340,h:72,c:'user',role:'patient',d:'Self-service user who searches medicines, uploads prescriptions, places orders, pays online and tracks fulfilment.',f:['Medicine search','Prescription upload','Refill request','Online order','Online payment','Order tracking'],parts:['Patient profile','Medicine catalog','Cart','Order tracker'],in:['Account'],out:['Order request','Prescription upload','Payment'],tech:'Mobile/Web → Gateway → Patient workspace → Clinical + Commerce + Operations APIs.',sec:'Own-data isolation, consent, secure uploads, token authentication.',entities:['Patient','Prescription','Order','Payment','Consent']},
+{id:'supplier',title:'🚛 Supplier / Distributor',sub:'B2B portal / API',x:1620,y:62,w:340,h:72,c:'user',role:'supplier',d:'Partner that receives purchase orders and sends shipment, invoice and product-document information.',f:['Purchase orders','Shipment updates','Invoice upload','Credit / debit notes','Product documents','Returns'],parts:['Supplier portal','PO inbox','Invoice upload','Shipment feed'],in:['PO','Return request'],out:['Invoice','Shipment update'],tech:'Partner portal/API → Gateway → Supplier workspace → Inventory API.',sec:'Tenant isolation, signed APIs, supplier-scoped access.',entities:['Supplier','PurchaseOrder','GRN','Invoice','Return']},
+{id:'delivery',title:'🛵 Delivery Partner',sub:'driver / rider app',x:2010,y:62,w:330,h:72,c:'user',role:'delivery',d:'Third-party or in-house delivery operator who handles assigned jobs, OTP, COD and proof of delivery.',f:['Assigned orders','Delivery status','Customer OTP','COD status','Proof of delivery'],parts:['Delivery job list','Route view','OTP screen','POD upload'],in:['Delivery job'],out:['POD','Status'],tech:'Delivery app/API → Gateway → Delivery workspace → Operations API.',sec:'Order-scoped permissions, OTP, POD audit.',entities:['DeliveryJob','Order','OTP','POD']},
+
+{id:'gateway',title:'🛡️ API Gateway + Identity',sub:'AUTH • MFA • RBAC • ROUTE',x:770,y:220,w:860,h:78,c:'access',d:'Central security and routing layer. It never decides pharmacy business outcomes; it verifies identity and sends each request to the correct role workspace and domain API.',f:['Authentication','MFA / OTP','OIDC / JWT validation','RBAC / policy checks','Rate limiting','Input validation','Request routing','Correlation ID / audit context'],parts:['Identity Provider','API Gateway','Policy Engine','WAF / Rate Limiter'],in:['HTTPS requests'],out:['Authorized request','Identity claims'],tech:'Reverse proxy + identity provider + policy engine + WAF + request router.',sec:'TLS, secure cookies/tokens, token rotation, WAF rules, least privilege.',entities:['User','Role','Permission','Session','Token']},
+
+// Role workspaces
+{id:'role-admin',title:'🔑 ADMIN WORKSPACE',sub:'Access: Inventory • Commerce • Operations',x:70,y:365,w:700,h:92,c:'role role-admin',role:'admin',d:'Admin-specific application shell. It exposes only the features permitted to an Admin / Owner.',f:['Staff management','Branch setup','Pricing / tax settings','Finance access','Reporting','Compliance'],parts:['Dashboard','User manager','Branch manager','Reports console'],in:['Admin token'],out:['Domain API calls'],tech:'Gateway role claim = admin → workspace menu + endpoint policy.',sec:'Privileged actions require extra audit / approval.'},
+{id:'role-pharmacist',title:'💊 PHARMACIST WORKSPACE',sub:'Access: Clinical • Inventory',x:850,y:365,w:700,h:92,c:'role role-pharmacist',role:'pharmacist',d:'Pharmacist application shell for clinical and inventory tasks.',f:['Prescription queue','Safety alerts','Dispensing','Patient medication view','Stock lookup','Refills'],parts:['Clinical dashboard','Prescription viewer','Dispense screen','Medication history'],in:['Pharmacist token'],out:['Clinical + inventory calls'],tech:'Gateway role claim = pharmacist → clinical-first permissions.',sec:'Controlled-drug and override actions are explicitly logged.'},
+{id:'role-cashier',title:'🏷️ CASHIER WORKSPACE',sub:'Access: Commerce • Inventory',x:1630,y:365,w:700,h:92,c:'role role-cashier',role:'cashier',d:'Fast counter workspace optimized for billing, payments and stock reduction.',f:['POS sale','Invoice','Payment','Discounts','Returns','Shift close'],parts:['Cart screen','Payment screen','Return screen','Shift reconciliation'],in:['Cashier token'],out:['Commerce + inventory calls'],tech:'Gateway role claim = cashier → POS endpoints.',sec:'No direct access to patient clinical history or admin configuration.'},
+{id:'role-patient',title:'📲 PATIENT WORKSPACE',sub:'Access: Clinical • Commerce • Operations',x:70,y:485,w:700,h:92,c:'role role-patient',role:'patient',d:'Patient self-service workspace limited to the patient’s own profile, prescriptions and orders.',f:['Search medicines','Upload prescription','Place order','Pay','Track delivery','Refill'],parts:['Catalog','Cart','Prescription upload','Order tracker'],in:['Patient token'],out:['Clinical + commerce + operations calls'],tech:'Gateway role claim = patient → self-service APIs.',sec:'Self-only record filtering and consent checks.'},
+{id:'role-supplier',title:'📦 SUPPLIER WORKSPACE',sub:'Access: Inventory',x:850,y:485,w:700,h:92,c:'role role-supplier',role:'supplier',d:'Supplier workspace scoped to the supplier’s own purchase orders and documents.',f:['View POs','Upload invoice','Shipment status','Returns','Documents'],parts:['PO inbox','Invoice module','Shipment module','Returns'],in:['Supplier token'],out:['Inventory / procurement calls'],tech:'Gateway role claim = supplier + supplier_id tenant scope.',sec:'Supplier cannot view internal margins or other suppliers.'},
+{id:'role-delivery',title:'🗺️ DELIVERY WORKSPACE',sub:'Access: Operations',x:1630,y:485,w:700,h:92,c:'role role-delivery',role:'delivery',d:'Delivery-specific workspace with only assigned jobs and customer contact fields.',f:['Assigned deliveries','OTP verification','COD status','POD','Status updates'],parts:['Job list','Route status','OTP','POD'],in:['Delivery token'],out:['Delivery updates'],tech:'Gateway role claim = delivery + assigned job scope.',sec:'Only assigned order data is visible.'},
+
+// Domain APIs
+{id:'clinical-api',title:'🩺 CLINICAL DOMAIN API',sub:'prescription • safety • medication',x:80,y:690,w:575,h:60,c:'domain domain-clinical',domain:'clinical',d:'Clinical domain entry point for prescription, patient medication and safety workflows.',f:['Prescription workflows','Drug safety','Patient medication context','Refill / repeat rules','Controlled-substance checks'],parts:['Clinical controller','Clinical rules','Clinical event publisher','Clinical read model'],in:['Workspace request'],out:['Clinical service calls'],tech:'REST/JSON or gRPC → internal clinical services.',sec:'Clinical policy enforcement and traceable overrides.',entities:['Prescription','Medication','Allergy','Dispense','SafetyAlert']},
+{id:'inventory-api',title:'📦 INVENTORY DOMAIN API',sub:'catalog • stock • procurement',x:660,y:690,w:575,h:60,c:'domain domain-inventory',domain:'inventory',d:'Inventory domain entry point for medicine catalog, batches, stock movements, suppliers and branches.',f:['Catalog / barcode','Batch & expiry','FEFO','Procurement','Transfers','Quality / recall'],parts:['Catalog controller','Stock ledger','Procurement workflow','Branch stock'],in:['Workspace request'],out:['Inventory service calls'],tech:'REST/gRPC → inventory and procurement services.',sec:'Transactional stock rules, approval controls and location scoping.',entities:['Medicine','Batch','StockLedger','Supplier','PurchaseOrder']},
+{id:'commerce-api',title:'🛍️ COMMERCE DOMAIN API',sub:'POS • billing • orders • loyalty',x:1240,y:690,w:575,h:60,c:'domain domain-commerce',domain:'commerce',d:'Commerce domain for counter sales, online orders, invoices, payments, promotions and customer buying journeys.',f:['POS / cart','Billing','Payments','Orders','Promotions','Loyalty'],parts:['Cart controller','Invoice service','Payment adapter','Order state machine'],in:['Workspace request'],out:['Commerce service calls'],tech:'REST → commerce services + async events.',sec:'Financial audit, payment verification and order authorization.',entities:['Sale','Invoice','Payment','Order','Coupon','LoyaltyPoint']},
+{id:'ops-api',title:'⚡ OPERATIONS DOMAIN API',sub:'delivery • notifications • finance • analytics',x:1820,y:690,w:575,h:60,c:'domain domain-operations',domain:'operations',d:'Operations entry point for fulfilment, messaging, finance, analytics, compliance and branch operations.',f:['Delivery','Notifications','Accounting','Analytics','Compliance','Branches / workforce'],parts:['Workflow orchestrator','Notification router','Reporting gateway','Compliance service'],in:['Workspace request'],out:['Operations service calls'],tech:'REST + event-driven workers + scheduled jobs.',sec:'Operational RBAC, export controls and audit retention.',entities:['DeliveryJob','Notification','LedgerEntry','AuditEvent','Branch']},
+
+// Clinical group services
+{id:'rx',title:'📄 Prescription & Dispense',sub:'eRx • validation • dispense',x:70,y:825,w:175,h:80,c:'service',domain:'clinical',d:'End-to-end prescription processing from intake to dispensing.',f:['Prescription upload','Prescriber validation','Rx status','Dispensing allocation','Refill rules','Substitution workflow'],parts:['Rx intake','OCR / image handler','Validation rules','Dispense transaction'],in:['Prescription','Patient','Inventory'],out:['Dispense order','Clinical event'],tech:'Workflow service + rule engine + document storage.',sec:'Versioned prescription history and override audit.',entities:['Prescription','PrescriptionItem','Dispense','Refill']},
+{id:'safety',title:'🧠 Drug Safety & Interactions',sub:'allergy • interaction • dose',x:255,y:825,w:175,h:80,c:'service',domain:'clinical',d:'Evaluates clinical safety rules before dispensing where supported.',f:['Drug-drug interaction','Allergy check','Duplicate therapy','Dose rules','Age / contraindication','Alert escalation'],parts:['Rule engine','Drug knowledge cache','Alert service','Override recorder'],in:['Prescription','Patient','Drug master'],out:['Safety decision','Alert'],tech:'Rules engine + drug knowledge cache.',sec:'Rule versions and clinician override logging.',entities:['SafetyAlert','Allergy','DrugInteraction']},
+{id:'patientSvc',title:'📋 Patient & Medication Profile',sub:'profile • consent • history',x:440,y:825,w:175,h:80,c:'service',domain:'clinical',d:'Stores patient identity, consent and longitudinal pharmacy medication context.',f:['Registration','Consent','Medication history','Allergies','Loyalty linkage','Refill preferences'],parts:['Profile service','Consent service','Medication history','Preference store'],in:['Registration','Clinical events'],out:['Patient context','Preferences'],tech:'Profile service + privacy controls.',sec:'PII encryption, consent checks, minimum necessary access.',entities:['Patient','Consent','Allergy','MedicationHistory']},
+{id:'refill',title:'🔄 Refill & Care Workflow',sub:'repeat • reminder • counselling',x:70,y:940,w:260,h:80,c:'service',domain:'clinical',d:'Manages repeat medication requests, refill eligibility and reminders.',f:['Refill eligibility','Repeat schedule','Reminder rules','Pharmacist review','Counselling notes'],parts:['Eligibility engine','Reminder scheduler','Review queue','Care note store'],in:['Past dispense','Prescription','Patient'],out:['Refill request','Reminder event'],tech:'Rules + scheduler + notification events.',sec:'Refill limits and pharmacist approval controls.',entities:['RefillRequest','CareNote','Reminder']},
+{id:'controlled',title:'🚨 Controlled Drugs & Recall',sub:'schedule log • recall trace',x:340,y:940,w:275,h:80,c:'service',domain:'clinical',d:'Tracks regulated/scheduled medicines and supports recall traceability.',f:['Controlled-drug register','Serial / batch trace','Recall notice','Destruction / adjustment','Exception review'],parts:['Schedule checker','Controlled log','Recall workflow','Approval queue'],in:['Dispense','Recall event','Stock movement'],out:['Regulatory record','Recall task'],tech:'Compliance workflow + immutable audit events.',sec:'Dual approval where required, protected logs.',entities:['ControlledDrugLog','Recall','Batch']},
+
+// Inventory group services
+{id:'catalog',title:'🏷️ Medicine Catalog & Barcode',sub:'SKU • generic • brand',x:655,y:825,w:175,h:80,c:'service',domain:'inventory',d:'Canonical medicine catalog with commercial identifiers, barcode mapping and product attributes.',f:['SKU / barcode','Brand / generic','Strength / dosage form','Pack size','Manufacturer','MRP / pricing link'],parts:['Medicine master','Barcode map','Product search index','Pricing map'],in:['Drug master data','Supplier catalog'],out:['Product master','Search index'],tech:'Catalog service + search index + versioned drug master snapshots.',sec:'Controlled catalog changes with effective dates.',entities:['Medicine','SKU','Barcode','Manufacturer','Price']},
+{id:'inventory',title:'📊 Inventory & Batch',sub:'stock • expiry • FEFO',x:840,y:825,w:175,h:80,c:'service',domain:'inventory',d:'Tracks exact stock by branch, storage location, batch and expiry.',f:['Batch tracking','FEFO','Low-stock alerts','Reservations','Adjustments','Inter-branch transfer'],parts:['Stock ledger','Batch service','Reservation engine','Transfer workflow'],in:['GRN','Sale','Dispense','Return'],out:['Available stock','Reservation','Ledger'],tech:'Transactional stock ledger + reservation service.',sec:'Batch-level traceability and approval for manual adjustment.',entities:['Batch','StockLedger','StockReservation','Location']},
+{id:'procure',title:'📦 Procurement & Supplier',sub:'PR • PO • GRN • invoice',x:1025,y:825,w:175,h:80,c:'service',domain:'inventory',d:'Manages replenishment, purchasing, receiving and supplier invoice matching.',f:['Purchase requisition','Purchase order','GRN','3-way match','Purchase return','Supplier rating'],parts:['Requisition','PO workflow','Receiving','Invoice match'],in:['Low stock','Supplier catalog'],out:['PO','GRN','Payable event'],tech:'Procurement workflow + three-way match.',sec:'Approval matrix and separation of duties.',entities:['PurchaseReq','PurchaseOrder','GRN','SupplierInvoice']},
+{id:'quality',title:'❄️ Quality, Recall & Cold Chain',sub:'temperature • quality • recall',x:655,y:940,w:260,h:80,c:'service',domain:'inventory',d:'Optional quality module for temperature-sensitive storage, recall and damaged-stock handling.',f:['Temperature logs','Cold-chain alerts','Recall batches','Damage / quarantine','Quality checks'],parts:['Temperature feed','Quarantine stock','Recall engine','QC checklist'],in:['Sensor/log','Recall notice','Stock event'],out:['Quality hold','Recall task'],tech:'Event rules + optional IoT connector + inventory hold flag.',sec:'Quarantine permissions and traceable release.',entities:['TemperatureLog','Quarantine','Recall','QCCheck']},
+{id:'branch',title:'🏬 Branch & Stock Transfer',sub:'stores • locations • transfers',x:925,y:940,w:275,h:80,c:'service',domain:'inventory',d:'Controls multi-store inventory visibility, branch permissions and inter-branch movement.',f:['Branch setup','Location stock','Transfer request','Transfer approval','Consolidated stock'],parts:['Branch manager','Location map','Transfer workflow','Branch reporting'],in:['Admin config','Stock events'],out:['Transfer job','Branch rules'],tech:'Location-aware service + stock transfer workflow.',sec:'Branch-scoped RBAC and approval trail.',entities:['Branch','Location','StockTransfer']},
+
+// Commerce group services
+{id:'pos',title:'💻 POS & Sales',sub:'scan • cart • returns',x:1240,y:825,w:175,h:80,c:'service',domain:'commerce',d:'High-speed counter sales flow with barcode scanning and returns.',f:['Barcode scan','Cart','Customer lookup','Sale completion','Returns','Shift close'],parts:['Cart engine','Barcode parser','Return workflow','Shift session'],in:['SKU','Customer','Pricing'],out:['Sale','Stock movement'],tech:'POS state machine + inventory reservation/release.',sec:'Transaction integrity and shift reconciliation.',entities:['Cart','Sale','SaleItem','Return','Shift']},
+{id:'billing',title:'🧾 Billing & GST',sub:'invoice • tax • refund',x:1425,y:825,w:175,h:80,c:'service',domain:'commerce',d:'Creates tax-compliant invoices and coordinates refunds/credit notes.',f:['GST / tax rules','Invoice numbering','Discounts','Credit notes','Refunds','Receipt print/email'],parts:['Tax calculator','Invoice service','Refund service','Receipt renderer'],in:['Sale','Tax rules','Payment status'],out:['Invoice','Refund event','Accounting event'],tech:'Billing engine + tax adapter.',sec:'Immutable invoice IDs, refund authorization and financial audit.',entities:['Invoice','TaxLine','CreditNote','Refund']},
+{id:'payments',title:'💳 Payment Orchestration',sub:'UPI • card • cash • COD',x:1610,y:825,w:175,h:80,c:'service',domain:'commerce',d:'Normalizes payment methods and validates external payment responses.',f:['UPI','Cards','Cash','Wallets','COD','Settlement'],parts:['Payment intent','PSP adapter','Webhook verifier','Settlement reconciler'],in:['Payment request'],out:['Verified payment','Settlement event'],tech:'Payment adapter + signed webhooks + reconciliation.',sec:'No raw card storage; callback signature and replay checks.',entities:['Payment','PaymentIntent','Settlement','Refund']},
+{id:'orders',title:'🚚 Orders & Fulfilment',sub:'online • pickup • delivery',x:1240,y:940,w:260,h:80,c:'service',domain:'commerce',d:'Controls order lifecycle from cart to fulfilment and customer status.',f:['Cart → order','Prescription gating','Pickup','Delivery assignment','COD/prepaid','Cancellation'],parts:['Order state machine','Eligibility checks','Fulfilment queue','Status service'],in:['Patient order','Stock','Payment status'],out:['Fulfilment job','Order status'],tech:'Order state machine + domain events.',sec:'Order authorization and payment-state checks.',entities:['Order','OrderItem','Fulfilment','Cancellation']},
+{id:'loyalty',title:'🎁 Promotions & Loyalty',sub:'coupon • points • membership',x:1510,y:940,w:275,h:80,c:'service',domain:'commerce',d:'Applies coupons, membership pricing and loyalty points without mixing them into core stock logic.',f:['Coupons','Offers','Membership','Loyalty points','Referral / rewards','Campaign rules'],parts:['Promotion engine','Coupon service','Points ledger','Campaign scheduler'],in:['Customer','Cart','Campaign'],out:['Discount','Points event'],tech:'Promotion rules + points ledger.',sec:'Prevent coupon replay and negative point balances.',entities:['Coupon','Promotion','LoyaltyAccount','PointsLedger']},
+
+// Operations group services
+{id:'deliverySvc',title:'🛵 Delivery Management',sub:'rider • OTP • POD',x:1825,y:825,w:175,h:80,c:'service',domain:'operations',d:'Assigns deliveries, tracks status and records OTP / proof of delivery.',f:['Assignment','Route status','Customer OTP','COD status','POD','Failed delivery'],parts:['Dispatch board','Driver assignment','OTP verifier','POD store'],in:['Fulfilment job'],out:['Delivery status','POD'],tech:'Delivery workflow + partner adapter.',sec:'Assigned-order scope and POD integrity.',entities:['DeliveryJob','Driver','OTP','POD']},
+{id:'notifications',title:'🔔 Notifications',sub:'SMS • email • push • WhatsApp',x:2010,y:825,w:175,h:80,c:'service',domain:'operations',d:'Publishes customer and operational messages from domain events.',f:['SMS','Email','Push','WhatsApp','Low-stock alert','Refill / expiry reminder'],parts:['Template service','Preference checker','Provider adapters','Retry queue'],in:['Domain events','Preferences'],out:['Messages'],tech:'Event consumer + provider adapters + retries.',sec:'Secret vaulting, consent and message deduplication.',entities:['Notification','Template','Preference']},
+{id:'finance',title:'📈 Finance & Accounting',sub:'ledger • payables • P&L',x:2195,y:825,w:175,h:80,c:'service',domain:'operations',d:'Converts sales, purchases, refunds and expenses into accounting events.',f:['Ledger posting','Supplier payables','Expenses','Cash reconciliation','P&L','Branch profitability'],parts:['Ledger mapper','Payables','Expense module','Reconciliation'],in:['Sales','Purchases','Refunds'],out:['Journal entry','Reconciliation event'],tech:'Accounting event mapper + connector.',sec:'Separation of duties and financial audit.',entities:['LedgerEntry','Expense','Payable','Reconciliation']},
+{id:'analytics',title:'📊 Analytics & Reporting',sub:'KPI • ageing • profit • reports',x:1825,y:940,w:175,h:80,c:'service',domain:'operations',d:'Provides management and operational intelligence across stores.',f:['Sales KPIs','Stock ageing','Expiry / dead stock','Top medicines','Profit & loss','Scheduled reports'],parts:['ETL/read model','KPI service','Report builder','Export service'],in:['Transactions','Inventory','Purchasing'],out:['Dashboards','Exports'],tech:'Read models + reporting store + scheduled jobs.',sec:'Read-only analytics roles and export restrictions.',entities:['DailySales','StockAgeing','KPI','ReportJob']},
+{id:'compliance',title:'⚖️ Compliance & Audit',sub:'license • audit • regulatory',x:2010,y:940,w:175,h:80,c:'service',domain:'operations',d:'Central operational compliance, audit, retention and regulatory workflow layer.',f:['Audit trail','Drug schedules','License dates','Controlled logs','Recall records','Data retention'],parts:['Audit collector','Compliance rules','Retention manager','Export / evidence'],in:['All domain events'],out:['Audit record','Compliance alert'],tech:'Append-only audit pipeline + scheduled compliance checks.',sec:'Tamper resistance, restricted access and evidence retention.',entities:['AuditEvent','License','ComplianceCheck','RetentionPolicy']},
+{id:'workforce',title:'👥 Workforce & Shift Ops',sub:'staff • roster • cash shifts',x:2195,y:940,w:175,h:80,c:'service',domain:'operations',d:'Supports staff roster, counter shifts, opening/closing checks and workforce permissions.',f:['Staff roster','Shift open/close','Cash drawer','Attendance','Task assignment'],parts:['Roster','Shift service','Cash drawer','Task board'],in:['Admin settings','POS sessions'],out:['Shift status','Workforce event'],tech:'Workforce service linked to RBAC and POS.',sec:'Shift-level access and cash reconciliation audit.',entities:['Employee','Shift','CashDrawer','Task']},
+
+// Data
+{id:'coredb',title:'🗄️ Core Pharmacy Database',sub:'PostgreSQL • system of record',x:70,y:1150,w:300,h:72,c:'data',d:'Primary transactional database for users, patients, medicines, batches, prescriptions, sales, purchases, orders, finance references and branches.',f:['Users / roles','Patients / consent','Medicine / batch','Prescription / dispense','Sales / purchases','Orders / payments refs','Branches / shifts'],parts:['OLTP schema','Indexes / constraints','Read replicas','Backup / PITR'],in:['Service transactions'],out:['Consistent records'],tech:'PostgreSQL / ACID transactions / constraints / indexed queries.',sec:'Encryption, least privilege, PITR, backup testing.',entities:['User','Patient','Medicine','Batch','Prescription','Sale','Order','Branch']},
+{id:'cache',title:'⚡ Redis Cache',sub:'sessions • rate limits • hot reads',x:400,y:1150,w:300,h:72,c:'data',d:'Fast volatile store for sessions, drug master hot reads, rate limiting, locks and short reservations.',f:['Sessions','Rate limits','Hot catalog','Locks','Short reservations'],parts:['Session cache','Rate limiter','Distributed locks','TTL store'],in:['Hot reads','Gateway requests'],out:['Fast response'],tech:'Redis + TTL / eviction strategy.',sec:'Network isolation and auth; never system of record.',entities:['Session','TokenState','Lock','Reservation']},
+{id:'searchidx',title:'🔍 Search Index',sub:'medicine • SKU • supplier catalog',x:730,y:1150,w:300,h:72,c:'data',d:'Search-optimized index for fast medicine and product discovery.',f:['Name search','Generic search','Barcode lookup','Synonyms','Supplier catalog'],parts:['Medicine index','Autocomplete','Synonym map','Reindex worker'],in:['Catalog changes'],out:['Search results'],tech:'Search index fed asynchronously from catalog changes.',sec:'No sensitive patient data in public index.',entities:['MedicineIndex','Synonym','SearchDocument']},
+{id:'queue',title:'📨 Event Bus / Job Queue',sub:'async • retry • DLQ',x:1060,y:1150,w:300,h:72,c:'data',d:'Decouples slow or retryable work such as notifications, reports, webhooks, accounting sync and offline POS reconciliation.',f:['Domain events','Workers','Retries','Dead-letter queue','Scheduled jobs'],parts:['Topic / queue','Worker pool','Retry policy','DLQ'],in:['Domain events'],out:['Async jobs'],tech:'Durable broker + workers + retry policy.',sec:'Signed events, idempotency keys and poison-message isolation.',entities:['DomainEvent','Job','Retry','DLQMessage']},
+{id:'storage',title:'📁 Secure Object Storage',sub:'Rx images • invoices • reports',x:1390,y:1150,w:300,h:72,c:'data',d:'Private document storage for prescription uploads, invoice PDFs, supplier documents, reports and backup artifacts.',f:['Prescription images','Invoice PDFs','Supplier documents','Report exports','Backup artifacts'],parts:['Private bucket','Versioning','Lifecycle','Signed download URLs'],in:['Documents'],out:['Secure download'],tech:'Private object storage + versioned objects.',sec:'Encryption, signed URLs, retention policies.',entities:['Object','Document','FileVersion']},
+{id:'auditlog',title:'🔒 Immutable Audit Log',sub:'who • what • when • before/after',x:1720,y:1150,w:300,h:72,c:'data',d:'Append-only operational history for security, compliance, refunds, prescription overrides, stock adjustments and admin changes.',f:['Login events','Prescription actions','Stock changes','Refunds','Admin changes','Before / after state'],parts:['Audit collector','Append-only store','Evidence export','Retention policy'],in:['System events'],out:['Audit evidence'],tech:'Append-only audit pipeline / restricted store.',sec:'Tamper resistance and restricted read access.',entities:['AuditEvent','Actor','ChangeSet']},
+{id:'reportdb',title:'📈 Reporting Store',sub:'analytics read model / warehouse',x:2050,y:1150,w:280,h:72,c:'data',d:'Optimized read model for dashboards, historical trends, ageing and branch analytics.',f:['Daily facts','Branch dimensions','Trend tables','Aggregates'],parts:['ETL jobs','Fact tables','Dimensions','Aggregates'],in:['Operational events'],out:['Analytics queries'],tech:'Read-optimized reporting store.',sec:'Derived data only; export controls.',entities:['FactSale','FactStock','DimBranch','DimMedicine']},
+
+// External / infra
+{id:'payment',title:'💳 Payment Gateway / PSP',sub:'UPI • cards • wallets',x:60,y:1330,w:500,h:72,c:'ext',d:'External payment provider used for online and supported counter payments.',f:['UPI','Cards','Wallets','Refunds','Settlement'],parts:['Payment intent','Checkout','Webhook','Settlement'],in:['Payment request'],out:['Signed callback'],tech:'PSP API + webhook adapter.',sec:'Signature verification and no raw card storage.',entities:['PSPTransaction','Callback','Settlement']},
+{id:'gst',title:'🏛️ GST / Tax Service',sub:'tax • invoice compliance',x:650,y:1330,w:500,h:72,c:'ext',d:'External or government-connected tax capability where applicable to the pharmacy setup.',f:['GSTIN checks','Tax classification','Invoice data','Credit notes','Tax reports'],parts:['Tax adapter','Validation','Export','Response parser'],in:['Invoice / tax request'],out:['Tax response'],tech:'External tax adapter with retry.',sec:'Credential vault + tax response audit.',entities:['GSTIN','TaxRate','TaxResponse']},
+{id:'erx',title:'🏥 eRx / Health Network',sub:'prescription exchange',x:1240,y:1330,w:500,h:72,c:'ext',d:'Optional prescription or health-network connectivity for supported e-prescription workflows.',f:['Prescription retrieval','Prescriber metadata','Status exchange','Refills'],parts:['FHIR/partner adapter','Patient match','Consent check','Status mapper'],in:['Authorized reference'],out:['Prescription payload'],tech:'Partner/FHIR adapter where supported.',sec:'Consent and encrypted transport.',entities:['FHIRResource','PrescriptionRef','Practitioner']},
+{id:'drugdb',title:'🌐 Drug / Medicine Master API',sub:'drug knowledge • warnings',x:1830,y:1330,w:500,h:72,c:'ext',d:'External medicine knowledge source for identifiers, mappings and warnings.',f:['Drug identity','Generic mapping','Warnings','Manufacturer','Regulatory status'],parts:['API adapter','Snapshot versioning','Cache updater','Validator'],in:['Drug identifier'],out:['Drug master data'],tech:'Adapter + cached versioned snapshots.',sec:'Source validation and version control.',entities:['ExternalDrug','Ingredient','Warning']},
+{id:'messaging',title:'💬 SMS / Email / Push / WhatsApp',sub:'notification providers',x:60,y:1398,w:500,h:72,c:'ext',d:'External messaging providers for customer and operational notifications.',f:['SMS','Email','Push','WhatsApp','Delivery reports'],parts:['Provider API','Template channel','Delivery callback','Failover provider'],in:['Message request'],out:['Delivery status'],tech:'Provider adapters behind notification service.',sec:'Consent, secrets vault and provider isolation.',entities:['Message','DeliveryReport']},
+{id:'accounting',title:'📑 Accounting Platform',sub:'Tally / Zoho / ERP connector',x:650,y:1398,w:500,h:72,c:'ext',d:'External accounting destination for journals, payables, expenses and reconciliation.',f:['Ledger sync','Supplier payables','Expenses','Refunds','P&L'],parts:['Mapping rules','Export queue','API connector','Reconciliation'],in:['Accounting event'],out:['Journal / sync status'],tech:'Connector + mapping + retry queue.',sec:'Scoped credentials and reconciliation logs.',entities:['Journal','Voucher','Account']},
+{id:'deliveryext',title:'🗺️ Delivery Aggregator / Maps',sub:'shipment • route • tracking',x:1240,y:1398,w:500,h:72,c:'ext',d:'External delivery partner or logistics platform used to dispatch and track orders.',f:['Create delivery','Driver assignment','Tracking','ETA','POD'],parts:['Dispatch API','Tracking','Maps/route','Status webhook'],in:['Fulfilment job'],out:['Delivery status'],tech:'Partner adapter + webhook receiver.',sec:'Partner-scoped tokens and webhook verification.',entities:['Shipment','Route','TrackingEvent']},
+{id:'infra',title:'☁️ Cloud / Server / Monitoring / DR',sub:'hosting • backup • alerts',x:1830,y:1398,w:500,h:72,c:'ext',d:'Application hosting, observability, backup and disaster recovery foundation.',f:['App hosting','Monitoring','Backups','Scaling','DR'],parts:['App cluster','Monitoring','Backup vault','Recovery runbook'],in:['App + DB data'],out:['Service uptime','Backups','Alerts'],tech:'Cloud/on-prem compute + monitoring + encrypted backups.',sec:'Network segmentation, secret vault and recovery tests.',entities:['Metric','Alert','Backup','RecoveryPoint']}
+];
+
+const groups=[
+{id:'g-clinical',title:'CLINICAL SERVICES',note:'Prescription • safety • patient medication • refills • controlled drugs',x:55,y:765,w:575,h:285,color:'--clinical'},
+{id:'g-inventory',title:'INVENTORY & PROCUREMENT',note:'Catalog • stock • FEFO • procurement • quality • branches',x:640,y:765,w:575,h:285,color:'--inventory'},
+{id:'g-commerce',title:'COMMERCE & CUSTOMER TRANSACTIONS',note:'POS • billing • payments • orders • loyalty',x:1225,y:765,w:575,h:285,color:'--commerce'},
+{id:'g-operations',title:'FULFILMENT & OPERATIONS',note:'Delivery • notifications • finance • analytics • compliance • workforce',x:1810,y:765,w:575,h:285,color:'--operations'}
+];
+
+const edges=[
+// user to gateway
+{a:'admin',b:'gateway',label:'Admin login',kind:'user',role:'admin'},
+{a:'pharmacist',b:'gateway',label:'Pharmacist login',kind:'user',role:'pharmacist'},
+{a:'cashier',b:'gateway',label:'Cashier login',kind:'user',role:'cashier'},
+{a:'patient',b:'gateway',label:'Patient login',kind:'user',role:'patient'},
+{a:'supplier',b:'gateway',label:'Supplier login',kind:'user',role:'supplier'},
+{a:'delivery',b:'gateway',label:'Delivery login',kind:'user',role:'delivery'},
+// gateway to role workspace
+{a:'gateway',b:'role-admin',label:'RBAC → ADMIN',kind:'role',role:'admin'},
+{a:'gateway',b:'role-pharmacist',label:'RBAC → PHARMACIST',kind:'role',role:'pharmacist'},
+{a:'gateway',b:'role-cashier',label:'RBAC → CASHIER',kind:'role',role:'cashier'},
+{a:'gateway',b:'role-patient',label:'RBAC → PATIENT',kind:'role',role:'patient'},
+{a:'gateway',b:'role-supplier',label:'RBAC → SUPPLIER',kind:'role',role:'supplier'},
+{a:'gateway',b:'role-delivery',label:'RBAC → DELIVERY',kind:'role',role:'delivery'},
+// role to domains
+{a:'role-admin',b:'inventory-api',label:'manage inventory',kind:'role',role:'admin'},
+{a:'role-admin',b:'commerce-api',label:'finance / sales',kind:'role',role:'admin'},
+{a:'role-admin',b:'ops-api',label:'reports / settings',kind:'role',role:'admin'},
+{a:'role-pharmacist',b:'clinical-api',label:'clinical',kind:'role',role:'pharmacist'},
+{a:'role-pharmacist',b:'inventory-api',label:'stock lookup',kind:'role',role:'pharmacist'},
+{a:'role-cashier',b:'commerce-api',label:'billing / payments',kind:'role',role:'cashier'},
+{a:'role-cashier',b:'inventory-api',label:'stock reduce',kind:'role',role:'cashier'},
+{a:'role-patient',b:'clinical-api',label:'Rx / refills',kind:'role',role:'patient'},
+{a:'role-patient',b:'commerce-api',label:'order / pay',kind:'role',role:'patient'},
+{a:'role-patient',b:'ops-api',label:'track delivery',kind:'role',role:'patient'},
+{a:'role-supplier',b:'inventory-api',label:'PO / shipment',kind:'role',role:'supplier'},
+{a:'role-delivery',b:'ops-api',label:'assigned delivery',kind:'role',role:'delivery'},
+// domains to services
+{a:'clinical-api',b:'rx',label:'Rx'}, {a:'clinical-api',b:'safety',label:'Safety'}, {a:'clinical-api',b:'patientSvc',label:'Patient'}, {a:'clinical-api',b:'refill',label:'Refill'}, {a:'clinical-api',b:'controlled',label:'Controlled drugs'},
+{a:'inventory-api',b:'catalog',label:'Catalog'}, {a:'inventory-api',b:'inventory',label:'Stock'}, {a:'inventory-api',b:'procure',label:'Procurement'}, {a:'inventory-api',b:'quality',label:'Quality'}, {a:'inventory-api',b:'branch',label:'Branches'},
+{a:'commerce-api',b:'pos',label:'POS'}, {a:'commerce-api',b:'billing',label:'Billing'}, {a:'commerce-api',b:'payments',label:'Payments'}, {a:'commerce-api',b:'orders',label:'Orders'}, {a:'commerce-api',b:'loyalty',label:'Loyalty'},
+{a:'ops-api',b:'deliverySvc',label:'Delivery'}, {a:'ops-api',b:'notifications',label:'Messages'}, {a:'ops-api',b:'finance',label:'Finance'}, {a:'ops-api',b:'analytics',label:'Analytics'}, {a:'ops-api',b:'compliance',label:'Compliance'}, {a:'ops-api',b:'workforce',label:'Workforce'},
+// clinical flows
+{a:'rx',b:'safety',kind:'flow'}, {a:'rx',b:'inventory',kind:'flow'}, {a:'rx',b:'patientSvc',kind:'flow'}, {a:'rx',b:'storage',kind:'flow'}, {a:'safety',b:'cache',kind:'flow'}, {a:'safety',b:'drugdb',kind:'flow',reverse:true}, {a:'controlled',b:'compliance',kind:'flow'},
+{a:'refill',b:'notifications',kind:'flow'}, {a:'patientSvc',b:'coredb',kind:'flow'},
+// inventory flows
+{a:'catalog',b:'searchidx',kind:'flow'}, {a:'catalog',b:'coredb',kind:'flow'}, {a:'catalog',b:'drugdb',kind:'flow',reverse:true}, {a:'inventory',b:'coredb',kind:'flow'}, {a:'inventory',b:'cache',kind:'flow'}, {a:'inventory',b:'queue',kind:'flow'}, {a:'procure',b:'inventory',kind:'flow'}, {a:'procure',b:'accounting',kind:'flow'}, {a:'quality',b:'inventory',kind:'flow'}, {a:'quality',b:'compliance',kind:'flow'}, {a:'branch',b:'coredb',kind:'flow'},
+// commerce flows
+{a:'pos',b:'billing',kind:'flow'}, {a:'pos',b:'inventory',kind:'flow'}, {a:'pos',b:'queue',kind:'flow'}, {a:'billing',b:'payments',kind:'flow'}, {a:'billing',b:'gst',kind:'flow'}, {a:'billing',b:'coredb',kind:'flow'}, {a:'billing',b:'accounting',kind:'flow'}, {a:'payments',b:'payment',kind:'flow'}, {a:'orders',b:'inventory',kind:'flow'}, {a:'orders',b:'billing',kind:'flow'}, {a:'orders',b:'deliverySvc',kind:'flow'}, {a:'orders',b:'patientSvc',kind:'flow'}, {a:'orders',b:'notifications',kind:'flow'}, {a:'loyalty',b:'coredb',kind:'flow'},
+// operations flows
+{a:'deliverySvc',b:'deliveryext',kind:'flow'}, {a:'notifications',b:'queue',kind:'flow'}, {a:'notifications',b:'messaging',kind:'flow'}, {a:'finance',b:'accounting',kind:'flow'}, {a:'analytics',b:'queue',kind:'flow'}, {a:'analytics',b:'reportdb',kind:'flow'}, {a:'compliance',b:'auditlog',kind:'flow'}, {a:'compliance',b:'coredb',kind:'flow'}, {a:'workforce',b:'coredb',kind:'flow'},
+// data/infrastructure
+{a:'coredb',b:'infra',kind:'flow'}, {a:'storage',b:'infra',kind:'flow'}, {a:'auditlog',b:'infra',kind:'flow'}, {a:'reportdb',b:'infra',kind:'flow'}, {a:'queue',b:'infra',kind:'flow'}
+];
+
+const domainServices={clinical:['rx','safety','patientSvc','refill','controlled'],inventory:['catalog','inventory','procure','quality','branch'],commerce:['pos','billing','payments','orders','loyalty'],operations:['deliverySvc','notifications','finance','analytics','compliance','workforce']};
+const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
+let scale=1,tx=0,ty=0,selected=null,dragging=false,startX=0,startY=0,startTx=0,startTy=0;
+
+function el(tag,attrs={}){const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e}
+function center(n){return{x:n.x+n.w/2,y:n.y+n.h/2}}
+function anchor(a,b){const A=center(a),B=center(b),dx=B.x-A.x,dy=B.y-A.y;let sx=A.x,sy=A.y,ex=B.x,ey=B.y;if(Math.abs(dx)/(a.w/2)>Math.abs(dy)/(a.h/2)){sx=A.x+(dx>0?a.w/2:-a.w/2);sy=A.y+(Math.abs(dx)?dy*(a.w/2)/Math.abs(dx):0)}else{sy=A.y+(dy>0?a.h/2:-a.h/2);sx=A.x+(Math.abs(dy)?dx*(a.h/2)/Math.abs(dy):0)}if(Math.abs(dx)/(b.w/2)>Math.abs(dy)/(b.h/2)){ex=B.x+(dx>0?-b.w/2:b.w/2);ey=B.y+(Math.abs(dx)?dy*(b.w/2)/Math.abs(dx):0)}else{ey=B.y+(dy>0?-b.h/2:b.h/2);ex=B.x+(Math.abs(dy)?dx*(b.h/2)/Math.abs(dy):0)}return{sx,sy,ex,ey}}
+function roleColor(role){return({admin:'#ffb65c',pharmacist:'#63d7a4',cashier:'#65b9ff',patient:'#c79cff',supplier:'#ff8ea6',delivery:'#6fd8ff'})[role]||'#7ce2ff'}
+function domainColor(domain){return({clinical:'#54d6b4',inventory:'#ffb86a',commerce:'#6fa9ff',operations:'#c58cff'})[domain]||'#7ce2ff'}
+function bendPath(a,b){const p=anchor(a,b);const same=Math.abs(center(a).y-center(b).y)<75;if(same)return`M ${p.sx} ${p.sy} L ${p.ex} ${p.ey}`;const mid=(p.sy+p.ey)/2;return`M ${p.sx} ${p.sy} L ${p.sx} ${mid} L ${p.ex} ${mid} L ${p.ex} ${p.ey}`}
+function labelPoint(a,b){const A=center(a),B=center(b);return{x:(A.x+B.x)/2,y:(A.y+B.y)/2-5}}
+function related(id){return[...new Set(edges.filter(e=>e.a===id||e.b===id).map(e=>e.a===id?e.b:e.a))]}
+function selectedLink(e){return!!selected&&(e.a===selected||e.b===selected)}
+function drawGroups(){groupsG.innerHTML='';groups.forEach(g=>{const gg=el('g',{class:'group'});const r=el('rect',{x:g.x,y:g.y,width:g.w,height:g.h});const title=el('text',{class:'group-title',x:g.x+12,y:g.y+22,fill:`var(${g.color})`});title.textContent=g.title;const note=el('text',{class:'group-note',x:g.x+12,y:g.y+38});note.textContent=g.note;gg.append(r,title,note);groupsG.appendChild(gg)})}
+function draw(){
+ edgesG.innerHTML='';nodesG.innerHTML='';drawGroups();
+ edges.forEach((e,i)=>{const a=byId[e.a],b=byId[e.b];if(!a||!b)return;const active=selectedLink(e);const path=el('path',{class:`edge ${e.kind||'flow'}${active?' active':''}${selected&&!active?' dim':''}`,d:bendPath(a,b),'data-i':i});if(e.kind==='role'||e.kind==='user'){path.setAttribute('stroke',roleColor(e.role))}else if(a.domain)path.setAttribute('stroke',domainColor(a.domain));if(active)path.setAttribute('marker-end','url(#arrowActive)');edgesG.appendChild(path);if(e.label && selectedLink(e)){const p=labelPoint(a,b);const t=el('text',{class:`edge-label${active?' active':''}`,x:p.x,y:p.y-7,'text-anchor':'middle'});t.textContent=e.label;edgesG.appendChild(t)}});
+ nodes.forEach(n=>{
+  const g=el('g',{class:`node ${n.c||''} ${n.role?'user-'+n.role:''} ${n.domain?'domain-'+n.domain:''}`,transform:`translate(${n.x},${n.y})`,'data-id':n.id});
+  if(selected&&n.id!==selected&&!related(selected).includes(n.id))g.classList.add('dim');
+  if(n.id===selected)g.classList.add('selected');
+  const r=el('rect',{width:n.w,height:n.h});
+
+  // ClipPath to hard-clip ALL text inside the rect
+  const clipId='cp-'+n.id;
+  const cp=document.createElementNS(NS,'clipPath');
+  cp.setAttribute('id',clipId);
+  const cr=el('rect',{x:4,y:2,width:Math.max(0,n.w-8),height:Math.max(0,n.h-4)});
+  cp.appendChild(cr);
+  g.appendChild(cp);
+
+  // Helper: truncate text to fit maxWidth pixels (approx 6.5px/char for 13px font)
+  function trunc(str,maxPx,pxPerChar){const max=Math.floor(maxPx/pxPerChar);return str.length<=max?str:str.slice(0,max-1)+'…';}
+
+  const maxW=n.w-26;
+  const title=el('text',{class:'title',x:13,y:23,'clip-path':`url(#${clipId})`});
+  title.textContent=trunc(n.title||'',maxW,6.2);
+
+  const sub=el('text',{class:'sub',x:13,y:40,'clip-path':`url(#${clipId})`});
+  sub.textContent=trunc(n.sub||'',maxW,5.4);
+
+  g.append(r,title,sub);
+
+  if(n.c?.includes('role')){
+    const roleEdges=edges.filter(e=>e.a===n.id&&e.kind==='role').map(e=>byId[e.b]?.title.replace(' DOMAIN API','').replace(' Domain API','')).filter(Boolean);
+    const allowedStr='→ '+(roleEdges.length?roleEdges.join(' • '):'No domains');
+    const access=el('text',{class:'badge',x:13,y:58,'clip-path':`url(#${clipId})`});
+    access.textContent=trunc(allowedStr,maxW,5.4);
+    g.appendChild(access);
+  }
+
+  g.addEventListener('click',ev=>{ev.stopPropagation();openNode(n.id)});
+  nodesG.appendChild(g);
+});
+}
+function chip(id){const n=byId[id];return n?`<button class="chip" data-open="${id}">${n.title}</button>`:''}
+function roleName(role){return role?role.charAt(0).toUpperCase()+role.slice(1):'System'}
+function rolesForService(id){return[...new Set(edges.filter(e=>e.kind==='role'&&e.b===id).map(e=>e.role))]}
+function domainForNode(id){return byId[id]?.domain||null}
+function servicesForRole(role){const ws='role-'+role;return edges.filter(e=>e.a===ws&&e.kind==='role').map(e=>e.b)}
+function directConnections(id){return[...new Set(edges.filter(e=>e.a===id||e.b===id).map(e=>e.a===id?e.b:e.a))]}
+function accessRows(id){
+ const roles=rolesForService(id);
+ if(roles.length)return roles.map(r=>{const ws=byId['role-'+r],u=byId[r];return`<div class="access-row"><strong style="color:${roleColor(r)}">${roleName(r)} → ${ws?.title||'Role Workspace'}</strong><div class="tags"><span class="tag">${u?.title||roleName(r)}</span><span class="tag">${byId[id]?.title||id}</span><span class="tag">via ${domainForNode(id)||'shared service'}</span></div></div>`}).join('');
+ if(id.startsWith('role-')){const r=id.slice(5);const u=byId[r];return`<div class="access-row"><strong style="color:${roleColor(r)}">${roleName(r)} access boundary</strong><div class="tags"><span class="tag">${u?.title||roleName(r)}</span><span class="tag">Authenticated by Gateway</span><span class="tag">Only approved domain APIs</span></div></div>`}
+ return`<div class="mini-note">This is shared infrastructure or an external dependency, not a direct end-user screen.</div>`;
+}
+function roleMatrix(){
+ const roles=['admin','pharmacist','cashier','patient','supplier','delivery'];
+ const mods=[...Object.values(domainServices).flat()].map(id=>byId[id]);
+ let html='<table><thead><tr><th>Business module</th>'+roles.map(r=>`<th style="color:${roleColor(r)}">${roleName(r)}</th>`).join('')+'</tr></thead><tbody>';
+ mods.forEach(n=>{html+=`<tr><td><button class="chip" data-open="${n.id}">${n.title}</button></td>`+roles.map(r=>{const yes=rolesForService(n.id).includes(r);return`<td class="${yes?'yes':'no'}">${yes?'✓':'—'}</td>`}).join('')+'</tr>'});
+ html+='</tbody></table>';document.getElementById('matrixContent').innerHTML=html;
+}
+function openNode(id){
+ const n=byId[id];if(!n)return;selected=id;connectBtn.textContent='Hide connections';draw();
+ document.getElementById('drawerTitle').textContent=n.title;document.getElementById('drawerDesc').textContent=n.d;
+ const incoming=edges.filter(e=>e.b===id).map(e=>e.a),outgoing=edges.filter(e=>e.a===id).map(e=>e.b),direct=directConnections(id);
+ const layer= n.c?.includes('user')?'Users / Client':n.c?.includes('access')?'Security & Gateway':n.c?.includes('role')?'Role Workspace':n.c?.includes('domain')?'Domain API':n.c?.includes('service')?'Business Service':n.c?.includes('data')?'Data / Async':'External / Infrastructure';
+ document.getElementById('tab-overview').innerHTML=`<div class="statgrid"><div class="stat"><b>Layer</b><span>${layer}</span></div><div class="stat"><b>Domain</b><span>${n.domain?n.domain.charAt(0).toUpperCase()+n.domain.slice(1):'Shared'}</span></div><div class="stat"><b>Connections</b><span>${direct.length}</span></div></div><div class="section-title">Capabilities</div><div class="feature-list">${(n.f||[]).map(x=>`<div class="feature">${x}</div>`).join('')}</div><div class="section-title">Internal components</div><div class="parts">${(n.parts||[]).map((x,i)=>`<div class="part"><strong>${x}</strong><span>${['UI / controller','Business rules','Workflow / event','Storage / integration'][i%4]}</span></div>`).join('')||'<div class="mini-note">No internal subcomponents listed.</div>'}</div><div class="section-title">Direct connections</div><div class="conn">${direct.map(chip).join('')||'<span class="mini-note">None</span>'}</div>`;
+ document.getElementById('tab-architecture').innerHTML=`<div class="section-title">How this component works</div><div class="flow"><div class="flowrow"><div class="flowbox"><b>Incoming</b><br>${incoming.length?incoming.map(x=>byId[x]?.title).join(' • '):'None'}</div><div class="flowarrow">→</div><div class="flowbox"><b>${n.title}</b><br>auth → validate → rules → transaction/event</div></div><div class="flowrow"><div class="flowbox"><b>Inputs</b><br>${(n.in||[]).join(' • ')||'—'}</div><div class="flowarrow">→</div><div class="flowbox"><b>Outputs</b><br>${(n.out||[]).join(' • ')||'—'}</div></div><div class="flowrow"><div class="flowbox"><b>Next step</b><br>${outgoing.length?outgoing.map(x=>byId[x]?.title).join(' • '):'End / external callback'}</div><div class="flowarrow">→</div><div class="flowbox"><span class="flow-badge">event / API / transaction</span></div></div></div><div class="section-title">Implementation idea</div><div class="tech">${n.tech||'Use a dedicated service with clear API boundaries, validation, logging and transactional controls.'}</div><div class="section-title">Important entities</div><div class="conn">${(n.entities||[]).map(x=>`<span class="flow-badge">${x}</span>`).join('')||'<span class="mini-note">No entity list.</span>'}</div>`;
+ document.getElementById('tab-access').innerHTML=`<div class="section-title">Who uses this?</div><div class="access-map">${accessRows(id)}</div><div class="section-title">Role path</div><div class="tech">User → API Gateway + Identity → Role Workspace → Domain API → ${n.title}${outgoing.length?' → downstream service/data/external':''}</div>${id.startsWith('role-')?`<div class="section-title">Allowed domain APIs</div><div class="conn">${servicesForRole(id.slice(5)).map(chip).join('')}</div>`:''}${rolesForService(id).length?`<div class="section-title">Roles directly mapped to this module</div><div class="conn">${rolesForService(id).map(r=>chip('role-'+r)).join('')}</div>`:''}`;
+ document.getElementById('tab-data').innerHTML=`<div class="section-title">Data handled</div><div class="feature-list">${(n.in||[]).map(x=>`<div class="feature"><b>Input</b><br>${x}</div>`).join('')}${(n.out||[]).map(x=>`<div class="feature"><b>Output</b><br>${x}</div>`).join('')}</div><div class="section-title">Security &amp; controls</div><div class="tech">${n.sec||'Use encryption in transit, role-based access, audit logs, validation and least-privilege service accounts.'}</div><div class="section-title">Typical entities / records</div><div class="conn">${(n.entities||[]).map(x=>`<span class="flow-badge">${x}</span>`).join('')}</div>`;
+ drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelector('[data-tab="overview"]').classList.add('active');document.querySelectorAll('.tabpane').forEach(t=>t.classList.remove('active'));document.getElementById('tab-overview').classList.add('active');
+}
+function closeDrawer(){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');selected=null;connectBtn.textContent='Show connections';
+
+  // Animated data flow particles for active edges
+  const particlesG = document.getElementById('particles');
+  if (particlesG) {
+    particlesG.innerHTML = '';
+    if (selected) {
+      edges.forEach(e => {
+        if (e.a === selected || e.b === selected) {
+          const na = byId[e.a], nb = byId[e.b];
+          if (!na || !nb) return;
+          const pa = anchor(na, nb), pb = anchor(nb, na);
+          const pathD = bendPath(pa, pb);
+          const p = document.createElementNS(NS, 'circle');
+          p.setAttribute('r', '4');
+          p.setAttribute('fill', '#38bdf8');
+          p.setAttribute('filter', 'url(#glow)');
+          const anim = document.createElementNS(NS, 'animateMotion');
+          anim.setAttribute('path', pathD);
+          anim.setAttribute('dur', '1.8s');
+          anim.setAttribute('repeatCount', 'indefinite');
+          p.appendChild(anim);
+          particlesG.appendChild(p);
+        }
+      });
+    }
+  }
+draw()}
+function setTransform(){wrap.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;document.getElementById('zoomReset').textContent=Math.round(scale*100)+'%'}
+function zoomAt(factor,cx,cy){const ns=Math.max(.45,Math.min(3.0,scale*factor));const f=ns/scale;tx=cx-(cx-tx)*f;ty=cy-(cy-ty)*f;scale=ns;setTransform()}
+function zoomBy(f){zoomAt(f,viewport.clientWidth/2,viewport.clientHeight/2)}
+function fit(){const vw=viewport.clientWidth,vh=viewport.clientHeight,sw=2400,sh=1700;scale=Math.min((vw-28)/sw,0.74);scale=Math.max(.58,Math.min(scale,1));tx=Math.max(12,(vw-sw*scale)/2);ty=12;setTransform()}
+function toastMsg(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>toast.classList.remove('show'),2200)}
+
+// interactions
+document.getElementById('closeBtn').addEventListener('click',closeDrawer);
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tabpane').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+b.dataset.tab).classList.add('active')});
+document.querySelector('.drawer-body').addEventListener('click',e=>{const id=e.target.closest('[data-open]')?.dataset.open;if(id)openNode(id)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();document.getElementById('matrixOverlay').classList.remove('open')}if(e.key==='+'||e.key==='=')zoomBy(1.15);if(e.key==='-')zoomBy(1/1.15)});
+connectBtn.addEventListener('click',()=>{if(selected){draw();toastMsg('Direct connections for '+byId[selected].title+' are highlighted.')}else toastMsg('Click a component first, then use this button to focus its path.')});
+search.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();let count=0;nodesG.querySelectorAll('.node').forEach(g=>{const n=byId[g.dataset.id];const hay=[n.title,n.sub,n.d,...(n.f||[]),...(n.parts||[]),...(n.entities||[])].join(' ').toLowerCase();const ok=!q||hay.includes(q);g.style.display=ok?'':'none';if(ok&&q)count++});if(q&&count===1){const match=[...nodesG.querySelectorAll('.node')].map(g=>byId[g.dataset.id]).find(n=>{const hay=[n.title,n.sub,n.d,...(n.f||[]),...(n.parts||[]),...(n.entities||[])].join(' ').toLowerCase();return hay.includes(q)});if(match)openNode(match.id)}});
+document.getElementById('fitBtn').addEventListener('click',fit);document.getElementById('resetBtn').addEventListener('click',()=>{search.value='';closeDrawer();nodesG.querySelectorAll('.node').forEach(g=>g.style.display='');fit()});
+document.getElementById('zoomIn').addEventListener('click',()=>zoomBy(1.18));document.getElementById('zoomOut').addEventListener('click',()=>zoomBy(1/1.18));document.getElementById('zoomReset').addEventListener('click',fit);
+viewport.addEventListener('wheel',e=>{e.preventDefault();const r=viewport.getBoundingClientRect();zoomAt(e.deltaY<0?1.1:.9,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node')||e.target.closest('.zoom')||e.target.closest('.drawer')||e.target.closest('.toolbar')||e.target.closest('.matrix-overlay'))return;dragging=true;startX=e.clientX;startY=e.clientY;startTx=tx;startTy=ty;wrap.classList.add('dragging');viewport.setPointerCapture(e.pointerId)});
+viewport.addEventListener('pointermove',e=>{if(!dragging)return;tx=startTx+(e.clientX-startX);ty=startTy+(e.clientY-startY);setTransform()});
+viewport.addEventListener('pointerup',()=>{dragging=false;wrap.classList.remove('dragging')});viewport.addEventListener('pointercancel',()=>{dragging=false;wrap.classList.remove('dragging')});
+viewport.addEventListener('dblclick',e=>{if(e.target===viewport||e.target===svg||e.target===wrap)fit()});
+// matrix
+const matrixOverlay=document.getElementById('matrixOverlay');document.getElementById('matrixBtn').addEventListener('click',()=>{roleMatrix();matrixOverlay.classList.add('open');matrixOverlay.setAttribute('aria-hidden','false')});document.getElementById('matrixClose').addEventListener('click',()=>{matrixOverlay.classList.remove('open');matrixOverlay.setAttribute('aria-hidden','true')});matrixOverlay.addEventListener('click',e=>{const id=e.target.closest('[data-open]')?.dataset.open;if(id){matrixOverlay.classList.remove('open');openNode(id)}else if(e.target===matrixOverlay){matrixOverlay.classList.remove('open')}});
+
+draw();requestAnimationFrame(fit);
+})();
+
+// Additional UI Enhancements (Category Filter Pills & Keyboard Shortcuts)
+document.querySelector('.filter-pills')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const filter = btn.dataset.filter;
+  const nodes = document.querySelectorAll('#nodes .node');
+  let count = 0;
+  
+  nodes.forEach(g => {
+    const id = g.dataset.id;
+    if (filter === 'all') {
+      g.style.display = '';
+      count++;
+    } else if (filter === 'role') {
+      const isRole = id.startsWith('role-') || ['admin','pharmacist','cashier','patient','supplier','delivery'].includes(id);
+      g.style.display = isRole ? '' : 'none';
+      if (isRole) count++;
+    } else if (filter === 'clinical') {
+      const isClin = id.includes('clinical') || ['rx','safety','patientSvc','refill','controlled','erx','drugdb'].includes(id);
+      g.style.display = isClin ? '' : 'none';
+      if (isClin) count++;
+    } else if (filter === 'inventory') {
+      const isInv = id.includes('inventory') || ['catalog','procure','quality','branch','supplier'].includes(id);
+      g.style.display = isInv ? '' : 'none';
+      if (isInv) count++;
+    } else if (filter === 'commerce') {
+      const isCom = id.includes('commerce') || ['pos','billing','payments','orders','loyalty','payment','gst'].includes(id);
+      g.style.display = isCom ? '' : 'none';
+      if (isCom) count++;
+    } else if (filter === 'operations') {
+      const isOps = id.includes('ops') || ['deliverySvc','notifications','finance','analytics','compliance','workforce','accounting','deliveryext','messaging'].includes(id);
+      g.style.display = isOps ? '' : 'none';
+      if (isOps) count++;
+    } else if (filter === 'infra') {
+      const isInfra = ['coredb','cache','searchidx','queue','storage','auditlog','reportdb','infra'].includes(id);
+      g.style.display = isInfra ? '' : 'none';
+      if (isInfra) count++;
+    }
+  });
+  
+  toastMsg(`Showing ${count} modules for filter: ${btn.textContent.trim()}`);
+});
+
+// Keyboard shortcut '/' for search
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    search.focus();
+    search.select();
+  }
+});
+</script>
+</body>
+</html>
+
