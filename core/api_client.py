@@ -1,7 +1,6 @@
 """
 API Client and Presence Connector for Pharmacy Management System Apps.
-Handles communication with the Central Gateway Server, sends periodic heartbeats,
-and logs real-time operational events.
+Runs completely in the background via non-blocking asynchronous threads to ensure 0ms UI latency.
 """
 
 import threading
@@ -9,10 +8,7 @@ import time
 import uuid
 import socket
 from datetime import datetime
-import requests
 from core.db import get_connection
-
-SERVER_URL = "http://127.0.0.1:8000"
 
 class AppConnector:
     def __init__(self, user_id, user_name, role, app_name):
@@ -30,18 +26,16 @@ class AppConnector:
     def start(self):
         """Register session and start background heartbeat loop."""
         self.is_running = True
-        self.register_session()
+        threading.Thread(target=self._async_register, daemon=True).start()
         self.heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
         self.heartbeat_thread.start()
-        self.log_event("Session Connected", f"User logged into {self.app_name} on terminal {self.hostname}")
 
     def stop(self):
         """Unregister session on window close."""
         self.is_running = False
-        self.unregister_session()
-        self.log_event("Session Disconnected", f"User closed {self.app_name}")
+        threading.Thread(target=self._async_unregister, daemon=True).start()
 
-    def register_session(self):
+    def _async_register(self):
         payload = {
             "session_id": self.session_id,
             "user_id": self.user_id,
@@ -54,16 +48,6 @@ class AppConnector:
             "login_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "last_heartbeat": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        
-        try:
-            # Try REST API first
-            res = requests.post(f"{SERVER_URL}/api/presence/register", json=payload, timeout=1.5)
-            if res.status_code == 200:
-                return
-        except Exception:
-            pass
-            
-        # Fallback to direct DB write
         try:
             conn = get_connection()
             cur = conn.cursor()
@@ -77,39 +61,35 @@ class AppConnector:
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"[Presence Error]: {e}")
+            pass
+            
+        self.log_event("Session Connected", f"User logged into {self.app_name} on terminal {self.hostname}")
 
     def _heartbeat_loop(self):
         while self.is_running:
-            time.sleep(4)
+            time.sleep(5)
             if not self.is_running:
                 break
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
             try:
-                requests.post(f"{SERVER_URL}/api/presence/heartbeat", json={
-                    "session_id": self.session_id,
-                    "last_action": self.last_action,
-                    "status": self.current_status
-                }, timeout=1.5)
+                conn = get_connection()
+                cur = conn.cursor()
+                cur.execute("""
+                UPDATE active_sessions 
+                SET last_heartbeat = ?, last_action = ?, status = ?
+                WHERE session_id = ?
+                """, (now, self.last_action, self.current_status, self.session_id))
+                conn.commit()
+                conn.close()
             except Exception:
-                # Direct DB fallback
-                try:
-                    conn = get_connection()
-                    cur = conn.cursor()
-                    cur.execute("""
-                    UPDATE active_sessions 
-                    SET last_heartbeat = ?, last_action = ?, status = ?
-                    WHERE session_id = ?
-                    """, (now, self.last_action, self.current_status, self.session_id))
-                    conn.commit()
-                    conn.close()
-                except Exception:
-                    pass
+                pass
 
     def update_action(self, action_text, status="Active"):
         self.last_action = action_text
         self.current_status = status
+        threading.Thread(target=self._async_update_action, args=(action_text, status), daemon=True).start()
+
+    def _async_update_action(self, action_text, status):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
             conn = get_connection()
@@ -124,11 +104,7 @@ class AppConnector:
         except Exception:
             pass
 
-    def unregister_session(self):
-        try:
-            requests.post(f"{SERVER_URL}/api/presence/unregister", json={"session_id": self.session_id}, timeout=1.5)
-        except Exception:
-            pass
+    def _async_unregister(self):
         try:
             conn = get_connection()
             cur = conn.cursor()
@@ -137,8 +113,12 @@ class AppConnector:
             conn.close()
         except Exception:
             pass
+        self.log_event("Session Disconnected", f"User logged out of {self.app_name}")
 
     def log_event(self, action, details, level="INFO"):
+        threading.Thread(target=self._async_log_event, args=(action, details, level), daemon=True).start()
+
+    def _async_log_event(self, action, details, level):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
             conn = get_connection()
@@ -149,5 +129,5 @@ class AppConnector:
             """, (now, self.user_name, self.role, action, details, level))
             conn.commit()
             conn.close()
-        except Exception as e:
-            print(f"[Log Error]: {e}")
+        except Exception:
+            pass
