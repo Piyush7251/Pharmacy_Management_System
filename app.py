@@ -1,7 +1,7 @@
 """
 AegisPharm Enterprise — Unified Desktop Application Entry Point.
-Provides secure authentication, role-based dashboard routing, real-time presence heartbeat tracking,
-and Admin-managed staff accounts.
+Dual-theme support (Default: White / Light Mode, with one-click Dark Mode toggle).
+Provides secure authentication, role-based dashboard routing, and real-time presence tracking.
 """
 
 import sys
@@ -21,8 +21,8 @@ from ui.views.delivery_dashboard_view import DeliveryDashboardView
 from core.api_client import AppConnector
 from core.db import init_db
 
-# Set global appearance
-ctk.set_appearance_mode("Dark")
+# Default theme: White / Light Mode
+ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
 class PharmacyApplication(ctk.CTk):
@@ -34,9 +34,10 @@ class PharmacyApplication(ctk.CTk):
         self.minsize(1100, 720)
         self.configure(fg_color=COLORS["bg_base"])
         
-        # Ensure database is initialized
+        # Initialize database
         init_db()
         
+        self.current_theme = "Light"
         self.current_user = None
         self.connector = None
         self.current_dashboard = None
@@ -45,6 +46,19 @@ class PharmacyApplication(ctk.CTk):
         
         # Start at Login Screen
         self.show_login_screen()
+
+    def toggle_theme(self):
+        """Toggle between Light (White) and Dark appearance modes."""
+        if self.current_theme == "Light":
+            self.current_theme = "Dark"
+            ctk.set_appearance_mode("Dark")
+            if hasattr(self, "btn_theme"):
+                self.btn_theme.configure(text="☀️ Light Mode")
+        else:
+            self.current_theme = "Light"
+            ctk.set_appearance_mode("Light")
+            if hasattr(self, "btn_theme"):
+                self.btn_theme.configure(text="🌙 Dark Mode")
 
     def show_login_screen(self):
         # Clean up any existing session
@@ -61,7 +75,12 @@ class PharmacyApplication(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         
-        self.login_view = LoginView(self, on_login_success_cb=self.handle_login_success)
+        self.login_view = LoginView(
+            self,
+            on_login_success_cb=self.handle_login_success,
+            toggle_theme_cb=self.toggle_theme,
+            current_theme=self.current_theme
+        )
         self.login_view.grid(row=0, column=0, sticky="nsew")
 
     def handle_login_success(self, user_data):
@@ -115,33 +134,55 @@ class PharmacyApplication(ctk.CTk):
         
         lbl_branch = ctk.CTkLabel(
             left_info,
-            text=f"  |  🏬 {self.current_user.get('branch', 'Apex Central - Branch #01')}",
+            text=f"  •  🏬 {self.current_user.get('branch', 'Apex Central - Branch #01')}",
             font=FONTS["small_bold"],
             text_color=COLORS["text_dim"]
         )
         lbl_branch.pack(side="left")
         
-        # Right: User Profile Badge & Logout
+        # Right: Theme Switcher, User Profile Badge & Logout
         right_info = ctk.CTkFrame(topbar, fg_color="transparent")
         right_info.grid(row=0, column=1, sticky="e", padx=20, pady=10)
         
-        role_icon = "👑" if "Admin" in self.current_user["role"] else ("🩺" if "Pharmacist" in self.current_user["role"] else ("💳" if "Cashier" in self.current_user["role"] else "📦"))
-        lbl_user = ctk.CTkLabel(
+        theme_btn_text = "🌙 Dark Mode" if self.current_theme == "Light" else "☀️ Light Mode"
+        self.btn_theme = ctk.CTkButton(
             right_info,
-            text=f"👤 {self.current_user['name']} ({role_icon} {self.current_user['role']})",
-            font=FONTS["body_bold"],
-            text_color=COLORS["text_main"]
+            text=theme_btn_text,
+            width=100,
+            height=32,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_secondary"],
+            hover_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["btn_secondary_text"],
+            command=self.toggle_theme
         )
-        lbl_user.pack(side="left", padx=(0, 16))
+        self.btn_theme.pack(side="left", padx=(0, 14))
+        
+        role_icon = "👑" if "Admin" in self.current_user["role"] else ("🩺" if "Pharmacist" in self.current_user["role"] else ("💳" if "Cashier" in self.current_user["role"] else "📦"))
+        
+        # User profile chip
+        user_chip = ctk.CTkFrame(right_info, fg_color=COLORS["badge_bg"], corner_radius=6, border_width=1, border_color=COLORS["border"])
+        user_chip.pack(side="left", padx=(0, 12))
+        
+        lbl_user = ctk.CTkLabel(
+            user_chip,
+            text=f" {role_icon} {self.current_user['name']}  |  {self.current_user['role']} ",
+            font=FONTS["small_bold"],
+            text_color=COLORS["text_main"],
+            padx=10,
+            pady=4
+        )
+        lbl_user.pack()
         
         btn_logout = ctk.CTkButton(
             right_info,
             text="🚪 Sign Out",
-            width=95,
+            width=85,
             height=32,
             font=FONTS["small_bold"],
             fg_color=COLORS["btn_secondary"],
             hover_color=COLORS["btn_danger"],
+            text_color=COLORS["btn_secondary_text"],
             command=self.logout
         )
         btn_logout.pack(side="left")
@@ -166,7 +207,6 @@ class PharmacyApplication(ctk.CTk):
         elif "Delivery" in role:
             self.current_dashboard = DeliveryDashboardView(content_container, self.current_user, self.connector)
         else:
-            # Default fallback to Cashier
             self.current_dashboard = CashierDashboardView(content_container, self.current_user, self.connector)
             
         self.current_dashboard.grid(row=0, column=0, sticky="nsew")

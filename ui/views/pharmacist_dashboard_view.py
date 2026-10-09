@@ -1,6 +1,6 @@
 """
 AegisPharm Enterprise — Pharmacist Clinical & Dispensing Dashboard View.
-Loaded automatically when a user with role 'Pharmacist' logs in.
+Dual-theme enabled (Clean White Light Mode & Sleek Dark Mode).
 """
 
 import customtkinter as ctk
@@ -27,14 +27,14 @@ class PharmacistDashboardView(ctk.CTkFrame):
 
     def setup_ui(self):
         # Header Banner
-        hdr = ctk.CTkFrame(self, height=50, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-        hdr.grid(row=0, column=0, columnspan=2, sticky="ew", padx=16, pady=(16, 8))
+        hdr = ctk.CTkFrame(self, height=52, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        hdr.grid(row=0, column=0, columnspan=2, sticky="ew", padx=16, pady=(14, 8))
         hdr.grid_columnconfigure(1, weight=1)
         
         lbl_brand = ctk.CTkLabel(hdr, text="🩺 Pharmacist Clinical Station (eRx & CDSS)", font=FONTS["h2"], text_color=COLORS["clinical"])
         lbl_brand.grid(row=0, column=0, padx=16, pady=10, sticky="w")
         
-        lbl_staff = ctk.CTkLabel(hdr, text=f"Logged in as: {self.user_data['name']} ({self.user_data['id']})", font=FONTS["small_bold"], text_color=COLORS["text_muted"])
+        lbl_staff = ctk.CTkLabel(hdr, text=f"Pharmacist: {self.user_data['name']} ({self.user_data['id']})", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_staff.grid(row=0, column=1, sticky="e", padx=16)
         
         # Left Panel: Prescriptions Queue
@@ -44,13 +44,13 @@ class PharmacistDashboardView(ctk.CTkFrame):
         left.grid_rowconfigure(1, weight=1)
         
         l_hdr = ctk.CTkFrame(left, fg_color="transparent")
-        l_hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=14)
+        l_hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=12)
         
         lbl_q = ctk.CTkLabel(l_hdr, text="📥 Incoming e-Prescription Queue", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl_q.pack(anchor="w")
         
         self.rx_scroll = ctk.CTkScrollableFrame(left, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.rx_scroll.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 16))
+        self.rx_scroll.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 14))
         self.rx_scroll.grid_columnconfigure(0, weight=1)
         
         # Right Panel: Detailed Inspection & CDSS Action
@@ -61,10 +61,10 @@ class PharmacistDashboardView(ctk.CTkFrame):
         
         # Rx Title
         self.lbl_rx_header = ctk.CTkLabel(right, text="Prescription Inspection", font=FONTS["h2"], text_color=COLORS["text_main"])
-        self.lbl_rx_header.grid(row=0, column=0, sticky="w", padx=20, pady=(16, 4))
+        self.lbl_rx_header.grid(row=0, column=0, sticky="w", padx=20, pady=(14, 2))
         
         self.lbl_doc_info = ctk.CTkLabel(right, text="Doctor & Clinic Details", font=FONTS["body"], text_color=COLORS["text_muted"])
-        self.lbl_doc_info.grid(row=1, column=0, sticky="w", padx=20, pady=(0, 10))
+        self.lbl_doc_info.grid(row=1, column=0, sticky="w", padx=20, pady=(0, 8))
         
         # Prescription Items Table
         self.items_scroll = ctk.CTkScrollableFrame(right, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -76,13 +76,13 @@ class PharmacistDashboardView(ctk.CTkFrame):
         act_box.grid(row=3, column=0, sticky="ew", padx=20, pady=(0, 16))
         act_box.grid_columnconfigure((0, 1, 2), weight=1)
         
-        btn_appr = ctk.CTkButton(act_box, text="✅ Approve & Push to POS", height=40, fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], font=FONTS["body_bold"], command=self.approve_rx)
+        btn_appr = ctk.CTkButton(act_box, text="✅ Approve & Push to POS", height=38, fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.approve_rx)
         btn_appr.grid(row=0, column=0, sticky="ew", padx=(0, 6))
         
-        btn_sign = ctk.CTkButton(act_box, text="🚨 Double-Sign Schedule X", height=40, fg_color=COLORS["schedule_x"], hover_color="#BE185D", font=FONTS["body_bold"], command=self.double_sign_sch_x)
+        btn_sign = ctk.CTkButton(act_box, text="🚨 Double-Sign Schedule X", height=38, fg_color=COLORS["schedule_x"], hover_color="#BE185D", text_color="#FFFFFF", font=FONTS["body_bold"], command=self.double_sign_sch_x)
         btn_sign.grid(row=0, column=1, sticky="ew", padx=6)
         
-        btn_rej = ctk.CTkButton(act_box, text="❌ Flag / Reject", height=40, fg_color=COLORS["btn_danger"], hover_color=COLORS["btn_danger_hover"], font=FONTS["body_bold"], command=self.reject_rx)
+        btn_rej = ctk.CTkButton(act_box, text="❌ Flag / Reject", height=38, fg_color=COLORS["btn_danger"], hover_color=COLORS["btn_danger_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.reject_rx)
         btn_rej.grid(row=0, column=2, sticky="ew", padx=(6, 0))
 
     def load_data(self):
@@ -108,7 +108,13 @@ class PharmacistDashboardView(ctk.CTkFrame):
             
         for rx in self.prescriptions:
             is_active = self.selected_rx and self.selected_rx["rx_id"] == rx["rx_id"]
-            card = ctk.CTkFrame(self.rx_scroll, fg_color=COLORS["bg_surface_alt"] if is_active else COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["clinical"] if is_active else COLORS["border"])
+            card = ctk.CTkFrame(
+                self.rx_scroll,
+                fg_color=COLORS["bg_surface_alt"] if is_active else COLORS["bg_card"],
+                corner_radius=8,
+                border_width=1,
+                border_color=COLORS["clinical"] if is_active else COLORS["border"]
+            )
             card.pack(fill="x", pady=4, padx=4)
             card.grid_columnconfigure(0, weight=1)
             
@@ -116,11 +122,11 @@ class PharmacistDashboardView(ctk.CTkFrame):
             r1.grid(row=0, column=0, sticky="ew", padx=10, pady=(8, 2))
             r1.grid_columnconfigure(0, weight=1)
             
-            lbl_id = ctk.CTkLabel(r1, text=rx["rx_id"], font=FONTS["body_bold"])
+            lbl_id = ctk.CTkLabel(r1, text=rx["rx_id"], font=FONTS["body_bold"], text_color=COLORS["text_main"])
             lbl_id.grid(row=0, column=0, sticky="w")
             
             st_color = COLORS["danger"] if "Approval" in rx["status"] else (COLORS["warning"] if "Verification" in rx["status"] else COLORS["success"])
-            lbl_st = ctk.CTkLabel(r1, text=f" {rx['status']} ", font=FONTS["small_bold"], fg_color=st_color, text_color="#000000", corner_radius=4)
+            lbl_st = ctk.CTkLabel(r1, text=f" {rx['status']} ", font=FONTS["small_bold"], fg_color=st_color, text_color="#FFFFFF", corner_radius=4)
             lbl_st.grid(row=0, column=1, sticky="e")
             
             lbl_info = ctk.CTkLabel(card, text=f"👤 {rx['patient_name']} | 👨‍⚕️ {rx['doctor_name'].split('(')[0]}", font=FONTS["small"], text_color=COLORS["text_muted"])
@@ -146,7 +152,7 @@ class PharmacistDashboardView(ctk.CTkFrame):
             c = ctk.CTkFrame(self.items_scroll, fg_color=COLORS["bg_card"], corner_radius=6, border_width=1, border_color=COLORS["border"])
             c.pack(fill="x", pady=4, padx=4)
             
-            lbl_m = ctk.CTkLabel(c, text=f"💊 {it['medicine']}", font=FONTS["body_bold"])
+            lbl_m = ctk.CTkLabel(c, text=f"💊 {it['medicine']}", font=FONTS["body_bold"], text_color=COLORS["text_main"])
             lbl_m.pack(anchor="w", padx=10, pady=(6, 2))
             
             lbl_d = ctk.CTkLabel(c, text=f"⏱️ Dosage: {it['dosage']} | Dispense Qty: {it['qty']} | Duration: {it['duration']}", font=FONTS["small"], text_color=COLORS["text_muted"])

@@ -1,49 +1,62 @@
 """
 UI Theme and Color System for Pharmacy Management System Desktop Application.
-Matches the 6-layer architecture dark aesthetic with clinical & commerce accents.
+Supports dual-theme (Clean White Light Mode by default, and Sleek Dark Mode).
+All color tokens are defined as (LightMode, DarkMode) tuples for instantaneous CustomTkinter theme switching.
 """
 
 COLORS = {
-    # Base backgrounds
-    "bg_base": "#0B111A",
-    "bg_sidebar": "#080D14",
-    "bg_surface": "#101924",
-    "bg_surface_alt": "#162232",
-    "bg_card": "#15202E",
-    "bg_input": "#1C2B3E",
-    "border": "#24374E",
-    "border_light": "#334A68",
+    # Base backgrounds: (Light, Dark)
+    "bg_base": ("#F8FAFC", "#0B111A"),
+    "bg_sidebar": ("#FFFFFF", "#080D14"),
+    "bg_surface": ("#FFFFFF", "#101924"),
+    "bg_surface_alt": ("#F1F5F9", "#162232"),
+    "bg_card": ("#FFFFFF", "#15202E"),
+    "bg_card_alt": ("#F8FAFC", "#1A283B"),
+    "bg_input": ("#F8FAFC", "#1C2B3E"),
     
-    # Text
-    "text_main": "#FFFFFF",
-    "text_muted": "#CBD5E1",
-    "text_dim": "#8A9BA8",
+    # Borders: (Light, Dark)
+    "border": ("#E2E8F0", "#24374E"),
+    "border_light": ("#CBD5E1", "#334A68"),
     
-    # Domain Accent Colors from Architecture
-    "clinical": "#10B981",       # Emerald Green
-    "clinical_hover": "#059669",
-    "inventory": "#F59E0B",      # Amber/Gold
-    "inventory_hover": "#D97706",
-    "commerce": "#06B6D4",       # Cyan
-    "commerce_hover": "#0891B2",
-    "operations": "#8B5CF6",     # Purple
-    "operations_hover": "#7C3AED",
+    # Text colors: (Light, Dark)
+    "text_main": ("#0F172A", "#FFFFFF"),
+    "text_muted": ("#475569", "#CBD5E1"),
+    "text_dim": ("#64748B", "#8A9BA8"),
+    "text_inverse": ("#FFFFFF", "#0F172A"),
     
-    # Alert / Status colors
-    "danger": "#EF4444",         # Red (Allergy / Interaction / Critical alert)
-    "warning": "#F59E0B",        # Amber (Expiring soon / low stock)
-    "success": "#10B981",        # Green (In stock / Verified)
-    "info": "#38BDF8",           # Sky blue
-    "schedule_x": "#EC4899",     # Pink/Magenta for Narcotic / Schedule X
+    # Domain Accent Colors: (Light, Dark)
+    "clinical": ("#0D9488", "#10B981"),         # Emerald / Teal
+    "clinical_hover": ("#0F766E", "#059669"),
+    "inventory": ("#D97706", "#F59E0B"),        # Warm Amber
+    "inventory_hover": ("#B45309", "#D97706"),
+    "commerce": ("#0284C7", "#06B6D4"),         # Cyan / Sky
+    "commerce_hover": ("#0369A1", "#0891B2"),
+    "operations": ("#7C3AED", "#8B5CF6"),       # Purple
+    "operations_hover": ("#6D28D9", "#7C3AED"),
+    "admin": ("#D97706", "#FBBF24"),            # Gold / Amber
     
-    # UI Elements
-    "btn_primary": "#06B6D4",
-    "btn_primary_hover": "#0891B2",
-    "btn_secondary": "#1E2E42",
-    "btn_secondary_hover": "#2B405B",
-    "btn_danger": "#DC2626",
-    "btn_danger_hover": "#B91C1C",
-    "badge_bg": "#1E293B"
+    # Alert / Status colors: (Light, Dark)
+    "danger": ("#DC2626", "#EF4444"),           # Red
+    "danger_bg": ("#FEE2E2", "#3B1219"),
+    "warning": ("#D97706", "#F59E0B"),          # Amber
+    "warning_bg": ("#FEF3C7", "#3D270B"),
+    "success": ("#0D9488", "#10B981"),          # Green
+    "success_bg": ("#CCFBF1", "#0F291E"),
+    "info": ("#0284C7", "#38BDF8"),             # Sky Blue
+    "info_bg": ("#E0F2FE", "#0C2740"),
+    "schedule_x": ("#DB2777", "#EC4899"),       # Pink/Magenta
+    "schedule_x_bg": ("#FCE7F3", "#3B1028"),
+    
+    # UI Buttons & Interactive Badges: (Light, Dark)
+    "btn_primary": ("#0284C7", "#06B6D4"),
+    "btn_primary_hover": ("#0369A1", "#0891B2"),
+    "btn_secondary": ("#E2E8F0", "#1E2E42"),
+    "btn_secondary_hover": ("#CBD5E1", "#2B405B"),
+    "btn_secondary_text": ("#1E293B", "#F1F5F9"),
+    "btn_danger": ("#DC2626", "#DC2626"),
+    "btn_danger_hover": ("#B91C1C", "#B91C1C"),
+    "badge_bg": ("#F1F5F9", "#1E293B"),
+    "badge_text": ("#334155", "#E2E8F0")
 }
 
 FONTS = {

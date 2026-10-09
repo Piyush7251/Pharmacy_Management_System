@@ -1,6 +1,6 @@
 """
 AegisPharm Enterprise — Inventory & Supply Chain Dashboard View.
-Loaded automatically when a user with role 'Inventory Manager' logs in.
+Dual-theme enabled (Clean White Light Mode & Sleek Dark Mode).
 """
 
 import customtkinter as ctk
@@ -23,14 +23,14 @@ class InventoryDashboardView(ctk.CTkFrame):
 
     def setup_ui(self):
         # Top Bar
-        hdr = ctk.CTkFrame(self, height=50, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-        hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(16, 8))
+        hdr = ctk.CTkFrame(self, height=52, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(14, 8))
         hdr.grid_columnconfigure(1, weight=1)
         
         lbl_brand = ctk.CTkLabel(hdr, text="📦 Warehouse & Supply Chain Inventory Hub", font=FONTS["h2"], text_color=COLORS["inventory"])
         lbl_brand.grid(row=0, column=0, padx=16, pady=10, sticky="w")
         
-        lbl_mgr = ctk.CTkLabel(hdr, text=f"Manager: {self.user_data['name']} ({self.user_data['id']}) | Cold-Chain: 4.2°C Active", font=FONTS["small_bold"], text_color=COLORS["text_muted"])
+        lbl_mgr = ctk.CTkLabel(hdr, text=f"Manager: {self.user_data['name']} ({self.user_data['id']}) | Cold-Chain: 4.2°C Active", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_mgr.grid(row=0, column=1, sticky="e", padx=16)
         
         # Filter & Action Strip
@@ -38,14 +38,41 @@ class InventoryDashboardView(ctk.CTkFrame):
         filter_box.grid(row=1, column=0, sticky="ew", padx=16, pady=8)
         filter_box.grid_columnconfigure(0, weight=1)
         
-        self.search_ent = ctk.CTkEntry(filter_box, placeholder_text="🔍 Search medicine, batch, manufacturer, rack location...", font=FONTS["body"], fg_color=COLORS["bg_input"], height=38)
+        self.search_ent = ctk.CTkEntry(
+            filter_box,
+            placeholder_text="🔍 Search medicine, batch, manufacturer, rack location...",
+            font=FONTS["body"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            border_color=COLORS["border"],
+            height=38
+        )
         self.search_ent.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         self.search_ent.bind("<KeyRelease>", lambda e: self.render_stock())
         
-        btn_grn = ctk.CTkButton(filter_box, text="+ Goods Receipt Note (GRN)", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], command=self.receive_grn)
+        btn_grn = ctk.CTkButton(
+            filter_box,
+            text="+ Goods Receipt Note (GRN)",
+            height=38,
+            font=FONTS["body_bold"],
+            fg_color=COLORS["inventory"],
+            hover_color=COLORS["inventory_hover"],
+            text_color="#FFFFFF",
+            command=self.receive_grn
+        )
         btn_grn.grid(row=0, column=1, padx=(0, 6))
         
-        btn_ref = ctk.CTkButton(filter_box, text="🔄 Reload", width=80, height=38, fg_color=COLORS["btn_secondary"], command=self.load_stock)
+        btn_ref = ctk.CTkButton(
+            filter_box,
+            text="🔄 Reload",
+            width=80,
+            height=38,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_secondary"],
+            hover_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["btn_secondary_text"],
+            command=self.load_stock
+        )
         btn_ref.grid(row=0, column=2)
         
         # Table Scroll
@@ -79,7 +106,7 @@ class InventoryDashboardView(ctk.CTkFrame):
             r1.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 2))
             r1.grid_columnconfigure(0, weight=1)
             
-            lbl_n = ctk.CTkLabel(r1, text=f"{med['name']}", font=FONTS["body_bold"])
+            lbl_n = ctk.CTkLabel(r1, text=f"{med['name']}", font=FONTS["body_bold"], text_color=COLORS["text_main"])
             lbl_n.grid(row=0, column=0, sticky="w")
             
             stk_c = COLORS["danger"] if med["stock"] < 25 else COLORS["clinical"]
@@ -95,7 +122,17 @@ class InventoryDashboardView(ctk.CTkFrame):
             lbl_d = ctk.CTkLabel(r2, text=det_txt, font=FONTS["small"], text_color=exp_c, justify="left")
             lbl_d.grid(row=0, column=0, sticky="w")
             
-            btn_adj = ctk.CTkButton(r2, text="Adjust Stock", width=100, height=26, fg_color=COLORS["btn_secondary"], command=lambda m=med: self.adjust(m))
+            btn_adj = ctk.CTkButton(
+                r2,
+                text="Adjust Stock",
+                width=95,
+                height=26,
+                font=FONTS["small"],
+                fg_color=COLORS["btn_secondary"],
+                hover_color=COLORS["btn_secondary_hover"],
+                text_color=COLORS["btn_secondary_text"],
+                command=lambda m=med: self.adjust(m)
+            )
             btn_adj.grid(row=0, column=1, sticky="e")
 
     def adjust(self, med):
@@ -108,10 +145,10 @@ class InventoryDashboardView(ctk.CTkFrame):
         lbl = ctk.CTkLabel(win, text=f"Stock Adjustment: {med['name']}", font=FONTS["h3"], text_color=COLORS["inventory"])
         lbl.pack(pady=(16, 4))
         
-        lbl_cur = ctk.CTkLabel(win, text=f"Current Stock: {med['stock']} units", font=FONTS["body"])
+        lbl_cur = ctk.CTkLabel(win, text=f"Current Stock: {med['stock']} units", font=FONTS["body"], text_color=COLORS["text_main"])
         lbl_cur.pack(pady=4)
         
-        ent = ctk.CTkEntry(win, placeholder_text="Add Quantity (e.g., 50)", font=FONTS["body"], width=240)
+        ent = ctk.CTkEntry(win, placeholder_text="Add Quantity (e.g., 50)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=240)
         ent.pack(pady=10)
         
         def save():
@@ -132,7 +169,7 @@ class InventoryDashboardView(ctk.CTkFrame):
             except ValueError:
                 messagebox.showwarning("Invalid Input", "Please enter a valid integer.", parent=win)
 
-        btn = ctk.CTkButton(win, text="Confirm", fg_color=COLORS["inventory"], command=save)
+        btn = ctk.CTkButton(win, text="Confirm", fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save)
         btn.pack(pady=10)
 
     def receive_grn(self):
