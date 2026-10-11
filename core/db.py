@@ -788,5 +788,123 @@ def get_refill_schedules():
     conn.close()
     return [dict(r) for r in rows]
 
+def update_refill_status(refill_id, status):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE refill_schedules SET status = ? WHERE id = ?", (status, refill_id))
+        conn.commit()
+        success = True
+    except Exception:
+        success = False
+    finally:
+        conn.close()
+    return success
+
+def get_patient_by_phone(phone):
+    conn = get_connection()
+    cur = conn.cursor()
+    # Normalize comparison by stripping non-digit characters or checking suffix
+    clean_p = "".join(ch for ch in phone if ch.isdigit())
+    cur.execute("SELECT * FROM patients")
+    rows = cur.fetchall()
+    conn.close()
+    for r in rows:
+        db_p = "".join(ch for ch in r["phone"] if ch.isdigit())
+        if clean_p and (clean_p in db_p or db_p in clean_p):
+            d = dict(r)
+            d["allergies"] = json.loads(d.get("allergies", "[]"))
+            d["chronic_conditions"] = json.loads(d.get("chronic_conditions", "[]"))
+            return d
+    return None
+
+def update_patient_loyalty(patient_id, points_delta):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE patients SET loyalty_points = MAX(0, loyalty_points + ?) WHERE id = ?", (points_delta, patient_id))
+        conn.commit()
+        success = True
+    except Exception:
+        success = False
+    finally:
+        conn.close()
+    return success
+
+def update_purchase_order_status(po_id, status, received_date=None):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        if received_date:
+            cur.execute("UPDATE purchase_orders SET status = ?, received_date = ? WHERE po_id = ?", (status, received_date, po_id))
+        else:
+            cur.execute("UPDATE purchase_orders SET status = ? WHERE po_id = ?", (status, po_id))
+        conn.commit()
+        success = True
+    except Exception:
+        success = False
+    finally:
+        conn.close()
+    return success
+
+def get_dashboard_analytics():
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    # Invoices stats
+    cur.execute("SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as gross, COALESCE(SUM(gst_amount), 0) as total_gst FROM invoices")
+    inv_row = cur.fetchone()
+    total_sales_count = inv_row["count"] if inv_row else 0
+    gross_sales = inv_row["gross"] if inv_row else 0.0
+    total_gst = inv_row["total_gst"] if inv_row else 0.0
+    
+    # By payment method
+    cur.execute("SELECT payment_method, COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total FROM invoices GROUP BY payment_method")
+    payment_breakdown = {r["payment_method"]: {"count": r["cnt"], "total": r["total"]} for r in cur.fetchall()}
+    
+    # Medicines count and stock alerts
+    cur.execute("SELECT COUNT(*) as total_meds, SUM(CASE WHEN stock <= 20 THEN 1 ELSE 0 END) as low_stock, SUM(CASE WHEN days_to_expiry <= 90 THEN 1 ELSE 0 END) as exp_soon FROM medicines")
+    med_row = cur.fetchone()
+    total_meds = med_row["total_meds"] if med_row else 0
+    low_stock_count = med_row["low_stock"] if med_row else 0
+    exp_soon_count = med_row["exp_soon"] if med_row else 0
+    
+    # Prescriptions
+    cur.execute("SELECT COUNT(*) as total_rx, SUM(CASE WHEN status LIKE '%Verification%' OR status LIKE '%Pending%' THEN 1 ELSE 0 END) as pending_rx, SUM(CASE WHEN status LIKE '%Verified%' OR status LIKE '%Approved%' THEN 1 ELSE 0 END) as approved_rx FROM prescriptions")
+    rx_row = cur.fetchone()
+    total_rx = rx_row["total_rx"] if rx_row else 0
+    pending_rx = rx_row["pending_rx"] if rx_row else 0
+    approved_rx = rx_row["approved_rx"] if rx_row else 0
+    
+    # Active sessions
+    cur.execute("SELECT COUNT(*) as active_staff FROM active_sessions WHERE status = 'Online'")
+    sess_row = cur.fetchone()
+    active_staff = sess_row["active_staff"] if sess_row else 0
+    
+    # Deliveries
+    cur.execute("SELECT COUNT(*) as total_deliv, SUM(CASE WHEN status LIKE '%Out for Delivery%' THEN 1 ELSE 0 END) as en_route, SUM(CASE WHEN status LIKE '%Delivered%' THEN 1 ELSE 0 END) as delivered FROM delivery_orders")
+    deliv_row = cur.fetchone()
+    total_deliv = deliv_row["total_deliv"] if deliv_row else 0
+    en_route_deliv = deliv_row["en_route"] if deliv_row else 0
+    delivered_deliv = deliv_row["delivered"] if deliv_row else 0
+    
+    conn.close()
+    return {
+        "gross_sales": gross_sales,
+        "total_gst": total_gst,
+        "total_sales_count": total_sales_count,
+        "payment_breakdown": payment_breakdown,
+        "total_meds": total_meds,
+        "low_stock_count": low_stock_count,
+        "exp_soon_count": exp_soon_count,
+        "total_rx": total_rx,
+        "pending_rx": pending_rx,
+        "approved_rx": approved_rx,
+        "active_staff": active_staff,
+        "total_deliv": total_deliv,
+        "en_route_deliv": en_route_deliv,
+        "delivered_deliv": delivered_deliv
+    }
+
 # Initialize database on import
 init_db()

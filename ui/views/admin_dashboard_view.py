@@ -1,20 +1,22 @@
 """
 AegisPharm Enterprise — Complete Admin Command Center & Store Analytics Dashboard.
 Full features:
-- Staff User & RBAC Management (Add/Edit ID, Password, Role, Branch, Status)
-- Live Online Terminals & Presence Heartbeat Monitor
-- Storewide Operational & Financial KPIs
-- Live Audit Stream & Compliance Ledger
-- Financial Analytics & Z-Report Cash Reconciliation
-- GST Tax Liability & Fast-Moving Stock Insights
+- Staff User & RBAC Management (Add/Edit ID, Password, Role, Branch, Status with Search)
+- Live Online Terminals & Presence Heartbeat Telemetry Monitor
+- Storewide Operational & Financial KPIs (Gross Sales, Active Staff, Rx Queue, Stock Risks)
+- Filterable Live Audit Stream (INFO, WARN, CRITICAL)
+- Financial Analytics & Daily Z-Report Cash/UPI Reconciliation with Real CSV Export
+- GST Tax Liability & Inventory Velocity Risk Analysis
 """
 
 import threading
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from datetime import datetime
 import json
+import csv
 from ui.theme import COLORS, FONTS
+from ui.components.toast import show_toast
 from core.db import (
     get_connection, get_all_staff, create_staff_user, update_staff_user,
     delete_staff_user, get_all_invoices, get_all_medicines
@@ -33,6 +35,7 @@ class AdminDashboardView(ctk.CTkFrame):
         self._last_audit_data = []
         self._last_users_data = []
         self._is_fetching = False
+        self.audit_filter = "ALL"
         
         self.setup_header()
         self.setup_kpis()
@@ -59,7 +62,7 @@ class AdminDashboardView(ctk.CTkFrame):
         
         self.lbl_server_status = ctk.CTkLabel(
             right_box,
-            text="🟢 State Engine: Active (0ms latency)",
+            text="🟢 State Engine: Active (0ms sync)",
             font=FONTS["small_bold"],
             text_color=COLORS["clinical"]
         )
@@ -84,10 +87,10 @@ class AdminDashboardView(ctk.CTkFrame):
         kpi_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         
         self.kpi_staff = self.create_kpi_card(kpi_frame, 0, "Online Staff", "0 Active", COLORS["clinical"])
-        self.kpi_sales = self.create_kpi_card(kpi_frame, 1, "Gross Sales", "₹ 48,920.50", COLORS["commerce"])
-        self.kpi_rx = self.create_kpi_card(kpi_frame, 2, "Pending Rx", "3 Pending", COLORS["warning"])
-        self.kpi_stock = self.create_kpi_card(kpi_frame, 3, "Low Stock", "4 Critical", COLORS["danger"])
-        self.kpi_deliv = self.create_kpi_card(kpi_frame, 4, "Active Routes", "3 Dispatched", COLORS["operations"])
+        self.kpi_sales = self.create_kpi_card(kpi_frame, 1, "Gross Sales", "₹ 0.00", COLORS["commerce"])
+        self.kpi_rx = self.create_kpi_card(kpi_frame, 2, "Pending Rx", "0 Pending", COLORS["warning"])
+        self.kpi_stock = self.create_kpi_card(kpi_frame, 3, "Low Stock", "0 Critical", COLORS["danger"])
+        self.kpi_deliv = self.create_kpi_card(kpi_frame, 4, "Active Routes", "0 En Route", COLORS["operations"])
 
     def create_kpi_card(self, parent, col, title, value, color):
         c = ctk.CTkFrame(parent, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -111,7 +114,7 @@ class AdminDashboardView(ctk.CTkFrame):
             border_width=1,
             border_color=COLORS["border"]
         )
-        self.tabview.grid(row=2, column=0, sticky="nsew", padx=16, pady=(0, 14))
+        self.tabview.grid(row=2, column=0, sticky="nsew", padx=16, pady=(0, 12))
         
         self.tab_users = self.tabview.add("👥 Staff User Accounts & RBAC")
         self.tab_presence = self.tabview.add("🟢 Live Online Presence")
@@ -127,10 +130,10 @@ class AdminDashboardView(ctk.CTkFrame):
 
     def setup_users_tab(self):
         self.tab_users.grid_columnconfigure(0, weight=1)
-        self.tab_users.grid_rowconfigure(1, weight=1)
+        self.tab_users.grid_rowconfigure(2, weight=1)
         
         act_bar = ctk.CTkFrame(self.tab_users, fg_color="transparent")
-        act_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(8, 6))
+        act_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
         act_bar.grid_columnconfigure(0, weight=1)
         
         lbl = ctk.CTkLabel(act_bar, text="Manage Staff Credentials, Roles & Terminal Access", font=FONTS["h3"], text_color=COLORS["text_main"])
@@ -139,8 +142,8 @@ class AdminDashboardView(ctk.CTkFrame):
         btn_add = ctk.CTkButton(
             act_bar,
             text="+ Create New User",
-            height=32,
-            font=FONTS["body_bold"],
+            height=30,
+            font=FONTS["small_bold"],
             fg_color=COLORS["clinical"],
             hover_color=COLORS["clinical_hover"],
             text_color="#FFFFFF",
@@ -148,19 +151,35 @@ class AdminDashboardView(ctk.CTkFrame):
         )
         btn_add.grid(row=0, column=1, sticky="e")
         
+        self.ent_user_search = ctk.CTkEntry(
+            self.tab_users,
+            placeholder_text="🔍 Search staff by name, username, role, or branch...",
+            font=FONTS["small"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            border_color=COLORS["border"],
+            height=32
+        )
+        self.ent_user_search.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 6))
+        self.ent_user_search.bind("<KeyRelease>", lambda e: self.render_users_list())
+        
         self.users_scroll = ctk.CTkScrollableFrame(self.tab_users, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.users_scroll.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.users_scroll.grid(row=2, column=0, sticky="nsew", padx=10, pady=(0, 10))
         self.users_scroll.grid_columnconfigure(0, weight=1)
 
     def refresh_users_table(self):
-        staff_list = get_all_staff()
-        if staff_list == self._last_users_data:
-            return
-        self._last_users_data = staff_list
+        self._last_users_data = get_all_staff()
+        self.render_users_list()
 
+    def render_users_list(self):
         for w in self.users_scroll.winfo_children():
             w.destroy()
             
+        staff_list = self._last_users_data or get_all_staff()
+        q = self.ent_user_search.get().strip().lower() if hasattr(self, "ent_user_search") else ""
+        if q:
+            staff_list = [u for u in staff_list if q in u['name'].lower() or q in u['username'].lower() or q in u['role'].lower() or q in u.get('branch', '').lower()]
+
         for u in staff_list:
             card = ctk.CTkFrame(self.users_scroll, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
             card.pack(fill="x", pady=4, padx=4)
@@ -222,7 +241,7 @@ class AdminDashboardView(ctk.CTkFrame):
     def open_create_user_modal(self):
         win = ctk.CTkToplevel(self)
         win.title("Create New Staff User & Assign Role")
-        win.geometry("520x560")
+        win.geometry("520x580")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
@@ -235,10 +254,10 @@ class AdminDashboardView(ctk.CTkFrame):
         
         fields = [
             ("Staff ID:", "ent_id", f"STF-0{len(get_all_staff()) + 1}"),
-            ("Full Name:", "ent_name", "e.g., Dr. Anjali Deshmukh"),
-            ("Username:", "ent_username", "e.g., anjali.pharma"),
-            ("Password:", "ent_password", "Assign password"),
-            ("Email:", "ent_email", "staff@aegispharm.com"),
+            ("Full Name:", "ent_name", "Dr. Anjali Deshmukh"),
+            ("Username:", "ent_username", "anjali.pharma"),
+            ("Password:", "ent_password", "pharma123"),
+            ("Email:", "ent_email", "anjali@aegispharm.com"),
             ("Phone:", "ent_phone", "+91 98201 00000"),
             ("Branch:", "ent_branch", "Apex Central - Branch #01")
         ]
@@ -246,29 +265,21 @@ class AdminDashboardView(ctk.CTkFrame):
         entries = {}
         for idx, (label_text, key, placeholder) in enumerate(fields):
             lbl = ctk.CTkLabel(form, text=label_text, font=FONTS["body_bold"], text_color=COLORS["text_main"])
-            lbl.grid(row=idx, column=0, sticky="w", pady=5, padx=(0, 10))
+            lbl.grid(row=idx, column=0, sticky="w", pady=4, padx=(0, 10))
             
-            ent = ctk.CTkEntry(form, placeholder_text=placeholder, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
-            ent.grid(row=idx, column=1, sticky="ew", pady=5)
-            if key == "ent_id":
-                ent.insert(0, placeholder)
+            ent = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+            ent.grid(row=idx, column=1, sticky="ew", pady=4)
+            ent.insert(0, placeholder)
             entries[key] = ent
-
+            
         lbl_role = ctk.CTkLabel(form, text="Assigned Role:", font=FONTS["body_bold"], text_color=COLORS["text_main"])
-        lbl_role.grid(row=len(fields), column=0, sticky="w", pady=5, padx=(0, 10))
+        lbl_role.grid(row=len(fields), column=0, sticky="w", pady=6, padx=(0, 10))
         
-        role_opt = ctk.CTkOptionMenu(
-            form,
-            values=["Admin", "Pharmacist", "Cashier", "Inventory Manager", "Delivery Agent"],
-            fg_color=COLORS["btn_secondary"],
-            button_color=COLORS["btn_secondary_hover"],
-            font=FONTS["body_bold"],
-            height=32
-        )
+        role_opt = ctk.CTkOptionMenu(form, values=["Store Admin", "Pharmacist", "Cashier", "Inventory Manager", "Delivery Agent"], height=32)
         role_opt.set("Pharmacist")
-        role_opt.grid(row=len(fields), column=1, sticky="ew", pady=5)
+        role_opt.grid(row=len(fields), column=1, sticky="ew", pady=6)
         
-        def save():
+        def save_user():
             s_id = entries["ent_id"].get().strip()
             name = entries["ent_name"].get().strip()
             uname = entries["ent_username"].get().strip()
@@ -276,77 +287,76 @@ class AdminDashboardView(ctk.CTkFrame):
             email = entries["ent_email"].get().strip()
             phone = entries["ent_phone"].get().strip()
             branch = entries["ent_branch"].get().strip()
-            role = role_opt.get()
+            role = role_opt.get().strip()
             
             if not s_id or not name or not uname or not pwd:
-                messagebox.showwarning("Incomplete Fields", "Staff ID, Full Name, Username, and Password are required.", parent=win)
+                messagebox.showwarning("Incomplete", "Please complete all mandatory fields.", parent=win)
                 return
                 
             success, err = create_staff_user(s_id, name, role, uname, pwd, email, phone, branch)
             if not success:
-                messagebox.showerror("Error Creating User", f"Could not create user: {err}", parent=win)
+                messagebox.showerror("Failed", f"Error: {err}", parent=win)
                 return
                 
             if self.connector:
                 self.connector.log_event("User Created", f"Admin created user {uname} ({role})", level="INFO")
                 
-            self._last_users_data = None
             self.refresh_users_table()
             win.destroy()
-            messagebox.showinfo("User Created", f"Staff user '{name}' ({uname}) created successfully!\nThey can now login with password '{pwd}'.")
-
-        btn_save = ctk.CTkButton(win, text="Save & Create Account", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=save)
-        btn_save.pack(fill="x", padx=30, pady=(10, 16))
+            show_toast(self, "Staff Account Created", f"{name} ({uname}) registered with {role} permissions.", "success")
+            
+        btn_save = ctk.CTkButton(win, text="Save & Grant Access", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=save_user)
+        btn_save.pack(fill="x", padx=30, pady=(6, 16))
 
     def open_edit_user_modal(self, user):
         win = ctk.CTkToplevel(self)
         win.title(f"Edit Credentials — {user['name']}")
-        win.geometry("480x500")
+        win.geometry("440x440")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl_head = ctk.CTkLabel(win, text=f"✏️ Edit Credentials: {user['name']}", font=FONTS["h2"], text_color=COLORS["commerce"])
+        lbl_head = ctk.CTkLabel(win, text=f"Edit User: {user['name']}", font=FONTS["h2"], text_color=COLORS["commerce"])
         lbl_head.pack(pady=(16, 10))
         
         form = ctk.CTkFrame(win, fg_color="transparent")
         form.pack(fill="both", expand=True, padx=30, pady=0)
         form.grid_columnconfigure(1, weight=1)
         
-        lbl_n = ctk.CTkLabel(form, text="Full Name:", font=FONTS["body_bold"], text_color=COLORS["text_main"])
-        lbl_n.grid(row=0, column=0, sticky="w", pady=5)
-        ent_n = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
-        ent_n.grid(row=0, column=1, sticky="ew", pady=5)
-        ent_n.insert(0, user["name"])
+        # Name
+        ctk.CTkLabel(form, text="Full Name:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=0, column=0, sticky="w", pady=4)
+        ent_name = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+        ent_name.grid(row=0, column=1, sticky="ew", pady=4)
+        ent_name.insert(0, user["name"])
         
-        lbl_u = ctk.CTkLabel(form, text="Username:", font=FONTS["body_bold"], text_color=COLORS["text_main"])
-        lbl_u.grid(row=1, column=0, sticky="w", pady=5)
-        ent_u = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
-        ent_u.grid(row=1, column=1, sticky="ew", pady=5)
-        ent_u.insert(0, user["username"])
+        # Username
+        ctk.CTkLabel(form, text="Username:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=1, column=0, sticky="w", pady=4)
+        ent_uname = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+        ent_uname.grid(row=1, column=1, sticky="ew", pady=4)
+        ent_uname.insert(0, user["username"])
         
-        lbl_p = ctk.CTkLabel(form, text="New Password:", font=FONTS["body_bold"], text_color=COLORS["text_main"])
-        lbl_p.grid(row=2, column=0, sticky="w", pady=5)
-        ent_p = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
-        ent_p.grid(row=2, column=1, sticky="ew", pady=5)
-        ent_p.insert(0, user.get("password", "password123"))
+        # Password
+        ctk.CTkLabel(form, text="Password:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=2, column=0, sticky="w", pady=4)
+        ent_pwd = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+        ent_pwd.grid(row=2, column=1, sticky="ew", pady=4)
+        ent_pwd.insert(0, user.get("password", "password123"))
         
-        lbl_r = ctk.CTkLabel(form, text="Role:", font=FONTS["body_bold"], text_color=COLORS["text_main"])
-        lbl_r.grid(row=3, column=0, sticky="w", pady=5)
-        role_opt = ctk.CTkOptionMenu(form, values=["Admin", "Pharmacist", "Cashier", "Inventory Manager", "Delivery Agent"], height=32)
+        # Role
+        ctk.CTkLabel(form, text="Role:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=3, column=0, sticky="w", pady=4)
+        role_opt = ctk.CTkOptionMenu(form, values=["Store Admin", "Pharmacist", "Cashier", "Inventory Manager", "Delivery Agent"], height=32)
         role_opt.set(user["role"])
-        role_opt.grid(row=3, column=1, sticky="ew", pady=5)
+        role_opt.grid(row=3, column=1, sticky="ew", pady=4)
         
-        lbl_s = ctk.CTkLabel(form, text="Status:", font=FONTS["body_bold"], text_color=COLORS["text_main"])
-        lbl_s.grid(row=4, column=0, sticky="w", pady=5)
+        # Status
+        ctk.CTkLabel(form, text="Status:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=4, column=0, sticky="w", pady=4)
         status_opt = ctk.CTkOptionMenu(form, values=["Active", "Suspended"], height=32)
         status_opt.set(user.get("status", "Active"))
-        status_opt.grid(row=4, column=1, sticky="ew", pady=5)
+        status_opt.grid(row=4, column=1, sticky="ew", pady=4)
         
         def save_edit():
-            name = ent_n.get().strip()
-            uname = ent_u.get().strip()
-            pwd = ent_p.get().strip()
-            role = role_opt.get()
+            name = ent_name.get().strip()
+            uname = ent_uname.get().strip()
+            pwd = ent_pwd.get().strip()
+            role = role_opt.get().strip()
             st = status_opt.get()
             
             if not name or not uname or not pwd:
@@ -361,10 +371,9 @@ class AdminDashboardView(ctk.CTkFrame):
             if self.connector:
                 self.connector.log_event("User Updated", f"Admin updated credentials for {uname}", level="INFO")
                 
-            self._last_users_data = None
             self.refresh_users_table()
             win.destroy()
-            messagebox.showinfo("Updated", f"Credentials for {uname} updated successfully!")
+            show_toast(self, "User Updated", f"Credentials for {uname} saved successfully.", "success")
 
         btn = ctk.CTkButton(win, text="Save Changes", height=38, font=FONTS["body_bold"], fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", command=save_edit)
         btn.pack(fill="x", padx=30, pady=(10, 16))
@@ -376,9 +385,8 @@ class AdminDashboardView(ctk.CTkFrame):
         delete_staff_user(user_id)
         if self.connector:
             self.connector.log_event("User Deleted", f"Admin deleted user {user_id}", level="WARN")
-        self._last_users_data = None
         self.refresh_users_table()
-        messagebox.showinfo("Deleted", "Staff account removed.")
+        show_toast(self, "User Removed", f"Account {user_id} deleted.", "info")
 
     # --- TAB 2: LIVE PRESENCE ---
 
@@ -408,7 +416,7 @@ class AdminDashboardView(ctk.CTkFrame):
         for u in users:
             is_on = u.get("is_online", False)
             status_color = COLORS["clinical"] if is_on else COLORS["danger"]
-            badge_text = "🟢 ONLINE" if is_on else f"🔴 IDLE / DISCONNECTED ({u.get('seconds_since_heartbeat', 0)}s ago)"
+            badge_text = "🟢 ONLINE" if is_on else f"🔴 DISCONNECTED ({u.get('seconds_since_heartbeat', 0)}s ago)"
             
             card = ctk.CTkFrame(self.presence_scroll, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
             card.pack(fill="x", pady=4, padx=4)
@@ -423,7 +431,8 @@ class AdminDashboardView(ctk.CTkFrame):
             lbl_n.grid(row=0, column=0, sticky="w")
             
             lbl_r = ctk.CTkLabel(r1, text=f" {u['role']} ", font=FONTS["small_bold"], fg_color=COLORS["badge_bg"], text_color=COLORS["commerce"], corner_radius=4)
-            lbl_r.grid(row=0, column=1, padx=6)
+            lbl_role = lbl_r
+            lbl_role.grid(row=0, column=1, padx=6)
             
             lbl_st = ctk.CTkLabel(r1, text=badge_text, font=FONTS["small_bold"], text_color=status_color)
             lbl_st.grid(row=0, column=2, sticky="e")
@@ -448,7 +457,7 @@ class AdminDashboardView(ctk.CTkFrame):
         lbl = ctk.CTkLabel(top_bar, text="📊 Daily Z-Report Cash Reconciliation & Tax Audit", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.grid(row=0, column=0, sticky="w")
         
-        btn_exp = ctk.CTkButton(top_bar, text="📑 Export Daily Ledger (CSV)", height=28, font=FONTS["small_bold"], fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=self.export_daily_ledger)
+        btn_exp = ctk.CTkButton(top_bar, text="📑 Export Z-Report Ledger (CSV)", height=28, font=FONTS["small_bold"], fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", command=self.export_daily_ledger)
         btn_exp.grid(row=0, column=1, sticky="e")
         
         self.analytics_scroll = ctk.CTkScrollableFrame(self.tab_analytics, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -476,7 +485,7 @@ class AdminDashboardView(ctk.CTkFrame):
         
         ctk.CTkLabel(c1, text="💵 Cash Drawer & Tender Reconciliation (Z-Report):", font=FONTS["body_bold"], text_color=COLORS["clinical"]).pack(anchor="w", padx=12, pady=(10, 4))
         
-        reconcile_text = f"• Total Sales Volume: {len(invoices)} Invoices Processed\n• Total Gross Revenue: ₹ {total_revenue:,.2f}\n• Cash in Drawer: ₹ {cash_rev:,.2f}\n• Digital UPI / QR Volume: ₹ {upi_rev:,.2f}\n• Card Terminal Volume: ₹ {card_rev:,.2f}\n• GST Collected (CGST + SGST): ₹ {total_gst:,.2f}"
+        reconcile_text = f"• Total Sales Volume: {len(invoices)} Invoices Processed\n• Total Gross Revenue: ₹ {total_revenue:,.2f}\n• Cash in Drawer: ₹ {cash_rev:,.2f}\n• Digital UPI / QR Volume: ₹ {upi_rev:,.2f}\n• Card Terminal Volume: ₹ {card_rev:,.2f}\n• GST Tax Liabilities: CGST (6%) ₹{total_gst/2:,.2f} | SGST (6%) ₹{total_gst/2:,.2f}"
         ctk.CTkLabel(c1, text=reconcile_text, font=FONTS["body"], text_color=COLORS["text_muted"], justify="left").pack(anchor="w", padx=12, pady=(0, 10))
         
         # Fast Moving vs Dead Stock Box
@@ -485,34 +494,72 @@ class AdminDashboardView(ctk.CTkFrame):
         
         ctk.CTkLabel(c2, text="📦 Inventory Velocity & Stock Reorder Alerts:", font=FONTS["body_bold"], text_color=COLORS["commerce"]).pack(anchor="w", padx=12, pady=(10, 4))
         
-        low_stk = [m["name"] for m in medicines if m.get("stock", 0) < 25]
+        low_stk = [m["name"] for m in medicines if m.get("stock", 0) <= 20]
         low_str = ", ".join(low_stk) if low_stk else "All items above reorder thresholds."
         
-        inv_text = f"• Total Catalog SKUs: {len(medicines)} Medicines Monitored\n• Critical Low-Stock SKUs (< 25 units): {low_str}\n• Cold-Chain Integrity Compliance: 100% (Sensors operating in 2–8°C safe zone)\n• Expiring Batches in Next 180 Days: {sum(1 for m in medicines if m.get('days_to_expiry', 999) < 180)} Batches"
+        inv_text = f"• Total Catalog SKUs: {len(medicines)} Medicines Monitored\n• Critical Low-Stock SKUs (≤ 20 units): {low_str}\n• Cold-Chain Integrity Compliance: 100% (Sensors operating in 2–8°C safe zone)\n• Expiring Batches in Next 180 Days: {sum(1 for m in medicines if m.get('days_to_expiry', 999) <= 180)} Batches"
         ctk.CTkLabel(c2, text=inv_text, font=FONTS["body"], text_color=COLORS["text_muted"], justify="left").pack(anchor="w", padx=12, pady=(0, 10))
 
     def export_daily_ledger(self):
-        messagebox.showinfo("Export Successful", "Daily Z-Report and GST Tax Invoices exported to: ~/.aegispharm/daily_ledger_report.csv")
+        invoices = get_all_invoices()
+        if not invoices:
+            show_toast(self, "No Sales", "No invoices found to export.", "warning")
+            return
+            
+        path = filedialog.asksaveasfilename(
+            title="Export Z-Report Ledger",
+            defaultextension=".csv",
+            filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
+            initialfile="AegisPharm_ZReport_Sales.csv"
+        )
+        if path:
+            fields = ["invoice_id", "timestamp", "patient_name", "cashier_name", "payment_method", "subtotal", "gst_amount", "total_amount"]
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+                writer.writeheader()
+                writer.writerows(invoices)
+            show_toast(self, "Z-Report Exported", f"Saved {len(invoices)} transactions to {path}.", "success")
 
     # --- TAB 4: AUDIT STREAM ---
 
     def setup_audit_tab(self):
         self.tab_audit.grid_columnconfigure(0, weight=1)
-        self.tab_audit.grid_rowconfigure(0, weight=1)
+        self.tab_audit.grid_rowconfigure(1, weight=1)
         
+        filter_bar = ctk.CTkFrame(self.tab_audit, fg_color="transparent")
+        filter_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
+        
+        for flt in ["ALL", "INFO", "WARN", "CRITICAL"]:
+            ctk.CTkButton(
+                filter_bar,
+                text=flt if flt != "ALL" else "All Logs",
+                width=75,
+                height=26,
+                font=FONTS["small_bold"],
+                fg_color=COLORS["btn_secondary"],
+                hover_color=COLORS["btn_secondary_hover"],
+                text_color=COLORS["btn_secondary_text"],
+                command=lambda f=flt: self.set_audit_filter(f)
+            ).pack(side="left", padx=2)
+            
         self.audit_scroll = ctk.CTkScrollableFrame(self.tab_audit, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.audit_scroll.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.audit_scroll.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         self.audit_scroll.grid_columnconfigure(0, weight=1)
 
-    def render_audit_ui(self, logs):
-        if logs == self._last_audit_data:
-            return
-        self._last_audit_data = logs
+    def set_audit_filter(self, flt):
+        self.audit_filter = flt
+        self.render_audit_ui(self._last_audit_data or [])
 
+    def render_audit_ui(self, logs):
+        self._last_audit_data = logs
         for w in self.audit_scroll.winfo_children():
             w.destroy()
 
-        for lg in logs:
+        items = logs
+        if self.audit_filter != "ALL":
+            items = [lg for lg in items if lg.get("level") == self.audit_filter]
+
+        for lg in items:
             c = ctk.CTkFrame(self.audit_scroll, fg_color=COLORS["bg_card"], corner_radius=6, border_width=1, border_color=COLORS["border"])
             c.pack(fill="x", pady=3, padx=2)
             
@@ -526,10 +573,10 @@ class AdminDashboardView(ctk.CTkFrame):
             lbl_det.pack(anchor="w", padx=10, pady=(0, 4))
 
     def render_kpis_ui(self, kpi_data):
-        self.kpi_sales.configure(text=kpi_data.get("sales", "₹ 48,920.50"))
-        self.kpi_rx.configure(text=f"{kpi_data.get('pending_rx', 3)} Pending")
-        self.kpi_stock.configure(text=f"{kpi_data.get('low_stock', 4)} Critical")
-        self.kpi_deliv.configure(text=f"{kpi_data.get('active_deliv', 3)} In Route")
+        self.kpi_sales.configure(text=kpi_data.get("sales", "₹ 0.00"))
+        self.kpi_rx.configure(text=f"{kpi_data.get('pending_rx', 0)} Pending")
+        self.kpi_stock.configure(text=f"{kpi_data.get('low_stock', 0)} Critical")
+        self.kpi_deliv.configure(text=f"{kpi_data.get('active_deliv', 0)} In Route")
 
     def _async_fetch_worker(self):
         try:
@@ -558,21 +605,21 @@ class AdminDashboardView(ctk.CTkFrame):
                     "seconds_since_heartbeat": int(diff)
                 })
                 
-            cur.execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT 30")
+            cur.execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT 40")
             audit_logs = [dict(r) for r in cur.fetchall()]
             
-            cur.execute("SELECT COUNT(*) as low_stock FROM medicines WHERE stock < 25")
+            cur.execute("SELECT COUNT(*) as low_stock FROM medicines WHERE stock <= 20")
             low_stock = cur.fetchone()["low_stock"]
             
-            cur.execute("SELECT COUNT(*) as pending_rx FROM prescriptions WHERE status != 'Verified & Approved'")
+            cur.execute("SELECT COUNT(*) as pending_rx FROM prescriptions WHERE status LIKE '%Verification%' OR status LIKE '%Pending%'")
             pending_rx = cur.fetchone()["pending_rx"]
             
-            cur.execute("SELECT COUNT(*) as active_deliveries FROM delivery_orders WHERE status != 'Delivered (OTP Verified)'")
+            cur.execute("SELECT COUNT(*) as active_deliveries FROM delivery_orders WHERE status NOT LIKE '%Delivered%'")
             active_deliv = cur.fetchone()["active_deliveries"]
             
-            cur.execute("SELECT SUM(total_amount) as total_sales FROM invoices")
+            cur.execute("SELECT COALESCE(SUM(total_amount), 0) as total_sales FROM invoices")
             sales_row = cur.fetchone()["total_sales"]
-            total_sales = sales_row if sales_row else 48920.50
+            total_sales = sales_row if sales_row else 0.0
             
             conn.close()
             

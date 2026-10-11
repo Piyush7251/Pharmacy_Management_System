@@ -1,23 +1,30 @@
 """
 AegisPharm Enterprise — Complete Cashier POS & Billing Terminal.
 Full features:
-- High-Speed Barcode & Medicine Catalog Search
+- High-Speed Barcode & Medicine Catalog Search with Category Filter Pills
+- Customer Phone Lookup, EHR Allergy Flags & Loyalty Points Redemption
 - 1-Click Import of Pharmacist-Approved Prescriptions
-- Live Cart with Quantity, Discount %, and GST Tax Calculations
-- Multi-Tender Payments (Cash with Change Calculator, UPI Dynamic QR, Card Auth)
-- Official GST Tax Invoice Generator & Thermal Receipt Printing Preview
-- Option to Route Order directly to Delivery Dispatch
-- Invoice History & Reprinting
+- Live Cart with Quantity Steppers, Discount %, and Real-Time GST Calculations
+- Multi-Tender Payments:
+    * Cash with Instant Change Return Calculator
+    * Dynamic Animated UPI QR Code with Simulated Auto-Pay Webhook
+    * Card Auth Simulation
+- Official GST Tax Invoice Generator with Thermal Receipt Preview, File Export (.txt/.pdf), & Clipboard Copy
+- Option to Route Order directly to Delivery Fleet Dispatch
+- Searchable Sales History Ledger with Dynamic Revenue Aggregate
 """
 
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from datetime import datetime
 import json
 from ui.theme import COLORS, FONTS
+from ui.components.toast import show_toast
+from ui.components.qr_canvas import DynamicUPIQR
 from core.db import (
     get_all_medicines, get_all_prescriptions, create_invoice,
-    get_all_invoices, create_delivery_order
+    get_all_invoices, create_delivery_order, get_patient_by_phone,
+    update_patient_loyalty
 )
 
 class CashierDashboardView(ctk.CTkFrame):
@@ -29,6 +36,9 @@ class CashierDashboardView(ctk.CTkFrame):
         self.cart = []
         self.medicines = []
         self.discount_pct = 0.0
+        self.current_patient = None
+        self.selected_category = "ALL"
+        self.loyalty_discount = 0.0
         
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -38,8 +48,8 @@ class CashierDashboardView(ctk.CTkFrame):
         self.load_inventory()
 
     def setup_header(self):
-        hdr = ctk.CTkFrame(self, height=52, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-        hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(14, 8))
+        hdr = ctk.CTkFrame(self, height=54, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 6))
         hdr.grid_columnconfigure(1, weight=1)
         
         lbl_brand = ctk.CTkLabel(hdr, text="💳 POS Terminal — Express Counter Checkout & GST Billing", font=FONTS["h2"], text_color=COLORS["commerce"])
@@ -48,7 +58,7 @@ class CashierDashboardView(ctk.CTkFrame):
         right_box = ctk.CTkFrame(hdr, fg_color="transparent")
         right_box.grid(row=0, column=1, sticky="e", padx=16)
         
-        lbl_cashier = ctk.CTkLabel(right_box, text=f"Cashier: {self.user_data['name']} (Terminal #01)", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
+        lbl_cashier = ctk.CTkLabel(right_box, text=f"Cashier: {self.user_data['name']} (Counter #01)", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_cashier.pack(side="left", padx=(0, 10))
         
         btn_import_rx = ctk.CTkButton(
@@ -74,7 +84,7 @@ class CashierDashboardView(ctk.CTkFrame):
             border_width=1,
             border_color=COLORS["border"]
         )
-        self.tabview.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 14))
+        self.tabview.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 12))
         
         self.tab_pos = self.tabview.add("🛒 Active Billing Terminal")
         self.tab_history = self.tabview.add("📑 Sales History & Invoices")
@@ -87,21 +97,73 @@ class CashierDashboardView(ctk.CTkFrame):
     def setup_pos_tab(self):
         self.tab_pos.grid_columnconfigure(0, weight=6)
         self.tab_pos.grid_columnconfigure(1, weight=4)
-        self.tab_pos.grid_rowconfigure(1, weight=1)
+        self.tab_pos.grid_rowconfigure(2, weight=1)
         
-        # Search & Barcode
+        # 1. Customer Phone & Loyalty Strip
+        cust_strip = ctk.CTkFrame(self.tab_pos, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+        cust_strip.grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=(4, 6))
+        cust_strip.grid_columnconfigure(1, weight=1)
+        
+        lbl_c_icon = ctk.CTkLabel(cust_strip, text="👤 Customer:", font=FONTS["small_bold"], text_color=COLORS["text_main"])
+        lbl_c_icon.grid(row=0, column=0, padx=(10, 4), pady=6, sticky="w")
+        
+        self.ent_phone = ctk.CTkEntry(
+            cust_strip,
+            placeholder_text="Enter customer mobile number (e.g. 9876543210)",
+            font=FONTS["small"],
+            width=240,
+            height=28,
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            border_color=COLORS["border"]
+        )
+        self.ent_phone.grid(row=0, column=1, sticky="w", padx=(0, 6), pady=6)
+        self.ent_phone.bind("<Return>", lambda e: self.lookup_customer())
+        
+        btn_lookup = ctk.CTkButton(
+            cust_strip,
+            text="🔍 Find / Lookup",
+            width=90,
+            height=28,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_secondary"],
+            hover_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["btn_secondary_text"],
+            command=self.lookup_customer
+        )
+        btn_lookup.grid(row=0, column=2, padx=(0, 8), pady=6)
+        
+        self.lbl_cust_info = ctk.CTkLabel(
+            cust_strip,
+            text="Walk-in Customer (General)",
+            font=FONTS["small"],
+            text_color=COLORS["text_dim"]
+        )
+        self.lbl_cust_info.grid(row=0, column=3, sticky="w", padx=(0, 10))
+        
+        self.chk_loyalty = ctk.CTkCheckBox(
+            cust_strip,
+            text="Redeem 100 Points (-₹50)",
+            font=FONTS["small_bold"],
+            text_color=COLORS["clinical"],
+            command=self.toggle_loyalty_redemption
+        )
+        self.chk_loyalty.grid(row=0, column=4, padx=10, sticky="e")
+        self.chk_loyalty.configure(state="disabled")
+        
+        # 2. Search & Category Filters
         search_box = ctk.CTkFrame(self.tab_pos, fg_color="transparent")
-        search_box.grid(row=0, column=0, sticky="ew", padx=(8, 4), pady=(8, 6))
+        search_box.grid(row=1, column=0, sticky="ew", padx=(8, 4), pady=(0, 4))
         search_box.grid_columnconfigure(0, weight=1)
         
         self.search_ent = ctk.CTkEntry(
             search_box,
-            placeholder_text="🔍 Scan barcode or search medicine, salt, batch, rack...",
+            placeholder_text="🔍 Scan barcode or search medicine, generic salt, batch, rack...",
             font=FONTS["body"],
             fg_color=COLORS["bg_input"],
             text_color=COLORS["text_main"],
             border_color=COLORS["border"],
-            height=38
+            height=36
         )
         self.search_ent.grid(row=0, column=0, sticky="ew", padx=(0, 6))
         self.search_ent.bind("<KeyRelease>", lambda e: self.filter_catalog())
@@ -109,59 +171,78 @@ class CashierDashboardView(ctk.CTkFrame):
         btn_scan = ctk.CTkButton(
             search_box,
             text="📷 Scan Barcode",
-            width=100,
-            height=38,
+            width=110,
+            height=36,
             font=FONTS["small_bold"],
-            fg_color=COLORS["btn_secondary"],
-            hover_color=COLORS["btn_secondary_hover"],
-            text_color=COLORS["btn_secondary_text"],
+            fg_color=COLORS["commerce"],
+            hover_color=COLORS["commerce_hover"],
+            text_color="#FFFFFF",
             command=self.simulate_barcode_scan
         )
         btn_scan.grid(row=0, column=1)
         
-        # Product Catalog Scroll
+        # Category Filter Pills
+        cat_bar = ctk.CTkFrame(self.tab_pos, fg_color="transparent")
+        cat_bar.grid(row=2, column=0, sticky="ew", padx=(8, 4), pady=(0, 4))
+        
+        categories = ["ALL", "Antibiotic", "Gastrointestinal", "Antidiabetic", "Cardiovascular / BP", "Endocrine / Insulin", "Pain / Anti-inflammatory"]
+        for cat in categories:
+            btn_cat = ctk.CTkButton(
+                cat_bar,
+                text=cat if cat != "ALL" else "✨ All Medicines",
+                height=24,
+                font=FONTS["small_bold"],
+                fg_color=COLORS["btn_secondary"],
+                hover_color=COLORS["btn_secondary_hover"],
+                text_color=COLORS["btn_secondary_text"],
+                command=lambda c=cat: self.set_category_filter(c)
+            )
+            btn_cat.pack(side="left", padx=2)
+            
+        # 3. Product Catalog Scroll
         self.med_scroll = ctk.CTkScrollableFrame(self.tab_pos, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.med_scroll.grid(row=1, column=0, sticky="nsew", padx=(8, 4), pady=(0, 8))
+        self.med_scroll.grid(row=3, column=0, sticky="nsew", padx=(8, 4), pady=(0, 6))
+        self.tab_pos.grid_rowconfigure(3, weight=1)
         self.med_scroll.grid_columnconfigure(0, weight=1)
         
-        # Right Side: Active Cart & Billing Totals
+        # 4. Right Side: Active Cart & Billing Totals
         right = ctk.CTkFrame(self.tab_pos, fg_color=COLORS["bg_surface_alt"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-        right.grid(row=0, column=1, rowspan=2, sticky="nsew", padx=(4, 8), pady=(8, 8))
+        right.grid(row=1, column=1, rowspan=3, sticky="nsew", padx=(4, 8), pady=(0, 6))
         right.grid_columnconfigure(0, weight=1)
         right.grid_rowconfigure(1, weight=1)
         
         # Cart Header
         r_hdr = ctk.CTkFrame(right, fg_color="transparent")
-        r_hdr.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
+        r_hdr.grid(row=0, column=0, sticky="ew", padx=12, pady=(8, 4))
         r_hdr.grid_columnconfigure(0, weight=1)
         
-        lbl_cart = ctk.CTkLabel(r_hdr, text="🧾 Active Bill Summary", font=FONTS["h3"], text_color=COLORS["text_main"])
-        lbl_cart.grid(row=0, column=0, sticky="w")
+        self.lbl_cart_header = ctk.CTkLabel(r_hdr, text="🧾 Active Bill (0 items)", font=FONTS["h3"], text_color=COLORS["text_main"])
+        self.lbl_cart_header.grid(row=0, column=0, sticky="w")
         
-        btn_clr = ctk.CTkButton(r_hdr, text="Clear Cart", width=70, height=26, font=FONTS["small_bold"], fg_color=COLORS["btn_danger"], hover_color=COLORS["btn_danger_hover"], text_color="#FFFFFF", command=self.clear_cart)
+        btn_clr = ctk.CTkButton(r_hdr, text="Clear", width=60, height=24, font=FONTS["small_bold"], fg_color=COLORS["btn_danger"], hover_color=COLORS["btn_danger_hover"], text_color="#FFFFFF", command=self.clear_cart)
         btn_clr.grid(row=0, column=1, sticky="e")
         
         # Cart Scroll
         self.cart_scroll = ctk.CTkScrollableFrame(right, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.cart_scroll.grid(row=1, column=0, sticky="nsew", padx=12, pady=(0, 8))
+        self.cart_scroll.grid(row=1, column=0, sticky="nsew", padx=12, pady=(0, 6))
         self.cart_scroll.grid_columnconfigure(0, weight=1)
         
         # Summary & Checkout Controls
         bot = ctk.CTkFrame(right, fg_color=COLORS["bg_card"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-        bot.grid(row=2, column=0, sticky="ew", padx=12, pady=(0, 10))
+        bot.grid(row=2, column=0, sticky="ew", padx=12, pady=(0, 8))
         
         # Discount selector
         disc_row = ctk.CTkFrame(bot, fg_color="transparent")
-        disc_row.pack(fill="x", padx=12, pady=(8, 2))
+        disc_row.pack(fill="x", padx=10, pady=(6, 2))
         
-        lbl_d = ctk.CTkLabel(disc_row, text="Discount:", font=FONTS["small"], text_color=COLORS["text_dim"])
+        lbl_d = ctk.CTkLabel(disc_row, text="Discount:", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_d.pack(side="left")
         
-        for disc in [0, 5, 10]:
+        for disc in [0, 5, 10, 15]:
             b = ctk.CTkButton(
                 disc_row,
                 text=f"{disc}%",
-                width=45,
+                width=42,
                 height=22,
                 font=FONTS["small_bold"],
                 fg_color=COLORS["btn_secondary"],
@@ -169,7 +250,7 @@ class CashierDashboardView(ctk.CTkFrame):
                 text_color=COLORS["btn_secondary_text"],
                 command=lambda d=disc: self.apply_discount(d)
             )
-            b.pack(side="left", padx=3)
+            b.pack(side="left", padx=2)
             
         self.lbl_subtotal = ctk.CTkLabel(bot, text="Subtotal: ₹ 0.00", font=FONTS["body"], text_color=COLORS["text_muted"])
         self.lbl_subtotal.pack(anchor="w", padx=12, pady=1)
@@ -178,48 +259,102 @@ class CashierDashboardView(ctk.CTkFrame):
         self.lbl_gst.pack(anchor="w", padx=12, pady=1)
         
         self.lbl_total = ctk.CTkLabel(bot, text="Total Payable: ₹ 0.00", font=FONTS["price_large"], text_color=COLORS["commerce"])
-        self.lbl_total.pack(anchor="w", padx=12, pady=(2, 8))
+        self.lbl_total.pack(anchor="w", padx=12, pady=(2, 6))
         
         # Deliver to Home Checkbox
-        self.chk_delivery = ctk.CTkCheckBox(bot, text="🛵 Route as Home Delivery Order", font=FONTS["small_bold"], text_color=COLORS["operations"])
-        self.chk_delivery.pack(anchor="w", padx=12, pady=(0, 8))
+        self.chk_delivery = ctk.CTkCheckBox(bot, text="🛵 Direct Route to Home Delivery Fleet", font=FONTS["small_bold"], text_color=COLORS["operations"])
+        self.chk_delivery.pack(anchor="w", padx=12, pady=(0, 6))
         
         # Payment Buttons
         p_row = ctk.CTkFrame(bot, fg_color="transparent")
-        p_row.pack(fill="x", padx=12, pady=(0, 10))
+        p_row.pack(fill="x", padx=10, pady=(0, 8))
         p_row.grid_columnconfigure((0, 1, 2), weight=1)
         
         btn_cash = ctk.CTkButton(p_row, text="💵 Cash", height=38, fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.open_cash_payment_modal)
-        btn_cash.grid(row=0, column=0, sticky="ew", padx=(0, 3))
+        btn_cash.grid(row=0, column=0, sticky="ew", padx=(0, 2))
         
-        btn_upi = ctk.CTkButton(p_row, text="⚡ UPI / QR", height=38, fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.open_upi_modal)
-        btn_upi.grid(row=0, column=1, sticky="ew", padx=3)
+        btn_upi = ctk.CTkButton(p_row, text="⚡ UPI QR", height=38, fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.open_upi_modal)
+        btn_upi.grid(row=0, column=1, sticky="ew", padx=2)
         
         btn_card = ctk.CTkButton(p_row, text="💳 Card", height=38, fg_color=COLORS["operations"], hover_color=COLORS["operations_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=lambda: self.process_checkout("Credit/Debit Card"))
-        btn_card.grid(row=0, column=2, sticky="ew", padx=(3, 0))
+        btn_card.grid(row=0, column=2, sticky="ew", padx=(2, 0))
 
     def load_inventory(self):
         self.medicines = get_all_medicines()
-        self.render_catalog(self.medicines)
+        self.filter_catalog()
+
+    def set_category_filter(self, cat):
+        self.selected_category = cat
+        self.filter_catalog()
 
     def filter_catalog(self):
         q = self.search_ent.get().strip().lower()
-        if not q:
-            self.render_catalog(self.medicines)
-            return
-        filtered = [m for m in self.medicines if q in m["name"].lower() or q in m["generic"].lower() or q in m["batch"].lower() or q in m.get("rack", "").lower()]
+        filtered = self.medicines
+        
+        if self.selected_category != "ALL":
+            filtered = [m for m in filtered if self.selected_category.lower() in m.get("category", "").lower()]
+            
+        if q:
+            filtered = [m for m in filtered if q in m["name"].lower() or q in m["generic"].lower() or q in m["batch"].lower() or q in m.get("rack", "").lower()]
+            
         self.render_catalog(filtered)
 
     def simulate_barcode_scan(self):
-        if self.medicines:
-            target = self.medicines[0]
-            self.add_to_cart(target)
-            messagebox.showinfo("Barcode Scanned", f"Scanned SKU barcode: {target['name']} added to cart.")
+        if not self.medicines:
+            return
+        # Pick next medicine or search match
+        q = self.search_ent.get().strip().lower()
+        matched = next((m for m in self.medicines if q in m["name"].lower()), self.medicines[0]) if q else self.medicines[0]
+        self.add_to_cart(matched)
+        show_toast(self, "📷 Barcode Scanned", f"Matched SKU [{matched['batch']}]: {matched['name']} added to cart.", "info")
+
+    def lookup_customer(self):
+        phone = self.ent_phone.get().strip()
+        if not phone:
+            self.lbl_cust_info.configure(text="Walk-in Customer (General)", text_color=COLORS["text_dim"])
+            self.current_patient = None
+            self.chk_loyalty.deselect()
+            self.chk_loyalty.configure(state="disabled")
+            return
+            
+        patient = get_patient_by_phone(phone)
+        if patient:
+            self.current_patient = patient
+            allergies = ", ".join(patient.get("allergies", [])) or "None"
+            points = patient.get("loyalty_points", 0)
+            
+            info_str = f"👤 {patient['name']} | ⭐ {points} pts | ⚠️ Allergies: {allergies}"
+            self.lbl_cust_info.configure(text=info_str, text_color=COLORS["clinical"] if allergies == "None" else COLORS["danger"])
+            
+            if points >= 100:
+                self.chk_loyalty.configure(state="normal")
+            else:
+                self.chk_loyalty.deselect()
+                self.chk_loyalty.configure(state="disabled")
+                
+            show_toast(self, "Patient Profile Loaded", f"{patient['name']} ({points} loyalty points).", "success")
+        else:
+            self.lbl_cust_info.configure(text=f"New Customer ({phone}) — General", text_color=COLORS["text_muted"])
+            self.current_patient = None
+            self.chk_loyalty.deselect()
+            self.chk_loyalty.configure(state="disabled")
+
+    def toggle_loyalty_redemption(self):
+        if self.chk_loyalty.get() == 1 and self.current_patient:
+            self.loyalty_discount = 50.0
+            show_toast(self, "Points Redeemed", "₹50.00 discount applied from 100 loyalty points.", "success")
+        else:
+            self.loyalty_discount = 0.0
+        self.update_cart()
 
     def render_catalog(self, items):
         for w in self.med_scroll.winfo_children():
             w.destroy()
             
+        if not items:
+            ctk.CTkLabel(self.med_scroll, text="No medicines matching search or category.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
+            return
+
         for med in items:
             card = ctk.CTkFrame(self.med_scroll, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
             card.pack(fill="x", pady=3, padx=2)
@@ -232,8 +367,20 @@ class CashierDashboardView(ctk.CTkFrame):
             lbl_n = ctk.CTkLabel(r1, text=med["name"], font=FONTS["body_bold"], text_color=COLORS["text_main"])
             lbl_n.grid(row=0, column=0, sticky="w")
             
+            # Expiry risk badge
+            days = med.get("days_to_expiry", 999)
+            if days <= 30:
+                badge = ("CRITICAL EXPIRY", COLORS["danger_bg"], COLORS["danger"])
+            elif days <= 90:
+                badge = ("EXPIRING SOON", COLORS["warning_bg"], COLORS["warning"])
+            else:
+                badge = ("FEFO GOOD", COLORS["success_bg"], COLORS["clinical"])
+                
+            lbl_exp = ctk.CTkLabel(r1, text=f" {badge[0]} ", font=FONTS["small_bold"], fg_color=badge[1], text_color=badge[2], corner_radius=4)
+            lbl_exp.grid(row=0, column=1, padx=(0, 10))
+            
             lbl_p = ctk.CTkLabel(r1, text=f"₹ {med['mrp']:.2f}", font=FONTS["h3"], text_color=COLORS["clinical"])
-            lbl_p.grid(row=0, column=1, sticky="e")
+            lbl_p.grid(row=0, column=2, sticky="e")
             
             lbl_det = ctk.CTkLabel(card, text=f"🧪 {med['generic'][:45]} | 📦 Stock: {med['stock']} | 🏷️ Batch: {med['batch']} | 📍 Rack: {med['rack']}", font=FONTS["small"], text_color=COLORS["text_muted"])
             lbl_det.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 6))
@@ -252,8 +399,16 @@ class CashierDashboardView(ctk.CTkFrame):
             btn_add.grid(row=2, column=0, sticky="e", padx=10, pady=(0, 6))
 
     def add_to_cart(self, med):
+        # Check stock
+        if med.get("stock", 0) <= 0:
+            show_toast(self, "Out of Stock", f"{med['name']} has 0 stock in inventory.", "warning")
+            return
+            
         for it in self.cart:
             if it["med"]["id"] == med["id"]:
+                if it["qty"] + 1 > med.get("stock", 999):
+                    show_toast(self, "Stock Limit Reached", f"Cannot add more than {med['stock']} units.", "warning")
+                    return
                 it["qty"] += 1
                 self.update_cart()
                 return
@@ -267,10 +422,15 @@ class CashierDashboardView(ctk.CTkFrame):
             w.destroy()
             
         subtotal = sum(i["med"]["mrp"] * i["qty"] for i in self.cart)
-        discount_amt = subtotal * (self.discount_pct / 100.0)
-        net_amount = subtotal - discount_amt
+        discount_amt = subtotal * (self.discount_pct / 100.0) + self.loyalty_discount
+        net_amount = max(0.0, subtotal - discount_amt)
         cgst = net_amount * 0.06
         sgst = net_amount * 0.06
+        
+        self.lbl_cart_header.configure(text=f"🧾 Active Bill ({len(self.cart)} items)")
+        
+        if not self.cart:
+            ctk.CTkLabel(self.cart_scroll, text="Cart is empty.\nScan barcodes or click '+ Add to Bill'.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
         
         for idx, it in enumerate(self.cart):
             m = it["med"]
@@ -306,7 +466,8 @@ class CashierDashboardView(ctk.CTkFrame):
             btn_minus = ctk.CTkButton(r2, text="-", width=22, height=20, fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=lambda i=idx: self.change_qty(i, -1))
             btn_minus.pack(side="right")
 
-        self.lbl_subtotal.configure(text=f"Subtotal: ₹ {subtotal:.2f} (Disc: {self.discount_pct}%)")
+        disc_str = f"{self.discount_pct}%" + (f" + ₹{self.loyalty_discount:.0f} Pts" if self.loyalty_discount > 0 else "")
+        self.lbl_subtotal.configure(text=f"Subtotal: ₹ {subtotal:.2f} (Discount: {disc_str})")
         self.lbl_gst.configure(text=f"CGST (6%): ₹{cgst:.2f} | SGST (6%): ₹{sgst:.2f}")
         self.lbl_total.configure(text=f"Total Payable: ₹ {net_amount:.2f}")
 
@@ -329,17 +490,19 @@ class CashierDashboardView(ctk.CTkFrame):
     def clear_cart(self):
         self.cart = []
         self.discount_pct = 0.0
+        self.loyalty_discount = 0.0
+        self.chk_loyalty.deselect()
         self.update_cart()
 
     def open_import_rx_modal(self):
         win = ctk.CTkToplevel(self)
         win.title("Import Verified Prescription")
-        win.geometry("560x440")
+        win.geometry("580x460")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="📥 Approved Prescriptions Queue", font=FONTS["h2"], text_color=COLORS["clinical"])
-        lbl.pack(pady=(16, 8))
+        lbl = ctk.CTkLabel(win, text="📥 Approved Prescriptions Ready for Billing", font=FONTS["h2"], text_color=COLORS["clinical"])
+        lbl.pack(pady=(16, 6))
         
         scroll = ctk.CTkScrollableFrame(win, fg_color=COLORS["bg_base"])
         scroll.pack(fill="both", expand=True, padx=20, pady=8)
@@ -382,38 +545,42 @@ class CashierDashboardView(ctk.CTkFrame):
             med_name = it["medicine"].lower()
             match = next((m for m in self.medicines if m["name"].lower() in med_name or med_name in m["name"].lower()), None)
             if not match:
-                # Fallback to closest medicine
                 match = self.medicines[0]
             self.cart.append({"med": match, "qty": it.get("qty", 10)})
             count += 1
             
+        # Set customer name if present
+        self.ent_phone.delete(0, "end")
+        self.lookup_customer()
+        
         window.destroy()
         self.update_cart()
-        messagebox.showinfo("Prescription Imported", f"Imported {count} prescribed medicines from {rx['rx_id']} for {rx['patient_name']}.")
+        show_toast(self, "Prescription Imported", f"Loaded {count} medicines from {rx['rx_id']} ({rx['patient_name']}).", "success")
 
     # --- PAYMENT & RECEIPT MODALS ---
 
     def open_cash_payment_modal(self):
         if not self.cart:
-            messagebox.showwarning("Cart Empty", "Add items to cart before proceeding.")
+            show_toast(self, "Cart Empty", "Add items to cart before proceeding.", "warning")
             return
             
-        total = sum(i["med"]["mrp"] * i["qty"] for i in self.cart) * (1 - self.discount_pct / 100.0)
+        total = max(0.0, sum(i["med"]["mrp"] * i["qty"] for i in self.cart) * (1 - self.discount_pct / 100.0) - self.loyalty_discount)
         
         win = ctk.CTkToplevel(self)
         win.title("Cash Payment & Change Calculator")
-        win.geometry("400x320")
+        win.geometry("420x340")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="💵 Cash Payment & Tender", font=FONTS["h2"], text_color=COLORS["clinical"])
+        lbl = ctk.CTkLabel(win, text="💵 Cash Payment & Tender Calculator", font=FONTS["h2"], text_color=COLORS["clinical"])
         lbl.pack(pady=(16, 4))
         
         lbl_due = ctk.CTkLabel(win, text=f"Total Amount Due: ₹ {total:.2f}", font=FONTS["price_large"], text_color=COLORS["commerce"])
         lbl_due.pack(pady=4)
         
-        ent_cash = ctk.CTkEntry(win, placeholder_text="Cash Received from Customer (e.g. 500)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=280)
+        ent_cash = ctk.CTkEntry(win, placeholder_text="Cash Received from Customer (e.g. 500)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=300, height=36)
         ent_cash.pack(pady=10)
+        ent_cash.focus()
         
         lbl_change = ctk.CTkLabel(win, text="Change to Return: ₹ 0.00", font=FONTS["body_bold"], text_color=COLORS["clinical"])
         lbl_change.pack(pady=4)
@@ -432,7 +599,7 @@ class CashierDashboardView(ctk.CTkFrame):
             try:
                 rec = float(ent_cash.get().strip())
                 if rec < total:
-                    messagebox.showwarning("Short Cash", f"Amount received (₹{rec}) is less than total due (₹{total}).", parent=win)
+                    messagebox.showwarning("Short Cash", f"Amount received (₹{rec:.2f}) is less than total due (₹{total:.2f}).", parent=win)
                     return
             except ValueError:
                 messagebox.showwarning("Invalid Input", "Enter valid cash amount.", parent=win)
@@ -441,50 +608,58 @@ class CashierDashboardView(ctk.CTkFrame):
             win.destroy()
             self.process_checkout("Cash")
             
-        ctk.CTkButton(win, text="Complete Cash Sale & Print Invoice", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=confirm).pack(fill="x", padx=30, pady=16)
+        btn_pay = ctk.CTkButton(win, text="Complete Cash Sale & Generate Invoice", height=40, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=confirm)
+        btn_pay.pack(fill="x", padx=30, pady=16)
 
     def open_upi_modal(self):
         if not self.cart:
-            messagebox.showwarning("Cart Empty", "Add items to cart before proceeding.")
+            show_toast(self, "Cart Empty", "Add items to cart before proceeding.", "warning")
             return
             
-        total = sum(i["med"]["mrp"] * i["qty"] for i in self.cart) * (1 - self.discount_pct / 100.0)
+        total = max(0.0, sum(i["med"]["mrp"] * i["qty"] for i in self.cart) * (1 - self.discount_pct / 100.0) - self.loyalty_discount)
         
         win = ctk.CTkToplevel(self)
-        win.title("UPI / QR Code Checkout")
-        win.geometry("400x380")
+        win.title("UPI Dynamic QR Checkout")
+        win.geometry("440x480")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="⚡ Scan Dynamic UPI QR Code", font=FONTS["h2"], text_color=COLORS["commerce"])
-        lbl.pack(pady=(16, 4))
+        upi_string = f"upi://pay?pa=aegispharm@icici&pn=AegisPharm&am={total:.2f}&cu=INR"
+        qr_widget = DynamicUPIQR(win, upi_string=upi_string, amount=total, payee_name="AegisPharm Healthcare", size=240)
+        qr_widget.pack(pady=10)
         
-        # Simulated QR code frame
-        qr_frame = ctk.CTkFrame(win, width=180, height=180, fg_color=COLORS["bg_card"], corner_radius=10, border_width=2, border_color=COLORS["border"])
-        qr_frame.pack(pady=10)
-        qr_frame.pack_propagate(False)
+        status_lbl = ctk.CTkLabel(win, text="⏳ Waiting for customer UPI app authorization...", font=FONTS["small_bold"], text_color=COLORS["commerce"])
+        status_lbl.pack(pady=4)
         
-        ctk.CTkLabel(qr_frame, text="[ UPI QR CODE ]\naegispharm@icici\n₹ " + f"{total:.2f}", font=FONTS["body_bold"], text_color=COLORS["commerce"]).pack(expand=True)
-        
-        ctk.CTkLabel(win, text=f"Amount: ₹ {total:.2f} | Txn Ref: UPI-{datetime.now().strftime('%M%S%f')[:6]}", font=FONTS["small"], text_color=COLORS["text_dim"]).pack()
-        
-        def confirm():
-            win.destroy()
-            self.process_checkout("UPI / QR")
+        def auto_pay():
+            status_lbl.configure(text="✅ Webhook: Payment Verified (Ref: ICICI-883920)!", text_color=COLORS["clinical"])
+            qr_widget.stop_scan()
+            win.after(800, lambda: (win.destroy(), self.process_checkout("UPI / Dynamic QR")))
             
-        ctk.CTkButton(win, text="Payment Received (Verify & Print)", height=38, font=FONTS["body_bold"], fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", command=confirm).pack(fill="x", padx=30, pady=14)
+        btn_confirm = ctk.CTkButton(
+            win,
+            text="⚡ Simulate Customer UPI Webhook Payment",
+            height=38,
+            font=FONTS["body_bold"],
+            fg_color=COLORS["commerce"],
+            hover_color=COLORS["commerce_hover"],
+            text_color="#FFFFFF",
+            command=auto_pay
+        )
+        btn_confirm.pack(fill="x", padx=30, pady=(6, 12))
 
     def process_checkout(self, payment_method):
         if not self.cart:
             return
             
         subtotal = sum(i["med"]["mrp"] * i["qty"] for i in self.cart)
-        discount_amt = subtotal * (self.discount_pct / 100.0)
-        net_amount = subtotal - discount_amt
+        discount_amt = subtotal * (self.discount_pct / 100.0) + self.loyalty_discount
+        net_amount = max(0.0, subtotal - discount_amt)
         gst_amt = net_amount * 0.12
         
         inv_id = f"INV-2026-{1000 + len(get_all_invoices())*7 + 1}"
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        patient_name = self.current_patient["name"] if self.current_patient else "Counter Walk-in"
         
         items_payload = []
         for it in self.cart:
@@ -501,7 +676,7 @@ class CashierDashboardView(ctk.CTkFrame):
         inv_data = {
             "invoice_id": inv_id,
             "timestamp": now_str,
-            "patient_name": "Counter Walk-in",
+            "patient_name": patient_name,
             "cashier_name": self.user_data["name"],
             "payment_method": payment_method,
             "subtotal": subtotal,
@@ -512,13 +687,17 @@ class CashierDashboardView(ctk.CTkFrame):
         
         create_invoice(inv_data)
         
+        # Deduct loyalty points if redeemed
+        if self.loyalty_discount > 0 and self.current_patient:
+            update_patient_loyalty(self.current_patient["id"], -100)
+            
         # Route to Delivery if checkbox checked
         if self.chk_delivery.get() == 1:
             deliv_data = {
                 "order_id": f"ORD-{inv_id[-4:]}",
-                "patient_name": "Counter Walk-in (Home Delivery)",
+                "patient_name": f"{patient_name} (Home Delivery)",
                 "address": "402, Green Glen Heights, Sector 14, Navi Mumbai",
-                "phone": "+91 98200 44556",
+                "phone": self.current_patient.get("phone", "+91 98200 44556") if self.current_patient else "+91 98200 44556",
                 "agent_name": "Ramesh Kumar (DL-104)",
                 "status": "Out for Delivery",
                 "time_slot": "15:00 - 16:30",
@@ -534,6 +713,8 @@ class CashierDashboardView(ctk.CTkFrame):
             self.connector.log_event("Invoice Generated", f"Billed ₹{net_amount:.2f} via {payment_method} ({inv_id})", level="INFO")
             self.connector.update_action(f"Completed Bill {inv_id}")
             
+        show_toast(self, "Sale Completed", f"{inv_id} successfully finalized ({payment_method}).", "success")
+        
         # Display Official Thermal Receipt Modal
         self.show_receipt_modal(inv_data)
         
@@ -544,7 +725,7 @@ class CashierDashboardView(ctk.CTkFrame):
     def show_receipt_modal(self, inv_data):
         win = ctk.CTkToplevel(self)
         win.title(f"GST Tax Invoice — {inv_data['invoice_id']}")
-        win.geometry("480x620")
+        win.geometry("500x640")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
@@ -559,8 +740,9 @@ class CashierDashboardView(ctk.CTkFrame):
 TAX INVOICE / CASH MEMO
 Invoice No: {inv_data['invoice_id']}
 Date & Time: {inv_data['timestamp']}
+Customer: {inv_data.get('patient_name', 'Counter Walk-in')}
 Cashier: {inv_data['cashier_name']}
-Payment: {inv_data['payment_method']}
+Payment Mode: {inv_data['payment_method']}
 --------------------------------------------------
 Item Name              Batch   Qty    Rate    Amt
 --------------------------------------------------
@@ -586,36 +768,66 @@ TOTAL AMOUNT PAYABLE:                  ₹ {inv_data['total_amount']:>8.2f}
         btn_box = ctk.CTkFrame(win, fg_color="transparent")
         btn_box.pack(fill="x", padx=20, pady=(0, 16))
         
-        btn_print = ctk.CTkButton(
-            btn_box,
-            text="🖨️ Print Receipt",
-            height=36,
-            font=FONTS["body_bold"],
-            fg_color=COLORS["commerce"],
-            hover_color=COLORS["commerce_hover"],
-            text_color="#FFFFFF",
-            command=lambda: (messagebox.showinfo("Receipt Printed", f"Thermal receipt {inv_data['invoice_id']} sent to default printer."), win.destroy())
-        )
-        btn_print.pack(side="left", expand=True, fill="x", padx=(0, 4))
+        def save_receipt_file():
+            path = filedialog.asksaveasfilename(
+                title="Save Receipt",
+                defaultextension=".txt",
+                filetypes=[("Text File", "*.txt"), ("All Files", "*.*")],
+                initialfile=f"{inv_data['invoice_id']}.txt"
+            )
+            if path:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(receipt_text)
+                show_toast(self, "Receipt Saved", f"Saved to {path}", "success")
+
+        def copy_clipboard():
+            win.clipboard_clear()
+            win.clipboard_append(receipt_text)
+            show_toast(self, "Copied", "Invoice copied to clipboard.", "info")
+
+        btn_save = ctk.CTkButton(btn_box, text="💾 Save Invoice File", height=36, font=FONTS["small_bold"], fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=save_receipt_file)
+        btn_save.pack(side="left", expand=True, fill="x", padx=(0, 4))
+        
+        btn_copy = ctk.CTkButton(btn_box, text="📋 Copy", width=75, height=36, font=FONTS["small_bold"], fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=copy_clipboard)
+        btn_copy.pack(side="left", padx=4)
+
+        btn_print = ctk.CTkButton(btn_box, text="🖨️ Print Receipt", height=36, font=FONTS["body_bold"], fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", command=lambda: (show_toast(self, "Receipt Printed", f"Thermal slip {inv_data['invoice_id']} sent to printer.", "success"), win.destroy()))
+        btn_print.pack(side="left", expand=True, fill="x", padx=(4, 0))
 
     # --- TAB 2: SALES HISTORY ---
 
     def setup_history_tab(self):
         self.tab_history.grid_columnconfigure(0, weight=1)
-        self.tab_history.grid_rowconfigure(1, weight=1)
+        self.tab_history.grid_rowconfigure(2, weight=1)
         
         top_bar = ctk.CTkFrame(self.tab_history, fg_color="transparent")
-        top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
+        top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(8, 4))
         top_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(top_bar, text="📑 Invoices & Daily Sales Ledger", font=FONTS["h3"], text_color=COLORS["text_main"])
-        lbl.grid(row=0, column=0, sticky="w")
+        self.hist_search = ctk.CTkEntry(
+            top_bar,
+            placeholder_text="🔍 Search invoices by ID, payment mode, cashier, or customer...",
+            font=FONTS["body"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            border_color=COLORS["border"],
+            height=36
+        )
+        self.hist_search.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        self.hist_search.bind("<KeyRelease>", lambda e: self.render_history())
         
-        btn_ref = ctk.CTkButton(top_bar, text="🔄 Refresh Ledger", height=28, font=FONTS["small_bold"], fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=self.render_history)
-        btn_ref.grid(row=0, column=1, sticky="e")
+        btn_ref = ctk.CTkButton(top_bar, text="🔄 Refresh", height=36, width=90, font=FONTS["small_bold"], fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=self.render_history)
+        btn_ref.grid(row=0, column=1)
+        
+        # Summary banner
+        self.hist_banner = ctk.CTkFrame(self.tab_history, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+        self.hist_banner.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 6))
+        
+        self.lbl_hist_stats = ctk.CTkLabel(self.hist_banner, text="📊 Total Sales Ledger: 0 bills | Revenue: ₹ 0.00", font=FONTS["body_bold"], text_color=COLORS["commerce"])
+        self.lbl_hist_stats.pack(anchor="w", padx=14, pady=6)
         
         self.history_scroll = ctk.CTkScrollableFrame(self.tab_history, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.history_scroll.grid(row=1, column=0, sticky="nsew", padx=12, pady=(0, 12))
+        self.history_scroll.grid(row=2, column=0, sticky="nsew", padx=12, pady=(0, 10))
         self.history_scroll.grid_columnconfigure(0, weight=1)
         
         self.render_history()
@@ -625,8 +837,16 @@ TOTAL AMOUNT PAYABLE:                  ₹ {inv_data['total_amount']:>8.2f}
             w.destroy()
             
         invoices = get_all_invoices()
+        q = self.hist_search.get().strip().lower() if hasattr(self, "hist_search") else ""
+        
+        if q:
+            invoices = [inv for inv in invoices if q in inv['invoice_id'].lower() or q in inv.get('patient_name', '').lower() or q in inv.get('payment_method', '').lower() or q in inv.get('cashier_name', '').lower()]
+            
+        total_rev = sum(inv.get("total_amount", 0.0) for inv in invoices)
+        self.lbl_hist_stats.configure(text=f"📊 Sales Ledger: {len(invoices)} bills | Total Filtered Revenue: ₹ {total_rev:,.2f}")
+        
         if not invoices:
-            ctk.CTkLabel(self.history_scroll, text="No past bills recorded.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
+            ctk.CTkLabel(self.history_scroll, text="No bills matching search.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
             return
 
         for inv in invoices:
@@ -644,16 +864,17 @@ TOTAL AMOUNT PAYABLE:                  ₹ {inv_data['total_amount']:>8.2f}
             lbl_amt = ctk.CTkLabel(r1, text=f"₹ {inv['total_amount']:.2f}", font=FONTS["body_bold"], text_color=COLORS["clinical"])
             lbl_amt.grid(row=0, column=1, sticky="e")
             
+            cust_name = inv.get("patient_name", "Counter Walk-in")
             items_summary = ", ".join(it.get("name", str(it)) for it in inv.get("items", []))
-            info_txt = f"🕒 {inv['timestamp']} | Cashier: {inv['cashier_name']}\n📦 Items: {items_summary}"
+            info_txt = f"👤 {cust_name} | 🕒 {inv['timestamp']} | Cashier: {inv['cashier_name']}\n📦 Items: {items_summary}"
             lbl_info = ctk.CTkLabel(c, text=info_txt, font=FONTS["small"], text_color=COLORS["text_muted"], justify="left")
             lbl_info.grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
             
             btn_reprint = ctk.CTkButton(
                 c,
-                text="Reprint",
-                width=75,
-                height=24,
+                text="Reprint / Export",
+                width=110,
+                height=26,
                 font=FONTS["small_bold"],
                 fg_color=COLORS["btn_secondary"],
                 hover_color=COLORS["btn_secondary_hover"],

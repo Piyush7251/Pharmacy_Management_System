@@ -1,11 +1,13 @@
 """
 AegisPharm Enterprise — Unified Desktop Application Entry Point.
 Dual-theme support (Default: White / Light Mode, with one-click Dark Mode toggle).
-Provides secure authentication, role-based dashboard routing, and real-time presence tracking.
+Provides secure authentication, role-based dashboard routing, real-time presence tracking,
+live digital clock telemetry, quick role switching, and global dynamic toast notifications.
 """
 
 import sys
 import os
+from datetime import datetime
 
 # Add workspace directory to python path for modular imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +20,7 @@ from ui.views.pharmacist_dashboard_view import PharmacistDashboardView
 from ui.views.cashier_dashboard_view import CashierDashboardView
 from ui.views.inventory_dashboard_view import InventoryDashboardView
 from ui.views.delivery_dashboard_view import DeliveryDashboardView
+from ui.components.toast import show_toast
 from core.api_client import AppConnector
 from core.db import init_db
 
@@ -29,9 +32,9 @@ class PharmacyApplication(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("AegisPharm Enterprise — Pharmacy Management System")
-        self.geometry("1400x900")
-        self.minsize(1100, 720)
+        self.title("AegisPharm Enterprise — Modern Clinical & Retail Pharmacy System")
+        self.geometry("1420x920")
+        self.minsize(1120, 720)
         self.configure(fg_color=COLORS["bg_base"])
         
         # Initialize database
@@ -41,11 +44,16 @@ class PharmacyApplication(ctk.CTk):
         self.current_user = None
         self.connector = None
         self.current_dashboard = None
+        self.clock_job = None
         
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         
         # Start at Login Screen
         self.show_login_screen()
+
+    def show_toast(self, title, message, toast_type="success", duration_ms=3500):
+        """Display an animated floating toast notification at top-right."""
+        return show_toast(self, title, message, toast_type, duration_ms)
 
     def toggle_theme(self):
         """Toggle between Light (White) and Dark appearance modes."""
@@ -61,6 +69,13 @@ class PharmacyApplication(ctk.CTk):
                 self.btn_theme.configure(text="🌙 Dark Mode")
 
     def show_login_screen(self):
+        if self.clock_job:
+            try:
+                self.after_cancel(self.clock_job)
+            except Exception:
+                pass
+            self.clock_job = None
+            
         # Clean up any existing session
         if self.connector:
             self.connector.stop()
@@ -97,8 +112,51 @@ class PharmacyApplication(ctk.CTk):
         
         # Transition to Main Dashboard UI
         self.load_role_dashboard()
+        
+        # Welcoming Toast
+        self.show_toast(
+            title=f"Welcome, {user_data['name']}",
+            message=f"Logged into {user_data['role']} workstation with full permissions.",
+            toast_type="success"
+        )
+
+    def switch_role(self, selected_role_text):
+        """Quickly switch active workspace view without logging out."""
+        role_map = {
+            "👑 Store Admin": ("Admin", "Dr. Rajesh Kulkarni", "STF-01"),
+            "🩺 Pharmacist": ("Pharmacist", "Pooja Sharma, R.Ph", "STF-02"),
+            "💳 Cashier POS": ("Cashier", "Amit Deshmukh", "STF-03"),
+            "📦 Inventory Hub": ("Inventory Manager", "Vikram Rathore", "STF-04"),
+            "🛵 Delivery Fleet": ("Delivery Agent", "Ramesh Kumar", "STF-05")
+        }
+        
+        target = role_map.get(selected_role_text)
+        if target and self.current_user:
+            self.current_user["role"] = target[0]
+            self.current_user["name"] = target[1]
+            self.current_user["id"] = target[2]
+            
+            if self.connector:
+                self.connector.role = target[0]
+                self.connector.user_name = target[1]
+                self.connector.user_id = target[2]
+                self.connector.update_action(f"Switched view to {target[0]}")
+                
+            self.load_role_dashboard()
+            self.show_toast(
+                title=f"Switched to {target[0]}",
+                message=f"Terminal interface reloaded for {target[1]}.",
+                toast_type="info"
+            )
 
     def load_role_dashboard(self):
+        if self.clock_job:
+            try:
+                self.after_cancel(self.clock_job)
+            except Exception:
+                pass
+            self.clock_job = None
+            
         # Clear login view
         for widget in self.winfo_children():
             widget.destroy()
@@ -110,7 +168,7 @@ class PharmacyApplication(ctk.CTk):
         # 1. Global Top Navigation Bar
         topbar = ctk.CTkFrame(
             self,
-            height=60,
+            height=62,
             corner_radius=0,
             fg_color=COLORS["bg_surface"],
             border_width=1,
@@ -122,7 +180,7 @@ class PharmacyApplication(ctk.CTk):
         
         # Left: Brand & Branch
         left_info = ctk.CTkFrame(topbar, fg_color="transparent")
-        left_info.grid(row=0, column=0, sticky="w", padx=20, pady=10)
+        left_info.grid(row=0, column=0, sticky="w", padx=16, pady=10)
         
         lbl_brand = ctk.CTkLabel(
             left_info,
@@ -139,46 +197,92 @@ class PharmacyApplication(ctk.CTk):
             text_color=COLORS["text_dim"]
         )
         lbl_branch.pack(side="left")
+
+        # Center-Left: Live Digital Clock & Sync Pulse
+        mid_info = ctk.CTkFrame(topbar, fg_color="transparent")
+        mid_info.grid(row=0, column=1, sticky="w", padx=20)
         
-        # Right: Theme Switcher, User Profile Badge & Logout
+        self.lbl_clock = ctk.CTkLabel(
+            mid_info,
+            text="",
+            font=FONTS["mono_bold"],
+            text_color=COLORS["text_muted"]
+        )
+        self.lbl_clock.pack(side="left", padx=(0, 10))
+        
+        pulse_badge = ctk.CTkLabel(
+            mid_info,
+            text=" 🟢 Live Sync (0ms) ",
+            font=FONTS["small_bold"],
+            fg_color=COLORS["success_bg"],
+            text_color=COLORS["clinical"],
+            corner_radius=6
+        )
+        pulse_badge.pack(side="left")
+        
+        self.update_clock()
+        
+        # Right: Quick Role Switcher, Theme Switcher, Profile Chip & Logout
         right_info = ctk.CTkFrame(topbar, fg_color="transparent")
-        right_info.grid(row=0, column=1, sticky="e", padx=20, pady=10)
+        right_info.grid(row=0, column=1, sticky="e", padx=16, pady=10)
+        
+        # Quick Role Switcher
+        roles_list = ["👑 Store Admin", "🩺 Pharmacist", "💳 Cashier POS", "📦 Inventory Hub", "🛵 Delivery Fleet"]
+        current_role_str = next((r for r in roles_list if self.current_user.get("role", "")[:4] in r), roles_list[0])
+        
+        lbl_switch = ctk.CTkLabel(right_info, text="View:", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
+        lbl_switch.pack(side="left", padx=(0, 4))
+        
+        self.role_switcher = ctk.CTkOptionMenu(
+            right_info,
+            values=roles_list,
+            width=140,
+            height=30,
+            font=FONTS["small_bold"],
+            dropdown_font=FONTS["small"],
+            fg_color=COLORS["btn_secondary"],
+            button_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["text_main"],
+            command=self.switch_role
+        )
+        self.role_switcher.set(current_role_str)
+        self.role_switcher.pack(side="left", padx=(0, 10))
         
         theme_btn_text = "🌙 Dark Mode" if self.current_theme == "Light" else "☀️ Light Mode"
         self.btn_theme = ctk.CTkButton(
             right_info,
             text=theme_btn_text,
-            width=100,
-            height=32,
+            width=95,
+            height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["btn_secondary"],
             hover_color=COLORS["btn_secondary_hover"],
             text_color=COLORS["btn_secondary_text"],
             command=self.toggle_theme
         )
-        self.btn_theme.pack(side="left", padx=(0, 14))
+        self.btn_theme.pack(side="left", padx=(0, 10))
         
         role_icon = "👑" if "Admin" in self.current_user["role"] else ("🩺" if "Pharmacist" in self.current_user["role"] else ("💳" if "Cashier" in self.current_user["role"] else "📦"))
         
         # User profile chip
         user_chip = ctk.CTkFrame(right_info, fg_color=COLORS["badge_bg"], corner_radius=6, border_width=1, border_color=COLORS["border"])
-        user_chip.pack(side="left", padx=(0, 12))
+        user_chip.pack(side="left", padx=(0, 10))
         
         lbl_user = ctk.CTkLabel(
             user_chip,
-            text=f" {role_icon} {self.current_user['name']}  |  {self.current_user['role']} ",
+            text=f" {role_icon} {self.current_user['name']} ",
             font=FONTS["small_bold"],
             text_color=COLORS["text_main"],
-            padx=10,
-            pady=4
+            padx=8,
+            pady=3
         )
         lbl_user.pack()
         
         btn_logout = ctk.CTkButton(
             right_info,
             text="🚪 Sign Out",
-            width=85,
-            height=32,
+            width=80,
+            height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["btn_secondary"],
             hover_color=COLORS["btn_danger"],
@@ -211,7 +315,23 @@ class PharmacyApplication(ctk.CTk):
             
         self.current_dashboard.grid(row=0, column=0, sticky="nsew")
 
+    def update_clock(self):
+        try:
+            now_str = datetime.now().strftime("%d %b %Y • %I:%M:%S %p")
+            if hasattr(self, "lbl_clock") and self.lbl_clock.winfo_exists():
+                self.lbl_clock.configure(text=f"🕒 {now_str}")
+                self.clock_job = self.after(1000, self.update_clock)
+        except Exception:
+            pass
+
     def logout(self):
+        if self.clock_job:
+            try:
+                self.after_cancel(self.clock_job)
+            except Exception:
+                pass
+            self.clock_job = None
+            
         if self.connector:
             self.connector.log_event("User Logout", f"{self.current_user['name']} signed out from terminal", level="INFO")
             self.connector.stop()
@@ -219,6 +339,11 @@ class PharmacyApplication(ctk.CTk):
         self.show_login_screen()
 
     def on_close(self):
+        if self.clock_job:
+            try:
+                self.after_cancel(self.clock_job)
+            except Exception:
+                pass
         if self.connector:
             self.connector.stop()
         self.destroy()
