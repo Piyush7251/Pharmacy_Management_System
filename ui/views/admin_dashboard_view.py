@@ -51,7 +51,7 @@ class AdminDashboardView(ctk.CTkFrame):
         
         lbl_title = ctk.CTkLabel(
             hdr,
-            text="👑 Admin Command Center — Enterprise Store Oversight & Analytics",
+            text="👑 Admin Dashboard (Store Overview & Staff)",
             font=FONTS["h2"],
             text_color=COLORS["warning"]
         )
@@ -62,7 +62,7 @@ class AdminDashboardView(ctk.CTkFrame):
         
         self.lbl_server_status = ctk.CTkLabel(
             right_box,
-            text="🟢 State Engine: Active (0ms sync)",
+            text="🟢 System Status: Active",
             font=FONTS["small_bold"],
             text_color=COLORS["clinical"]
         )
@@ -86,11 +86,11 @@ class AdminDashboardView(ctk.CTkFrame):
         kpi_frame.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
         kpi_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         
-        self.kpi_staff = self.create_kpi_card(kpi_frame, 0, "Online Staff", "0 Active", COLORS["clinical"])
-        self.kpi_sales = self.create_kpi_card(kpi_frame, 1, "Gross Sales", "₹ 0.00", COLORS["commerce"])
-        self.kpi_rx = self.create_kpi_card(kpi_frame, 2, "Pending Rx", "0 Pending", COLORS["warning"])
-        self.kpi_stock = self.create_kpi_card(kpi_frame, 3, "Low Stock", "0 Critical", COLORS["danger"])
-        self.kpi_deliv = self.create_kpi_card(kpi_frame, 4, "Active Routes", "0 En Route", COLORS["operations"])
+        self.kpi_staff = self.create_kpi_card(kpi_frame, 0, "Staff Online", "0 Active", COLORS["clinical"])
+        self.kpi_sales = self.create_kpi_card(kpi_frame, 1, "Total Sales", "₹ 0.00", COLORS["commerce"])
+        self.kpi_rx = self.create_kpi_card(kpi_frame, 2, "Prescriptions Waiting", "0 Pending", COLORS["warning"])
+        self.kpi_stock = self.create_kpi_card(kpi_frame, 3, "Low Stock Alert", "0 Critical", COLORS["danger"])
+        self.kpi_deliv = self.create_kpi_card(kpi_frame, 4, "Active Deliveries", "0 En Route", COLORS["operations"])
 
     def create_kpi_card(self, parent, col, title, value, color):
         c = ctk.CTkFrame(parent, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -116,10 +116,10 @@ class AdminDashboardView(ctk.CTkFrame):
         )
         self.tabview.grid(row=2, column=0, sticky="nsew", padx=16, pady=(0, 12))
         
-        self.tab_users = self.tabview.add("👥 Staff User Accounts & RBAC")
-        self.tab_presence = self.tabview.add("🟢 Live Online Presence")
-        self.tab_analytics = self.tabview.add("📊 Financial Reports & Z-Reconciliation")
-        self.tab_audit = self.tabview.add("📡 Live Audit Stream")
+        self.tab_users = self.tabview.add("👥 Staff Accounts")
+        self.tab_presence = self.tabview.add("🟢 Online Staff Terminals")
+        self.tab_analytics = self.tabview.add("📊 Sales Summary & Cash Report")
+        self.tab_audit = self.tabview.add("📡 System Activity Log")
         
         self.setup_users_tab()
         self.setup_presence_tab()
@@ -136,12 +136,12 @@ class AdminDashboardView(ctk.CTkFrame):
         act_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
         act_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(act_bar, text="Manage Staff Credentials, Roles & Terminal Access", font=FONTS["h3"], text_color=COLORS["text_main"])
+        lbl = ctk.CTkLabel(act_bar, text="Store Staff & Login Accounts", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.grid(row=0, column=0, sticky="w")
         
         btn_add = ctk.CTkButton(
             act_bar,
-            text="+ Create New User",
+            text="+ Create New Staff",
             height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["clinical"],
@@ -454,10 +454,10 @@ class AdminDashboardView(ctk.CTkFrame):
         top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
         top_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(top_bar, text="📊 Daily Z-Report Cash Reconciliation & Tax Audit", font=FONTS["h3"], text_color=COLORS["text_main"])
+        lbl = ctk.CTkLabel(top_bar, text="📊 Daily Cash Register & Sales Summary", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.grid(row=0, column=0, sticky="w")
         
-        btn_exp = ctk.CTkButton(top_bar, text="📑 Export Z-Report Ledger (CSV)", height=28, font=FONTS["small_bold"], fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", command=self.export_daily_ledger)
+        btn_exp = ctk.CTkButton(top_bar, text="📑 Export Sales Report (CSV)", height=28, font=FONTS["small_bold"], fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", command=self.export_daily_ledger)
         btn_exp.grid(row=0, column=1, sticky="e")
         
         self.analytics_scroll = ctk.CTkScrollableFrame(self.tab_analytics, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -483,21 +483,21 @@ class AdminDashboardView(ctk.CTkFrame):
         c1 = ctk.CTkFrame(self.analytics_scroll, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
         c1.pack(fill="x", pady=4, padx=4)
         
-        ctk.CTkLabel(c1, text="💵 Cash Drawer & Tender Reconciliation (Z-Report):", font=FONTS["body_bold"], text_color=COLORS["clinical"]).pack(anchor="w", padx=12, pady=(10, 4))
+        ctk.CTkLabel(c1, text="💵 Cash Drawer & Payment Summary:", font=FONTS["body_bold"], text_color=COLORS["clinical"]).pack(anchor="w", padx=12, pady=(10, 4))
         
-        reconcile_text = f"• Total Sales Volume: {len(invoices)} Invoices Processed\n• Total Gross Revenue: ₹ {total_revenue:,.2f}\n• Cash in Drawer: ₹ {cash_rev:,.2f}\n• Digital UPI / QR Volume: ₹ {upi_rev:,.2f}\n• Card Terminal Volume: ₹ {card_rev:,.2f}\n• GST Tax Liabilities: CGST (6%) ₹{total_gst/2:,.2f} | SGST (6%) ₹{total_gst/2:,.2f}"
+        reconcile_text = f"• Total Bills: {len(invoices)} Invoices Processed\n• Total Revenue: ₹ {total_revenue:,.2f}\n• Cash Received: ₹ {cash_rev:,.2f}\n• Online UPI / QR Payments: ₹ {upi_rev:,.2f}\n• Card Payments: ₹ {card_rev:,.2f}\n• Total GST Collected: ₹{total_gst:,.2f} (CGST: ₹{total_gst/2:,.2f} | SGST: ₹{total_gst/2:,.2f})"
         ctk.CTkLabel(c1, text=reconcile_text, font=FONTS["body"], text_color=COLORS["text_muted"], justify="left").pack(anchor="w", padx=12, pady=(0, 10))
         
         # Fast Moving vs Dead Stock Box
         c2 = ctk.CTkFrame(self.analytics_scroll, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
         c2.pack(fill="x", pady=6, padx=4)
         
-        ctk.CTkLabel(c2, text="📦 Inventory Velocity & Stock Reorder Alerts:", font=FONTS["body_bold"], text_color=COLORS["commerce"]).pack(anchor="w", padx=12, pady=(10, 4))
+        ctk.CTkLabel(c2, text="📦 Stock Health & Low-Stock Alerts:", font=FONTS["body_bold"], text_color=COLORS["commerce"]).pack(anchor="w", padx=12, pady=(10, 4))
         
         low_stk = [m["name"] for m in medicines if m.get("stock", 0) <= 20]
-        low_str = ", ".join(low_stk) if low_stk else "All items above reorder thresholds."
+        low_str = ", ".join(low_stk) if low_stk else "All items in stock."
         
-        inv_text = f"• Total Catalog SKUs: {len(medicines)} Medicines Monitored\n• Critical Low-Stock SKUs (≤ 20 units): {low_str}\n• Cold-Chain Integrity Compliance: 100% (Sensors operating in 2–8°C safe zone)\n• Expiring Batches in Next 180 Days: {sum(1 for m in medicines if m.get('days_to_expiry', 999) <= 180)} Batches"
+        inv_text = f"• Total Medicines in Catalog: {len(medicines)} items\n• Low-Stock Items (≤ 20 units): {low_str}\n• Refrigerator Safe Storage: Normal (2°C to 8°C)\n• Batches Expiring in Next 6 Months: {sum(1 for m in medicines if m.get('days_to_expiry', 999) <= 180)} items"
         ctk.CTkLabel(c2, text=inv_text, font=FONTS["body"], text_color=COLORS["text_muted"], justify="left").pack(anchor="w", padx=12, pady=(0, 10))
 
     def export_daily_ledger(self):
@@ -507,10 +507,10 @@ class AdminDashboardView(ctk.CTkFrame):
             return
             
         path = filedialog.asksaveasfilename(
-            title="Export Z-Report Ledger",
+            title="Export Sales Report",
             defaultextension=".csv",
             filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
-            initialfile="AegisPharm_ZReport_Sales.csv"
+            initialfile="AegisPharm_Daily_Sales.csv"
         )
         if path:
             fields = ["invoice_id", "timestamp", "patient_name", "cashier_name", "payment_method", "subtotal", "gst_amount", "total_amount"]
@@ -518,7 +518,7 @@ class AdminDashboardView(ctk.CTkFrame):
                 writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
                 writer.writeheader()
                 writer.writerows(invoices)
-            show_toast(self, "Z-Report Exported", f"Saved {len(invoices)} transactions to {path}.", "success")
+            show_toast(self, "Sales Exported", f"Saved {len(invoices)} transactions to {path}.", "success")
 
     # --- TAB 4: AUDIT STREAM ---
 
@@ -529,11 +529,11 @@ class AdminDashboardView(ctk.CTkFrame):
         filter_bar = ctk.CTkFrame(self.tab_audit, fg_color="transparent")
         filter_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
         
-        for flt in ["ALL", "INFO", "WARN", "CRITICAL"]:
+        for flt, label in [("ALL", "All Logs"), ("INFO", "Info"), ("WARN", "Warnings"), ("CRITICAL", "Alerts")]:
             ctk.CTkButton(
                 filter_bar,
-                text=flt if flt != "ALL" else "All Logs",
-                width=75,
+                text=label,
+                width=80,
                 height=26,
                 font=FONTS["small_bold"],
                 fg_color=COLORS["btn_secondary"],

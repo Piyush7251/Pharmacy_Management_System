@@ -49,13 +49,13 @@ class InventoryDashboardView(ctk.CTkFrame):
         hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 6))
         hdr.grid_columnconfigure(1, weight=1)
         
-        lbl_brand = ctk.CTkLabel(hdr, text="📦 Supply Chain & FEFO Inventory Hub", font=FONTS["h2"], text_color=COLORS["inventory"])
+        lbl_brand = ctk.CTkLabel(hdr, text="📦 Medicines Stock & Inventory", font=FONTS["h2"], text_color=COLORS["inventory"])
         lbl_brand.grid(row=0, column=0, padx=16, pady=10, sticky="w")
         
         right_box = ctk.CTkFrame(hdr, fg_color="transparent")
         right_box.grid(row=0, column=1, sticky="e", padx=16)
         
-        lbl_mgr = ctk.CTkLabel(right_box, text=f"Manager: {self.user_data['name']} | Cold-Chain: 4.2°C (Optimal)", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
+        lbl_mgr = ctk.CTkLabel(right_box, text=f"Manager: {self.user_data['name']} | ❄️ Fridge: 4.2°C (Normal)", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_mgr.pack(side="left", padx=(0, 10))
         
         btn_add_med = ctk.CTkButton(
@@ -83,10 +83,10 @@ class InventoryDashboardView(ctk.CTkFrame):
         )
         self.tabview.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 12))
         
-        self.tab_stock = self.tabview.add("📊 Multi-Batch Stock Ledger")
-        self.tab_grn = self.tabview.add("📦 GRN & Purchase Orders")
-        self.tab_cold = self.tabview.add("❄️ Cold-Chain IoT Monitor")
-        self.tab_suppliers = self.tabview.add("🏢 Suppliers Directory")
+        self.tab_stock = self.tabview.add("📊 Stock List & Batches")
+        self.tab_grn = self.tabview.add("📦 Supplier Orders (Stock In)")
+        self.tab_cold = self.tabview.add("❄️ Fridge Temperature (2-8°C)")
+        self.tab_suppliers = self.tabview.add("🏢 Medicine Suppliers")
         
         self.setup_stock_tab()
         self.setup_grn_tab()
@@ -105,7 +105,7 @@ class InventoryDashboardView(ctk.CTkFrame):
         
         self.search_ent = ctk.CTkEntry(
             filter_box,
-            placeholder_text="🔍 Search medicine, salt, batch, rack location...",
+            placeholder_text="🔍 Search by medicine name, salt, batch, or rack...",
             font=FONTS["body"],
             fg_color=COLORS["bg_input"],
             text_color=COLORS["text_main"],
@@ -118,11 +118,11 @@ class InventoryDashboardView(ctk.CTkFrame):
         btn_box = ctk.CTkFrame(filter_box, fg_color="transparent")
         btn_box.grid(row=0, column=1)
         
-        for f in [("All", "ALL"), ("⚠️ Low Stock", "LOW"), ("⏳ Expiring Soon", "EXP"), ("❄️ Cold Chain", "COLD")]:
+        for f in [("All Medicines", "ALL"), ("⚠️ Low Stock", "LOW"), ("⏳ Expiring Soon", "EXP"), ("❄️ Needs Fridge", "COLD")]:
             b = ctk.CTkButton(
                 btn_box,
                 text=f[0],
-                width=85,
+                width=95,
                 height=34,
                 font=FONTS["small_bold"],
                 fg_color=COLORS["btn_secondary"],
@@ -187,11 +187,11 @@ class InventoryDashboardView(ctk.CTkFrame):
         tot_cost = sum(m["cost_price"] * m["stock"] for m in items)
         tot_units = sum(m["stock"] for m in items)
         self.lbl_valuation.configure(
-            text=f"📊 Showing {len(items)} SKU Batches ({tot_units} units)  |  Retail Valuation (MRP): ₹ {tot_mrp:,.2f}  |  Cost Valuation: ₹ {tot_cost:,.2f}"
+            text=f"📊 Showing {len(items)} items ({tot_units} units in stock)  |  Selling Value (MRP): ₹{tot_mrp:,.2f}  |  Purchase Cost: ₹{tot_cost:,.2f}"
         )
 
         if not items:
-            ctk.CTkLabel(self.stock_scroll, text="No medicines matching filter criteria.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
+            ctk.CTkLabel(self.stock_scroll, text="No medicines matching search or filter.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
             return
 
         for med in items:
@@ -275,18 +275,18 @@ class InventoryDashboardView(ctk.CTkFrame):
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text=f"Stock Adjustment: {med['name']}", font=FONTS["h3"], text_color=COLORS["inventory"])
+        lbl = ctk.CTkLabel(win, text=f"Update Stock: {med['name']}", font=FONTS["h3"], text_color=COLORS["inventory"])
         lbl.pack(pady=(16, 4))
         
         lbl_cur = ctk.CTkLabel(win, text=f"Current Stock: {med['stock']} units (Batch: {med['batch']})", font=FONTS["body"], text_color=COLORS["text_main"])
         lbl_cur.pack(pady=4)
         
-        ent = ctk.CTkEntry(win, placeholder_text="Quantity delta (e.g. +50 or -10)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=280, height=36)
+        ent = ctk.CTkEntry(win, placeholder_text="Quantity change (e.g. +50 or -10)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=280, height=36)
         ent.pack(pady=8)
         ent.focus()
         
-        reason_opt = ctk.CTkOptionMenu(win, values=["Goods Receipt Note (GRN)", "Damage / Breakage", "Expiry Quarantine", "Physical Count Audit Correction"], width=280)
-        reason_opt.set("Physical Count Audit Correction")
+        reason_opt = ctk.CTkOptionMenu(win, values=["Stock Arrival / New Batch", "Damaged / Broken", "Expired Stock", "Count Correction"], width=280)
+        reason_opt.set("Count Correction")
         reason_opt.pack(pady=6)
         
         def save():
@@ -303,26 +303,26 @@ class InventoryDashboardView(ctk.CTkFrame):
                 self.render_stock()
                 show_toast(self, "Stock Updated", f"{med['name']} stock updated by {qty_delta:+d} units.", "success")
             except ValueError:
-                messagebox.showwarning("Invalid Input", "Enter valid integer delta.", parent=win)
+                messagebox.showwarning("Invalid Input", "Enter a valid number.", parent=win)
                 
-        ctk.CTkButton(win, text="Confirm Stock Adjustment", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(pady=16)
+        ctk.CTkButton(win, text="Confirm Stock Change", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(pady=16)
 
     def delete_medicine_item(self, med):
-        confirm = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete SKU {med['name']} (Batch {med['batch']})?")
+        confirm = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {med['name']} (Batch {med['batch']})?")
         if confirm:
             delete_medicine(med["id"])
             self.medicines = [m for m in self.medicines if m["id"] != med["id"]]
             self.render_stock()
-            show_toast(self, "SKU Removed", f"{med['name']} deleted from catalog.", "info")
+            show_toast(self, "Medicine Removed", f"{med['name']} deleted from stock list.", "info")
 
     def open_add_medicine_modal(self):
         win = ctk.CTkToplevel(self)
-        win.title("Add New Medicine to Catalog")
+        win.title("Add New Medicine to Stock")
         win.geometry("540x640")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl_head = ctk.CTkLabel(win, text="📦 Add Medicine SKU to FEFO Catalog", font=FONTS["h2"], text_color=COLORS["inventory"])
+        lbl_head = ctk.CTkLabel(win, text="📦 Add New Medicine to Stock", font=FONTS["h2"], text_color=COLORS["inventory"])
         lbl_head.pack(pady=(16, 8))
         
         form = ctk.CTkFrame(win, fg_color="transparent")
@@ -330,18 +330,18 @@ class InventoryDashboardView(ctk.CTkFrame):
         form.grid_columnconfigure(1, weight=1)
         
         fields = [
-            ("SKU ID:", "id", f"MED-00{len(self.medicines)+1}"),
+            ("Item ID:", "id", f"MED-00{len(self.medicines)+1}"),
             ("Medicine Name:", "name", "Dolo 650 Tablet"),
-            ("Generic / Salt:", "generic", "Paracetamol (650mg)"),
-            ("Category:", "category", "Pain / Antipyretic"),
+            ("Formula / Salt:", "generic", "Paracetamol (650mg)"),
+            ("Category:", "category", "Pain Relief / Fever"),
             ("Manufacturer:", "mfg", "Micro Labs"),
             ("Batch Number:", "batch", "DLO-992"),
             ("Expiry Date (YYYY-MM-DD):", "expiry", "2027-08-30"),
-            ("Current Stock:", "stock", "150"),
-            ("Unit (Strip/Vial/Pen):", "unit", "Strip (15 tabs)"),
-            ("MRP Price (₹):", "mrp", "34.50"),
-            ("Cost Price (₹):", "cost", "22.00"),
-            ("Rack Location:", "rack", "D-04-B")
+            ("Initial Stock:", "stock", "150"),
+            ("Packaging Unit:", "unit", "Strip (15 tabs)"),
+            ("Selling Price MRP (₹):", "mrp", "34.50"),
+            ("Purchase Cost (₹):", "cost", "22.00"),
+            ("Rack / Shelf:", "rack", "D-04-B")
         ]
         
         ents = {}
@@ -354,7 +354,7 @@ class InventoryDashboardView(ctk.CTkFrame):
             ent.insert(0, d_val)
             ents[key] = ent
             
-        chk_cold = ctk.CTkCheckBox(form, text="Cold-Chain Required (Store at 2-8°C in Dedicated Refrigerator)", font=FONTS["small_bold"], text_color=COLORS["clinical"])
+        chk_cold = ctk.CTkCheckBox(form, text="Requires Refrigerator Storage (2-8°C)", font=FONTS["small_bold"], text_color=COLORS["clinical"])
         chk_cold.grid(row=len(fields), column=0, columnspan=2, sticky="w", pady=8)
         
         def save_drug():
@@ -363,14 +363,14 @@ class InventoryDashboardView(ctk.CTkFrame):
             gen = ents["generic"].get().strip()
             
             if not m_id or not name:
-                messagebox.showwarning("Incomplete", "SKU ID and Name are required.", parent=win)
+                messagebox.showwarning("Incomplete", "Item ID and Medicine Name are required.", parent=win)
                 return
             try:
                 stk = int(ents["stock"].get().strip() or "0")
                 mrp_v = float(ents["mrp"].get().strip() or "0.0")
                 cost_v = float(ents["cost"].get().strip() or "0.0")
             except ValueError:
-                messagebox.showwarning("Invalid Numbers", "Check stock and pricing numbers.", parent=win)
+                messagebox.showwarning("Invalid Numbers", "Check stock and price numbers.", parent=win)
                 return
                 
             med_obj = {
@@ -396,11 +396,11 @@ class InventoryDashboardView(ctk.CTkFrame):
             self.medicines.append(med_obj)
             win.destroy()
             self.render_stock()
-            show_toast(self, "Medicine Added", f"{name} added to catalog with {stk} units.", "success")
+            show_toast(self, "Medicine Added", f"{name} added to stock ({stk} units).", "success")
             
-        ctk.CTkButton(win, text="Save Medicine to Catalog", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save_drug).pack(fill="x", padx=24, pady=(6, 16))
+        ctk.CTkButton(win, text="Save Medicine to Stock", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save_drug).pack(fill="x", padx=24, pady=(6, 16))
 
-    # --- TAB 2: GRN & PURCHASE ORDERS ---
+    # --- TAB 2: SUPPLIER ORDERS ---
 
     def setup_grn_tab(self):
         self.tab_grn.grid_columnconfigure(0, weight=1)
@@ -410,10 +410,10 @@ class InventoryDashboardView(ctk.CTkFrame):
         top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
         top_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(top_bar, text="📦 Goods Receipt Notes (GRN) & Procurement Inwarding", font=FONTS["h3"], text_color=COLORS["text_main"])
+        lbl = ctk.CTkLabel(top_bar, text="📦 Supplier Purchase Orders & Stock Intake", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.grid(row=0, column=0, sticky="w")
         
-        btn_po = ctk.CTkButton(top_bar, text="+ Inward Goods Receipt (GRN)", height=28, font=FONTS["small_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=self.open_inward_grn_modal)
+        btn_po = ctk.CTkButton(top_bar, text="+ Receive Stock from Supplier", height=28, font=FONTS["small_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=self.open_inward_grn_modal)
         btn_po.grid(row=0, column=1, sticky="e")
         
         self.grn_scroll = ctk.CTkScrollableFrame(self.tab_grn, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -442,18 +442,18 @@ class InventoryDashboardView(ctk.CTkFrame):
             lbl_st.grid(row=0, column=1, sticky="e")
             
             items_str = ", ".join(f"{it.get('medicine', 'Item')} (Qty: {it.get('qty', 10)})" for it in po.get("items", []))
-            info_txt = f"📅 Date: {po['date']} | Total PO Value: ₹{po['total_amount']:.2f} | Created by: {po['created_by']}\n📦 Inwarded Items: {items_str}"
+            info_txt = f"📅 Date: {po['date']} | Total Value: ₹{po['total_amount']:.2f} | Received by: {po['created_by']}\n📦 Medicines Received: {items_str}"
             lbl_info = ctk.CTkLabel(c, text=info_txt, font=FONTS["small"], text_color=COLORS["text_muted"], justify="left")
             lbl_info.grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
 
     def open_inward_grn_modal(self):
         win = ctk.CTkToplevel(self)
-        win.title("Process Goods Receipt Note (GRN)")
+        win.title("Receive Stock from Supplier")
         win.geometry("500x460")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="Inward Goods Receipt (GRN)", font=FONTS["h2"], text_color=COLORS["inventory"])
+        lbl = ctk.CTkLabel(win, text="Receive Stock from Supplier", font=FONTS["h2"], text_color=COLORS["inventory"])
         lbl.pack(pady=(16, 8))
         
         suppliers = get_all_suppliers()
@@ -462,7 +462,7 @@ class InventoryDashboardView(ctk.CTkFrame):
         opt_s = ctk.CTkOptionMenu(win, values=s_names, width=340)
         opt_s.pack(pady=6)
         
-        ent_po = ctk.CTkEntry(win, placeholder_text="Supplier Invoice / PO No (e.g. PO-2026-904)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=340)
+        ent_po = ctk.CTkEntry(win, placeholder_text="Supplier Bill / Order No (e.g. PO-2026-904)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=340)
         ent_po.pack(pady=6)
         ent_po.insert(0, f"PO-2026-{datetime.now().strftime('%M%S')}")
         
@@ -470,11 +470,11 @@ class InventoryDashboardView(ctk.CTkFrame):
         opt_med = ctk.CTkOptionMenu(win, values=med_names, width=340)
         opt_med.pack(pady=6)
         
-        ent_qty = ctk.CTkEntry(win, placeholder_text="Total Quantity Inwarded (e.g. 100)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=340)
+        ent_qty = ctk.CTkEntry(win, placeholder_text="Quantity Received (e.g. 100)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=340)
         ent_qty.pack(pady=6)
         ent_qty.insert(0, "100")
         
-        ent_rate = ctk.CTkEntry(win, placeholder_text="Unit Cost Price (₹)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=340)
+        ent_rate = ctk.CTkEntry(win, placeholder_text="Unit Purchase Price (₹)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=340)
         ent_rate.pack(pady=6)
         ent_rate.insert(0, "145.00")
         
@@ -493,7 +493,7 @@ class InventoryDashboardView(ctk.CTkFrame):
                 "po_id": po_id,
                 "date": datetime.now().strftime("%Y-%m-%d"),
                 "supplier_name": opt_s.get(),
-                "status": "Goods Received & Inwarded",
+                "status": "Received & Added to Stock",
                 "items": [{"medicine": selected_med, "qty": qty_val, "rate": rate_val}],
                 "total_amount": qty_val * rate_val,
                 "received_date": datetime.now().strftime("%Y-%m-%d"),
@@ -510,11 +510,11 @@ class InventoryDashboardView(ctk.CTkFrame):
             win.destroy()
             self.render_grn_orders()
             self.render_stock()
-            show_toast(self, "GRN Inwarded", f"{po_id} inwarded +{qty_val} units of {selected_med}.", "success")
+            show_toast(self, "Stock Received", f"{po_id}: Added +{qty_val} units of {selected_med}.", "success")
 
-        ctk.CTkButton(win, text="Confirm Inwarding to Stock", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(pady=16)
+        ctk.CTkButton(win, text="Add to Stock", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(pady=16)
 
-    # --- TAB 3: COLD-CHAIN IOT MONITOR ---
+    # --- TAB 3: FRIDGE TEMPERATURE MONITOR ---
 
     def setup_cold_tab(self):
         self.tab_cold.grid_columnconfigure(0, weight=1)
@@ -528,15 +528,15 @@ class InventoryDashboardView(ctk.CTkFrame):
         left_c = ctk.CTkFrame(ctrl_card, fg_color="transparent")
         left_c.grid(row=0, column=0, padx=14, pady=8, sticky="w")
         
-        ctk.CTkLabel(left_c, text="❄️ Cold-Chain Refrigerator #FRIDGE-01 (Vaccines & Insulin)", font=FONTS["body_bold"], text_color=COLORS["clinical"]).pack(anchor="w")
-        ctk.CTkLabel(left_c, text="Sensor IoT Telemetry Stream: 2-8°C Continuous Regulation", font=FONTS["small"], text_color=COLORS["text_dim"]).pack(anchor="w")
+        ctk.CTkLabel(left_c, text="❄️ Medicine Refrigerator #01 (Vaccines & Insulin)", font=FONTS["body_bold"], text_color=COLORS["clinical"]).pack(anchor="w")
+        ctk.CTkLabel(left_c, text="Temperature Sensor: Safe Range is 2°C to 8°C", font=FONTS["small"], text_color=COLORS["text_dim"]).pack(anchor="w")
         
         right_c = ctk.CTkFrame(ctrl_card, fg_color="transparent")
         right_c.grid(row=0, column=1, sticky="e", padx=14)
         
         btn_spike = ctk.CTkButton(
             right_c,
-            text="🚨 Simulate Temp Spike (9.5°C)",
+            text="⚠️ Test High Temp Alarm (9.5°C)",
             height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["btn_danger"],
@@ -548,7 +548,7 @@ class InventoryDashboardView(ctk.CTkFrame):
         
         btn_norm = ctk.CTkButton(
             right_c,
-            text="❄️ Restore Cooling (4.2°C)",
+            text="❄️ Reset to Normal (4.2°C)",
             height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["clinical"],
@@ -573,14 +573,14 @@ class InventoryDashboardView(ctk.CTkFrame):
         logs = get_temperature_logs(20)
         self.chart_widget.update_logs(logs)
         self.render_temp_logs()
-        show_toast(self, "🚨 Cold-Chain Alarm!", "Temperature breached 8°C! Quarantine protocol triggered.", "danger")
+        show_toast(self, "🚨 Temperature Warning!", "Fridge reached 9.5°C! Above safe limit of 8°C.", "danger")
 
     def reset_temp(self):
         add_temperature_log("SENSOR-FRIDGE-01", 4.2, "Optimal (2-8°C)")
         logs = get_temperature_logs(20)
         self.chart_widget.update_logs(logs)
         self.render_temp_logs()
-        show_toast(self, "Cooling Normalized", "Refrigerator restored to 4.2°C compliant band.", "success")
+        show_toast(self, "Normal Temperature", "Fridge restored to safe 4.2°C.", "success")
 
     def render_temp_logs(self):
         for w in self.temp_scroll.winfo_children():
@@ -599,7 +599,7 @@ class InventoryDashboardView(ctk.CTkFrame):
             lbl_time = ctk.CTkLabel(c, text=f"🕒 {lg['timestamp']}", font=FONTS["small"], text_color=COLORS["text_dim"])
             lbl_time.grid(row=0, column=1, sticky="e", padx=10)
 
-    # --- TAB 4: SUPPLIERS DIRECTORY ---
+    # --- TAB 4: MEDICINE SUPPLIERS ---
 
     def setup_suppliers_tab(self):
         self.tab_suppliers.grid_columnconfigure(0, weight=1)
@@ -609,15 +609,15 @@ class InventoryDashboardView(ctk.CTkFrame):
         top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 4))
         top_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(top_bar, text="🏢 Approved Pharmaceutical Suppliers & Distributors", font=FONTS["h3"], text_color=COLORS["text_main"])
+        lbl = ctk.CTkLabel(top_bar, text="🏢 Registered Medicine Suppliers & Distributors", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.grid(row=0, column=0, sticky="w")
         
-        btn_add_s = ctk.CTkButton(top_bar, text="+ Register Supplier", height=28, font=FONTS["small_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=self.open_add_supplier_modal)
+        btn_add_s = ctk.CTkButton(top_bar, text="+ Add Supplier", height=28, font=FONTS["small_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=self.open_add_supplier_modal)
         btn_add_s.grid(row=0, column=1, sticky="e")
         
         self.ent_sup_search = ctk.CTkEntry(
             self.tab_suppliers,
-            placeholder_text="🔍 Search suppliers by distributor name, contact, or GSTIN...",
+            placeholder_text="🔍 Search suppliers by name, contact, or GST...",
             font=FONTS["small"],
             fg_color=COLORS["bg_input"],
             text_color=COLORS["text_main"],
@@ -659,12 +659,12 @@ class InventoryDashboardView(ctk.CTkFrame):
 
     def open_add_supplier_modal(self):
         win = ctk.CTkToplevel(self)
-        win.title("Register Pharmaceutical Supplier")
+        win.title("Add Medicine Supplier")
         win.geometry("480x480")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="Register Supplier Directory Entry", font=FONTS["h2"], text_color=COLORS["inventory"])
+        lbl = ctk.CTkLabel(win, text="Add New Medicine Supplier", font=FONTS["h2"], text_color=COLORS["inventory"])
         lbl.pack(pady=(16, 10))
         
         form = ctk.CTkFrame(win, fg_color="transparent")
@@ -676,8 +676,8 @@ class InventoryDashboardView(ctk.CTkFrame):
             ("Contact Person:", "contact", "Manish Joshi"),
             ("Phone Number:", "phone", "+91 98220 99881"),
             ("Email Address:", "email", "orders@sunrisepharma.com"),
-            ("GSTIN Tax ID:", "gstin", "27AABCS8899D1Z4"),
-            ("Address / Hub:", "address", "Unit 12, Logistic Hub, Bhiwandi")
+            ("GST Number:", "gstin", "27AABCS8899D1Z4"),
+            ("Warehouse Address:", "address", "Unit 12, Logistic Hub, Bhiwandi")
         ]
         ents = {}
         for idx, (label, key, val) in enumerate(fields):
@@ -706,11 +706,11 @@ class InventoryDashboardView(ctk.CTkFrame):
                 conn.close()
                 win.destroy()
                 self.render_suppliers()
-                show_toast(self, "Supplier Registered", f"{name} ({s_id}) added to directory.", "success")
+                show_toast(self, "Supplier Registered", f"{name} ({s_id}) added to suppliers.", "success")
             except Exception as e:
                 messagebox.showerror("Error", str(e), parent=win)
                 
-        ctk.CTkButton(win, text="Save Supplier Entry", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(fill="x", padx=24, pady=16)
+        ctk.CTkButton(win, text="Save Supplier", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(fill="x", padx=24, pady=16)
 
     def load_all_data(self):
         self.medicines = get_all_medicines()

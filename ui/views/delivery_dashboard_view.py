@@ -38,18 +38,18 @@ class DeliveryDashboardView(ctk.CTkFrame):
         hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 6))
         hdr.grid_columnconfigure(1, weight=1)
         
-        lbl_brand = ctk.CTkLabel(hdr, text="🛵 Fulfilment & Delivery Logistics Dispatch", font=FONTS["h2"], text_color=COLORS["operations"])
+        lbl_brand = ctk.CTkLabel(hdr, text="🛵 Home Delivery Orders", font=FONTS["h2"], text_color=COLORS["operations"])
         lbl_brand.grid(row=0, column=0, padx=16, pady=10, sticky="w")
         
         right_box = ctk.CTkFrame(hdr, fg_color="transparent")
         right_box.grid(row=0, column=1, sticky="e", padx=16)
         
-        lbl_agent = ctk.CTkLabel(right_box, text=f"Rider: {self.user_data['name']} (EV-Route #14)", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
+        lbl_agent = ctk.CTkLabel(right_box, text=f"Rider: {self.user_data['name']}", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_agent.pack(side="left", padx=(0, 10))
         
         btn_add = ctk.CTkButton(
             right_box,
-            text="+ Create Delivery Task",
+            text="+ Add Delivery Order",
             height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["operations"],
@@ -64,10 +64,10 @@ class DeliveryDashboardView(ctk.CTkFrame):
         m_frame.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
         m_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
         
-        self.m_total = self.create_metric_box(m_frame, 0, "Total Assigned", "0 Orders", COLORS["text_main"])
-        self.m_active = self.create_metric_box(m_frame, 1, "In Transit / Out for Delivery", "0 En Route", COLORS["operations"])
-        self.m_delivered = self.create_metric_box(m_frame, 2, "Successfully Delivered", "0 Completed", COLORS["clinical"])
-        self.m_cold = self.create_metric_box(m_frame, 3, "Cold-Chain Insulated Packs", "0 Monitored", COLORS["commerce"])
+        self.m_total = self.create_metric_box(m_frame, 0, "Total Orders", "0 Orders", COLORS["text_main"])
+        self.m_active = self.create_metric_box(m_frame, 1, "On the Way", "0 En Route", COLORS["operations"])
+        self.m_delivered = self.create_metric_box(m_frame, 2, "Delivered", "0 Completed", COLORS["clinical"])
+        self.m_cold = self.create_metric_box(m_frame, 3, "Cold Bag Orders", "0 Monitored", COLORS["commerce"])
 
     def create_metric_box(self, parent, col, title, value, color):
         c = ctk.CTkFrame(parent, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -94,7 +94,7 @@ class DeliveryDashboardView(ctk.CTkFrame):
         filter_buttons = ctk.CTkFrame(bar, fg_color="transparent")
         filter_buttons.pack(side="left")
         
-        for f in [("All Orders", "ALL"), ("En Route", "Out for Delivery"), ("Packaging", "Packaging & Verification"), ("Delivered", "Delivered (OTP Verified)")]:
+        for f in [("All Orders", "ALL"), ("On the Way", "Out for Delivery"), ("Packing", "Packaging & Verification"), ("Delivered", "Delivered (OTP Verified)")]:
             b = ctk.CTkButton(
                 filter_buttons,
                 text=f[0],
@@ -219,7 +219,7 @@ class DeliveryDashboardView(ctk.CTkFrame):
             if "Packaging" in d["status"]:
                 btn_dispatch = ctk.CTkButton(
                     btn_box,
-                    text="🚀 Mark Out for Delivery",
+                    text="🚀 Send Out for Delivery",
                     height=26,
                     font=FONTS["small_bold"],
                     fg_color=COLORS["operations"],
@@ -232,7 +232,7 @@ class DeliveryDashboardView(ctk.CTkFrame):
             if "Delivered" not in d["status"]:
                 btn_pod = ctk.CTkButton(
                     btn_box,
-                    text="🔑 Verify Customer OTP (e-POD)",
+                    text="🔑 Enter Customer OTP to Complete",
                     height=26,
                     font=FONTS["small_bold"],
                     fg_color=COLORS["clinical"],
@@ -249,20 +249,20 @@ class DeliveryDashboardView(ctk.CTkFrame):
             self.connector.log_event("Dispatch Updated", f"Order {order['order_id']} dispatched on route", level="INFO")
             self.connector.update_action(f"Dispatched {order['order_id']}")
         self.render_deliveries()
-        show_toast(self, "Dispatched", f"{order['order_id']} marked as Out for Delivery.", "info")
+        show_toast(self, "On the Way", f"{order['order_id']} marked as on the way.", "info")
 
     def open_otp_modal(self, order):
         win = ctk.CTkToplevel(self)
-        win.title(f"Delivery Confirmation — {order['order_id']}")
+        win.title(f"Complete Delivery — {order['order_id']}")
         win.geometry("420x280")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="Digital Proof of Delivery (e-POD)", font=FONTS["h3"], text_color=COLORS["operations"])
+        lbl = ctk.CTkLabel(win, text="Confirm Delivery with Customer OTP", font=FONTS["h3"], text_color=COLORS["operations"])
         lbl.pack(pady=(16, 4))
         
         expected_otp = str(order.get("otp", "4821"))
-        lbl_sub = ctk.CTkLabel(win, text=f"Order: {order['order_id']} ({order['patient_name']})\nEnter customer 4-digit verification code:\n(Customer OTP: {expected_otp})", font=FONTS["small"], text_color=COLORS["text_muted"], justify="center")
+        lbl_sub = ctk.CTkLabel(win, text=f"Order: {order['order_id']} ({order['patient_name']})\nEnter the 4-digit code provided by customer:\n(Customer OTP: {expected_otp})", font=FONTS["small"], text_color=COLORS["text_muted"], justify="center")
         lbl_sub.pack(pady=4)
         
         ent_otp = ctk.CTkEntry(win, placeholder_text="4-Digit Code", font=("Segoe UI", 16, "bold"), width=160, height=36, justify="center")
@@ -279,24 +279,24 @@ class DeliveryDashboardView(ctk.CTkFrame):
             order["status"] = "Delivered (OTP Verified)"
             
             if self.connector:
-                self.connector.log_event("Order Delivered", f"Completed e-POD for {order['order_id']} to {order['patient_name']}", level="INFO")
+                self.connector.log_event("Order Delivered", f"Completed delivery for {order['order_id']} to {order['patient_name']}", level="INFO")
                 self.connector.update_action(f"Delivered {order['order_id']}")
                 
             win.destroy()
             self.render_deliveries()
-            show_toast(self, "Delivery Completed", f"{order['order_id']} successfully confirmed via OTP e-POD.", "success")
+            show_toast(self, "Delivery Completed", f"{order['order_id']} successfully confirmed and delivered.", "success")
 
-        btn_c = ctk.CTkButton(win, text="Confirm & Finalize Delivery", height=38, font=FONTS["body_bold"], fg_color=COLORS["operations"], hover_color=COLORS["operations_hover"], text_color="#FFFFFF", command=confirm)
+        btn_c = ctk.CTkButton(win, text="Confirm Delivery", height=38, font=FONTS["body_bold"], fg_color=COLORS["operations"], hover_color=COLORS["operations_hover"], text_color="#FFFFFF", command=confirm)
         btn_c.pack(fill="x", padx=30, pady=12)
 
     def open_create_delivery_modal(self):
         win = ctk.CTkToplevel(self)
-        win.title("Create Delivery Dispatch Task")
+        win.title("Create Delivery Order")
         win.geometry("500x520")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="New Delivery Dispatch Task", font=FONTS["h2"], text_color=COLORS["operations"])
+        lbl = ctk.CTkLabel(win, text="New Delivery Order", font=FONTS["h2"], text_color=COLORS["operations"])
         lbl.pack(pady=(16, 8))
         
         form = ctk.CTkFrame(win, fg_color="transparent")
@@ -305,11 +305,11 @@ class DeliveryDashboardView(ctk.CTkFrame):
         
         f_list = [
             ("Order ID:", "id", f"ORD-2026-{100 + len(self.deliveries) + 1}"),
-            ("Patient Name:", "name", "Sunil Deshmukh"),
+            ("Customer Name:", "name", "Sunil Deshmukh"),
             ("Delivery Address:", "addr", "Flat 402, Green Glen Heights, Sector 14, Navi Mumbai"),
             ("Phone Number:", "phone", "+91 98200 44556"),
-            ("Order Amount (₹):", "amt", "750.00"),
-            ("Time Slot:", "slot", "15:00 - 17:00")
+            ("Bill Amount (₹):", "amt", "750.00"),
+            ("Delivery Time Slot:", "slot", "15:00 - 17:00")
         ]
         
         ents = {}
@@ -320,7 +320,7 @@ class DeliveryDashboardView(ctk.CTkFrame):
             ent.insert(0, val)
             ents[key] = ent
             
-        chk_cold = ctk.CTkCheckBox(form, text="❄️ Insulated Cold-Bag Required (2-8°C)", font=FONTS["small_bold"], text_color=COLORS["clinical"])
+        chk_cold = ctk.CTkCheckBox(form, text="❄️ Requires Cold-Bag / Ice Pack (2-8°C)", font=FONTS["small_bold"], text_color=COLORS["clinical"])
         chk_cold.grid(row=len(f_list), column=1, sticky="w", pady=6)
         
         def save():
@@ -354,6 +354,6 @@ class DeliveryDashboardView(ctk.CTkFrame):
             self.deliveries.insert(0, deliv_obj)
             win.destroy()
             self.render_deliveries()
-            show_toast(self, "Task Created", f"{o_id} dispatched to route board.", "success")
+            show_toast(self, "Order Added", f"{o_id} scheduled for delivery.", "success")
 
-        ctk.CTkButton(win, text="Create Dispatch Order", height=38, font=FONTS["body_bold"], fg_color=COLORS["operations"], hover_color=COLORS["operations_hover"], text_color="#FFFFFF", command=save).pack(fill="x", padx=24, pady=16)
+        ctk.CTkButton(win, text="Save Delivery Order", height=38, font=FONTS["body_bold"], fg_color=COLORS["operations"], hover_color=COLORS["operations_hover"], text_color="#FFFFFF", command=save).pack(fill="x", padx=24, pady=16)

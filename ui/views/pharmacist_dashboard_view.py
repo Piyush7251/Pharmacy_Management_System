@@ -52,18 +52,18 @@ class PharmacistDashboardView(ctk.CTkFrame):
         hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 6))
         hdr.grid_columnconfigure(1, weight=1)
         
-        lbl_brand = ctk.CTkLabel(hdr, text="🩺 Pharmacist Clinical Station (eRx • CDSS • NDPS • Refills)", font=FONTS["h2"], text_color=COLORS["clinical"])
+        lbl_brand = ctk.CTkLabel(hdr, text="🩺 Pharmacist Station (Prescriptions & Patient Safety)", font=FONTS["h2"], text_color=COLORS["clinical"])
         lbl_brand.grid(row=0, column=0, padx=16, pady=10, sticky="w")
         
         right_box = ctk.CTkFrame(hdr, fg_color="transparent")
         right_box.grid(row=0, column=1, sticky="e", padx=16)
         
-        lbl_staff = ctk.CTkLabel(right_box, text=f"Pharmacist: {self.user_data['name']} (Reg #{self.user_data.get('id', 'PH-MH-44102')})", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
+        lbl_staff = ctk.CTkLabel(right_box, text=f"Pharmacist: {self.user_data['name']}", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_staff.pack(side="left", padx=(0, 10))
         
         btn_new_rx = ctk.CTkButton(
             right_box,
-            text="+ Add New e-Prescription",
+            text="+ Add Prescription",
             height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["clinical"],
@@ -86,17 +86,17 @@ class PharmacistDashboardView(ctk.CTkFrame):
         )
         self.tabview.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 12))
         
-        self.tab_rx = self.tabview.add("📥 eRx Queue & CDSS Safety")
-        self.tab_narcotic = self.tabview.add("🚨 Schedule X / NDPS Narcotic Register")
-        self.tab_refills = self.tabview.add("🔄 Chronic Refill Adherence")
-        self.tab_patients = self.tabview.add("👤 Patient EHR & Allergies")
+        self.tab_rx = self.tabview.add("📥 Doctor Prescriptions")
+        self.tab_narcotic = self.tabview.add("🚨 Controlled Drugs Register")
+        self.tab_refills = self.tabview.add("🔄 Patient Monthly Refills")
+        self.tab_patients = self.tabview.add("👤 Patient Records & Allergies")
         
         self.setup_rx_tab()
         self.setup_narcotic_tab()
         self.setup_refills_tab()
         self.setup_patients_tab()
 
-    # --- TAB 1: PRESCRIPTION QUEUE & CDSS ---
+    # --- TAB 1: PRESCRIPTION QUEUE & SAFETY CHECK ---
 
     def setup_rx_tab(self):
         self.tab_rx.grid_columnconfigure(0, weight=4)
@@ -107,11 +107,11 @@ class PharmacistDashboardView(ctk.CTkFrame):
         filter_row = ctk.CTkFrame(self.tab_rx, fg_color="transparent")
         filter_row.grid(row=0, column=0, sticky="ew", padx=(8, 4), pady=(6, 2))
         
-        for st in [("All", "ALL"), ("Pending", "Verification Required"), ("Approved", "Verified & Approved")]:
+        for st in [("All", "ALL"), ("Pending Review", "Verification Required"), ("Approved", "Verified & Approved")]:
             b = ctk.CTkButton(
                 filter_row,
                 text=st[0],
-                width=65,
+                width=90,
                 height=26,
                 font=FONTS["small_bold"],
                 fg_color=COLORS["btn_secondary"],
@@ -138,24 +138,24 @@ class PharmacistDashboardView(ctk.CTkFrame):
         self.rx_scroll.grid(row=2, column=0, sticky="nsew", padx=(8, 4), pady=(0, 8))
         self.rx_scroll.grid_columnconfigure(0, weight=1)
         
-        # Right Panel: Detailed Clinical Review & CDSS Safety Check
+        # Right Panel: Detailed Review & Safety Check
         right = ctk.CTkFrame(self.tab_rx, fg_color=COLORS["bg_surface_alt"], corner_radius=10, border_width=1, border_color=COLORS["border"])
         right.grid(row=0, column=1, rowspan=3, sticky="nsew", padx=(4, 8), pady=(6, 8))
         right.grid_columnconfigure(0, weight=1)
         right.grid_rowconfigure(3, weight=1)
         
         # Header Info
-        self.lbl_rx_header = ctk.CTkLabel(right, text="Select Prescription from Queue", font=FONTS["h2"], text_color=COLORS["text_main"])
+        self.lbl_rx_header = ctk.CTkLabel(right, text="Select a prescription to review details", font=FONTS["h2"], text_color=COLORS["text_main"])
         self.lbl_rx_header.grid(row=0, column=0, sticky="w", padx=16, pady=(12, 2))
         
-        self.lbl_doc_info = ctk.CTkLabel(right, text="Doctor & Hospital Meta", font=FONTS["body"], text_color=COLORS["text_muted"])
+        self.lbl_doc_info = ctk.CTkLabel(right, text="Doctor & Clinic Details", font=FONTS["body"], text_color=COLORS["text_muted"])
         self.lbl_doc_info.grid(row=1, column=0, sticky="w", padx=16, pady=(0, 6))
         
-        # CDSS Safety Alert Banner
+        # Medicine Safety & Allergy Alert Banner
         self.cdss_banner = ctk.CTkFrame(right, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
         self.cdss_banner.grid(row=2, column=0, sticky="ew", padx=16, pady=(0, 8))
         
-        self.lbl_cdss = ctk.CTkLabel(self.cdss_banner, text="🛡️ CDSS Clinical Safety Engine: Idle", font=FONTS["body_bold"], wraplength=520, justify="left")
+        self.lbl_cdss = ctk.CTkLabel(self.cdss_banner, text="🛡️ Medicine Safety & Allergy Check: Waiting for selection", font=FONTS["body_bold"], wraplength=520, justify="left")
         self.lbl_cdss.pack(fill="x", padx=12, pady=8)
         
         # Prescribed Items Scroll
@@ -168,16 +168,16 @@ class PharmacistDashboardView(ctk.CTkFrame):
         act_box.grid(row=4, column=0, sticky="ew", padx=16, pady=(0, 10))
         act_box.grid_columnconfigure((0, 1, 2, 3), weight=1)
         
-        btn_appr = ctk.CTkButton(act_box, text="✅ Approve to POS", height=38, fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.approve_rx)
+        btn_appr = ctk.CTkButton(act_box, text="✅ Approve for Billing", height=38, fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.approve_rx)
         btn_appr.grid(row=0, column=0, sticky="ew", padx=(0, 2))
         
-        btn_slip = ctk.CTkButton(act_box, text="🖨️ Dispense Slip", height=38, fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.show_dispense_slip)
+        btn_slip = ctk.CTkButton(act_box, text="🖨️ View Doctor Slip", height=38, fg_color=COLORS["commerce"], hover_color=COLORS["commerce_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.show_dispense_slip)
         btn_slip.grid(row=0, column=1, sticky="ew", padx=2)
         
-        btn_sign = ctk.CTkButton(act_box, text="🚨 Schedule X Sign", height=38, fg_color=COLORS["schedule_x"], hover_color="#BE185D", text_color="#FFFFFF", font=FONTS["body_bold"], command=self.open_double_sign_modal)
+        btn_sign = ctk.CTkButton(act_box, text="🚨 Special Drug Sign-off", height=38, fg_color=COLORS["schedule_x"], hover_color="#BE185D", text_color="#FFFFFF", font=FONTS["body_bold"], command=self.open_double_sign_modal)
         btn_sign.grid(row=0, column=2, sticky="ew", padx=2)
         
-        btn_rej = ctk.CTkButton(act_box, text="❌ Reject Flag", height=38, fg_color=COLORS["btn_danger"], hover_color=COLORS["btn_danger_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.reject_rx)
+        btn_rej = ctk.CTkButton(act_box, text="❌ Reject with Note", height=38, fg_color=COLORS["btn_danger"], hover_color=COLORS["btn_danger_hover"], text_color="#FFFFFF", font=FONTS["body_bold"], command=self.reject_rx)
         btn_rej.grid(row=0, column=3, sticky="ew", padx=(2, 0))
 
     def load_all_data(self):
@@ -278,12 +278,12 @@ class PharmacistDashboardView(ctk.CTkFrame):
                 for it in rx.get("items", []):
                     med_name = it["medicine"].lower()
                     if "penicillin" in al.lower() and ("augmentin" in med_name or "amoxicillin" in med_name):
-                        warnings.append(f"🚨 CRITICAL ALLERGY: Patient {rx['patient_name']} is allergic to PENICILLIN! Prescribed {it['medicine']} contains Amoxicillin.")
+                        warnings.append(f"⚠️ ALLERGY WARNING: Patient {rx['patient_name']} is allergic to PENICILLIN! Prescribed {it['medicine']} contains Amoxicillin.")
                     if "aspirin" in al.lower() and ("nsaid" in med_name or "aspirin" in med_name or "combiflam" in med_name):
-                        warnings.append(f"🚨 CRITICAL ALLERGY: Patient allergic to NSAIDs/Aspirin! Flagged {it['medicine']}.")
+                        warnings.append(f"⚠️ ALLERGY WARNING: Patient is allergic to NSAIDs/Aspirin! Flagged {it['medicine']}.")
 
         if "allergic to Penicillin" in notes and not any("PENICILLIN" in w for w in warnings):
-            warnings.append(f"🚨 ALLERGY CONTRAINDICATION ALERT: {notes}")
+            warnings.append(f"⚠️ ALLERGY WARNING: {notes}")
             
         # 2. Multi-Drug Interaction Checking
         rx_med_names = [it["medicine"].lower() for it in rx.get("items", [])]
@@ -293,25 +293,25 @@ class PharmacistDashboardView(ctk.CTkFrame):
                 for target_med in rx_med_names:
                     for inter in interactions:
                         if inter.lower() in target_med:
-                            warnings.append(f"⚠️ DRUG INTERACTION: {m['name']} interacts with {inter} prescribed in this regimen!")
+                            warnings.append(f"⚠️ DRUG INTERACTION: {m['name']} may react with {inter} in this prescription.")
 
-        # 3. Schedule X / Narcotic Check
+        # 3. Schedule X / Controlled Drug Check
         if any("Alprax" in it["medicine"] or "Schedule X" in str(it) for it in rx.get("items", [])) or "Schedule X" in notes:
-            warnings.append("⚠️ NARCOTIC / SCHEDULE X DETECTED: Mandatory Pharmacist Double-Signature & Doctor DMC verification required.")
+            warnings.append("⚠️ CONTROLLED MEDICINE: Requires doctor reg number and pharmacist sign-off PIN.")
 
         if warnings:
             self.cdss_banner.configure(fg_color=COLORS["danger_bg"], border_color=COLORS["danger"])
             self.lbl_cdss.configure(text="\n".join(warnings), text_color=COLORS["danger"])
         else:
             self.cdss_banner.configure(fg_color=COLORS["success_bg"], border_color=COLORS["clinical"])
-            self.lbl_cdss.configure(text="✅ CDSS Clinical Safety Cleared: No active contraindications or critical drug interactions found.", text_color=COLORS["clinical"])
+            self.lbl_cdss.configure(text="✅ All Clear: No allergy conflicts or medicine interactions found.", text_color=COLORS["clinical"])
 
     def approve_rx(self):
         if not self.selected_rx:
-            show_toast(self, "No Selection", "Select a prescription from queue to approve.", "warning")
+            show_toast(self, "No Selection", "Please select a prescription first.", "warning")
             return
-        if "CRITICAL ALLERGY" in self.lbl_cdss.cget("text"):
-            messagebox.showerror("Clinical Safety Block", "Cannot approve prescription: Critical Allergy Contraindication!\nPlease consult prescribing doctor to switch molecule.")
+        if "ALLERGY WARNING" in self.lbl_cdss.cget("text"):
+            messagebox.showerror("Allergy Conflict", "Cannot approve prescription: Patient has a documented allergy!\nPlease contact the doctor to change the medicine.")
             return
             
         update_prescription_status(self.selected_rx["rx_id"], "Verified & Approved", self.user_data["name"])
@@ -321,7 +321,7 @@ class PharmacistDashboardView(ctk.CTkFrame):
             self.connector.update_action(f"Approved Rx {self.selected_rx['rx_id']}")
             
         self.render_queue()
-        show_toast(self, "Rx Approved", f"{self.selected_rx['rx_id']} verified and transferred to Cashier POS.", "success")
+        show_toast(self, "Prescription Approved", f"{self.selected_rx['rx_id']} approved and sent to billing.", "success")
 
     def reject_rx(self):
         if not self.selected_rx:
@@ -331,16 +331,16 @@ class PharmacistDashboardView(ctk.CTkFrame):
         if self.connector:
             self.connector.log_event("Rx Flagged", f"Prescription {self.selected_rx['rx_id']} rejected by {self.user_data['name']}", level="WARN")
         self.render_queue()
-        show_toast(self, "Prescription Flagged", f"{self.selected_rx['rx_id']} marked as Rejected / Clinical Review.", "danger")
+        show_toast(self, "Prescription Flagged", f"{self.selected_rx['rx_id']} marked as rejected.", "danger")
 
     def show_dispense_slip(self):
         if not self.selected_rx:
-            show_toast(self, "No Selection", "Select a prescription to view dispense slip.", "warning")
+            show_toast(self, "No Selection", "Please select a prescription first.", "warning")
             return
             
         rx = self.selected_rx
         win = ctk.CTkToplevel(self)
-        win.title(f"Clinical Dispensing Slip — {rx['rx_id']}")
+        win.title(f"Doctor Prescription Slip — {rx['rx_id']}")
         win.geometry("480x560")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
@@ -349,26 +349,25 @@ class PharmacistDashboardView(ctk.CTkFrame):
         txt_box.pack(fill="both", expand=True, padx=16, pady=(16, 10))
         
         slip_text = f"""==================================================
-           CLINICAL PHARMACY DISPENSING SLIP      
-     Apex Central - Branch #01, Navi Mumbai       
+           DOCTOR PRESCRIPTION & DISPENSE SLIP      
+     Apex Central Pharmacy - Branch #01            
 ==================================================
-Rx Identifier:     {rx['rx_id']}
-Date:              {rx['date']}
-Patient:           {rx['patient_name']}
-Prescribing Doc:   {rx['doctor_name']}
-Hospital / Clinic: {rx['hospital']}
-Status:            {rx['status']}
+Prescription ID:  {rx['rx_id']}
+Date:             {rx['date']}
+Patient Name:     {rx['patient_name']}
+Doctor:           {rx['doctor_name']}
+Clinic / Hospital:{rx['hospital']}
+Status:           {rx['status']}
 --------------------------------------------------
-PRESCRIBED MEDICINES & DOSAGE INSTRUCTIONS:
+PRESCRIBED MEDICINES:
 --------------------------------------------------
 """
         for it in rx.get("items", []):
-            slip_text += f"• {it['medicine']}\n  Dosage: {it.get('dosage', '1 tab daily')} | Qty: {it.get('qty', 10)}\n"
+            slip_text += f"• {it['medicine']}\n  Dosage: {it.get('dosage', '1 tab daily')} | Quantity: {it.get('qty', 10)}\n"
             
         slip_text += f"""--------------------------------------------------
-CDSS Safety Check: PASSED / REVIEWED
-Pharmacist Stamp:  {self.user_data['name']}
-Registration:      {self.user_data.get('id', 'PH-MH-44102')}
+Safety Check:     PASSED / VERIFIED
+Pharmacist:       {self.user_data['name']}
 ==================================================
 """
         txt_box.insert("1.0", slip_text)
@@ -389,22 +388,22 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
 
     def open_double_sign_modal(self):
         if not self.selected_rx:
-            show_toast(self, "No Selection", "Select prescription requiring narcotic sign-off.", "warning")
+            show_toast(self, "No Selection", "Select prescription requiring sign-off.", "warning")
             return
             
         win = ctk.CTkToplevel(self)
-        win.title("NDPS Schedule X Double-Sign Authorization")
+        win.title("Controlled Medicine Sign-Off")
         win.geometry("500x420")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="🚨 Schedule X / NDPS Narcotic Sign-Off", font=FONTS["h2"], text_color=COLORS["schedule_x"])
+        lbl = ctk.CTkLabel(win, text="🚨 Controlled Medicine Sign-Off", font=FONTS["h2"], text_color=COLORS["schedule_x"])
         lbl.pack(pady=(16, 4))
         
-        lbl_info = ctk.CTkLabel(win, text=f"Rx: {self.selected_rx['rx_id']} | Patient: {self.selected_rx['patient_name']}\nMandatory digital authentication for state regulatory NDPS register:", font=FONTS["small"], text_color=COLORS["text_dim"])
+        lbl_info = ctk.CTkLabel(win, text=f"Rx: {self.selected_rx['rx_id']} | Patient: {self.selected_rx['patient_name']}\nEnter verification details to approve:", font=FONTS["small"], text_color=COLORS["text_dim"])
         lbl_info.pack(pady=4)
         
-        ent_reg = ctk.CTkEntry(win, placeholder_text="Doctor DMC / GMC Reg No (e.g. DMC-44910)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=320)
+        ent_reg = ctk.CTkEntry(win, placeholder_text="Doctor Reg No (e.g. DMC-44910)", font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], width=320)
         ent_reg.pack(pady=6)
         ent_reg.insert(0, "DMC-44910")
         
@@ -444,19 +443,19 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             win.destroy()
             self.render_queue()
             self.render_narcotic_records()
-            show_toast(self, "NDPS Registered", "Dispensation recorded in State Narcotic Registry.", "success")
+            show_toast(self, "Recorded", "Medicine logged in Controlled Drugs Register.", "success")
 
-        btn = ctk.CTkButton(win, text="Authorize & Register Dispensing", height=38, font=FONTS["body_bold"], fg_color=COLORS["schedule_x"], hover_color="#BE185D", text_color="#FFFFFF", command=confirm)
+        btn = ctk.CTkButton(win, text="Confirm & Authorize Dispensing", height=38, font=FONTS["body_bold"], fg_color=COLORS["schedule_x"], hover_color="#BE185D", text_color="#FFFFFF", command=confirm)
         btn.pack(pady=16)
 
     def open_add_rx_modal(self):
         win = ctk.CTkToplevel(self)
-        win.title("Digitize / Intake New e-Prescription")
+        win.title("Add New Doctor Prescription")
         win.geometry("560x580")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl_head = ctk.CTkLabel(win, text="📝 New e-Prescription Intake", font=FONTS["h2"], text_color=COLORS["clinical"])
+        lbl_head = ctk.CTkLabel(win, text="📝 Add New Prescription", font=FONTS["h2"], text_color=COLORS["clinical"])
         lbl_head.pack(pady=(16, 8))
         
         form = ctk.CTkFrame(win, fg_color="transparent")
@@ -465,13 +464,13 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
         
         new_rx_id = f"RX-2026-{100 + len(self.prescriptions) + 1}"
         fields = [
-            ("Rx Number:", "rx_id", new_rx_id),
+            ("Prescription ID:", "rx_id", new_rx_id),
             ("Patient Name:", "patient_name", "Anil Deshmukh"),
             ("Doctor Name:", "doctor_name", "Dr. Rajesh Shah (MD)"),
             ("Clinic / Hospital:", "hospital", "Apex Multispeciality Hospital"),
             ("Medicine Name:", "med_name", "Augmentin 625 Duo Tablet"),
-            ("Dosage / Instructions:", "dosage", "1 tab twice daily for 5 days"),
-            ("Clinical Notes:", "notes", "Check for allergy or renal parameters")
+            ("Dosage / Timing:", "dosage", "1 tab twice daily for 5 days"),
+            ("Doctor Notes:", "notes", "Check for allergy or kidney parameters")
         ]
         
         ents = {}
@@ -502,12 +501,12 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             self.prescriptions = get_all_prescriptions()
             self.render_queue()
             win.destroy()
-            show_toast(self, "Prescription Added", f"{rx_dict['rx_id']} registered in intake queue.", "success")
+            show_toast(self, "Prescription Added", f"{rx_dict['rx_id']} added for review.", "success")
             
-        btn_s = ctk.CTkButton(win, text="Save & Queue for CDSS Review", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=save)
+        btn_s = ctk.CTkButton(win, text="Save Prescription", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=save)
         btn_s.pack(fill="x", padx=24, pady=16)
 
-    # --- TAB 2: NARCOTIC REGISTER ---
+    # --- TAB 2: CONTROLLED DRUGS REGISTER ---
 
     def setup_narcotic_tab(self):
         self.tab_narcotic.grid_columnconfigure(0, weight=1)
@@ -517,7 +516,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
         top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
         top_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(top_bar, text="🚨 Mandatory State Narcotic (NDPS / Schedule X) Dispensing Register", font=FONTS["h3"], text_color=COLORS["schedule_x"])
+        lbl = ctk.CTkLabel(top_bar, text="🚨 Controlled Drugs & Narcotics Register", font=FONTS["h3"], text_color=COLORS["schedule_x"])
         lbl.grid(row=0, column=0, sticky="w")
         
         btn_exp = ctk.CTkButton(top_bar, text="💾 Export Register CSV", height=28, font=FONTS["small_bold"], fg_color=COLORS["schedule_x"], hover_color="#BE185D", text_color="#FFFFFF", command=self.export_narcotic_csv)
@@ -533,7 +532,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             
         records = get_narcotic_records()
         if not records:
-            ctk.CTkLabel(self.narcotic_scroll, text="No Schedule X Narcotic transactions recorded.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
+            ctk.CTkLabel(self.narcotic_scroll, text="No controlled drug transactions recorded.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
             return
 
         for r in records:
@@ -549,21 +548,21 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             lbl_ts = ctk.CTkLabel(r1, text=f"🕒 {r['timestamp']}", font=FONTS["small"], text_color=COLORS["text_dim"])
             lbl_ts.pack(side="right")
             
-            info_txt = f"👤 Patient: {r['patient_name']} ({r.get('patient_phone', 'N/A')}) | 👨‍⚕️ Prescriber: {r['doctor_name']} (Reg #{r.get('doctor_reg_no', 'N/A')})\n🩺 Pharmacist: {r['pharmacist_name']} (Reg #{r['pharmacist_reg_no']}) | 2-Sign Auth: ✅ VERIFIED"
+            info_txt = f"👤 Patient: {r['patient_name']} ({r.get('patient_phone', 'N/A')}) | 👨‍⚕️ Prescriber: {r['doctor_name']} (Reg #{r.get('doctor_reg_no', 'N/A')})\n🩺 Pharmacist: {r['pharmacist_name']} (Reg #{r['pharmacist_reg_no']}) | Status: ✅ Verified & Signed"
             lbl_info = ctk.CTkLabel(c, text=info_txt, font=FONTS["small"], text_color=COLORS["text_muted"], justify="left")
             lbl_info.pack(anchor="w", padx=12, pady=(0, 8))
 
     def export_narcotic_csv(self):
         records = get_narcotic_records()
         if not records:
-            show_toast(self, "Empty", "No narcotic records to export.", "warning")
+            show_toast(self, "Empty", "No records to export.", "warning")
             return
             
         path = filedialog.asksaveasfilename(
-            title="Export Narcotic Register",
+            title="Export Controlled Drugs Register",
             defaultextension=".csv",
             filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
-            initialfile="NDPS_Narcotic_Register.csv"
+            initialfile="Controlled_Drugs_Register.csv"
         )
         if path:
             keys = records[0].keys()
@@ -571,9 +570,9 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
                 writer = csv.DictWriter(f, fieldnames=keys)
                 writer.writeheader()
                 writer.writerows(records)
-            show_toast(self, "Exported", f"Saved {len(records)} compliance rows to {path}.", "success")
+            show_toast(self, "Exported", f"Saved {len(records)} records to {path}.", "success")
 
-    # --- TAB 3: REFILL ADHERENCE ---
+    # --- TAB 3: MONTHLY REFILLS ---
 
     def setup_refills_tab(self):
         self.tab_refills.grid_columnconfigure(0, weight=1)
@@ -582,7 +581,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
         top_bar = ctk.CTkFrame(self.tab_refills, fg_color="transparent")
         top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
         
-        lbl = ctk.CTkLabel(top_bar, text="🔄 Chronic Disease Patient Refill Adherence Calendar", font=FONTS["h3"], text_color=COLORS["text_main"])
+        lbl = ctk.CTkLabel(top_bar, text="🔄 Patient Monthly Medicine Refill Reminders", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.pack(side="left")
         
         self.refills_scroll = ctk.CTkScrollableFrame(self.tab_refills, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
@@ -619,7 +618,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             
             btn_sms = ctk.CTkButton(
                 r2,
-                text="📲 Send WhatsApp / SMS Alert",
+                text="📲 Send WhatsApp Reminder",
                 width=175,
                 height=26,
                 font=FONTS["small_bold"],
@@ -632,15 +631,15 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
 
     def open_reminder_modal(self, refill_data):
         win = ctk.CTkToplevel(self)
-        win.title("Send Refill Reminder")
+        win.title("Send Monthly Refill Reminder")
         win.geometry("460x340")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="📲 Automated WhatsApp & SMS Refill Reminder", font=FONTS["h3"], text_color=COLORS["clinical"])
+        lbl = ctk.CTkLabel(win, text="📲 Send Monthly Refill Reminder", font=FONTS["h3"], text_color=COLORS["clinical"])
         lbl.pack(pady=(16, 6))
         
-        msg_template = f"Hello {refill_data['patient_name']}, this is a friendly reminder from AegisPharm. Your monthly supply of {refill_data['medicine_name']} is due for refill on {refill_data['next_due_date']}. Reply YES to confirm delivery."
+        msg_template = f"Hello {refill_data['patient_name']}, this is a friendly reminder from Apex Pharmacy. Your monthly supply of {refill_data['medicine_name']} is due for refill on {refill_data['next_due_date']}. Reply YES to confirm delivery."
         
         txt = ctk.CTkTextbox(win, font=FONTS["small"], fg_color=COLORS["bg_card"], text_color=COLORS["text_main"], height=120)
         txt.pack(fill="x", padx=20, pady=8)
@@ -650,9 +649,9 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             update_refill_status(refill_data["id"], "Reminder Sent (WhatsApp)")
             win.destroy()
             self.render_refills()
-            show_toast(self, "WhatsApp Reminder Dispatched", f"Alert sent to {refill_data['patient_name']} ({refill_data['patient_phone']}).", "success")
+            show_toast(self, "Reminder Dispatched", f"Alert sent to {refill_data['patient_name']} ({refill_data['patient_phone']}).", "success")
             
-        btn_send = ctk.CTkButton(win, text="🚀 Dispatch WhatsApp / SMS Message Now", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=send)
+        btn_send = ctk.CTkButton(win, text="🚀 Send WhatsApp Reminder Now", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=send)
         btn_send.pack(fill="x", padx=20, pady=12)
 
     # --- TAB 4: PATIENT PROFILES & ALLERGIES ---
@@ -665,7 +664,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
         top_bar.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 4))
         top_bar.grid_columnconfigure(0, weight=1)
         
-        lbl = ctk.CTkLabel(top_bar, text="👤 Patient Electronic Health Registry (EHR Allergies & Chronic History)", font=FONTS["h3"], text_color=COLORS["text_main"])
+        lbl = ctk.CTkLabel(top_bar, text="👤 Patient Records & Allergies", font=FONTS["h3"], text_color=COLORS["text_main"])
         lbl.grid(row=0, column=0, sticky="w")
         
         btn_add_p = ctk.CTkButton(top_bar, text="+ Register Patient", height=28, font=FONTS["small_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=self.open_add_patient_modal)
@@ -718,12 +717,12 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
 
     def open_add_patient_modal(self):
         win = ctk.CTkToplevel(self)
-        win.title("Register Patient & Allergies")
+        win.title("Register New Patient")
         win.geometry("480x500")
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        lbl = ctk.CTkLabel(win, text="Register New Patient EHR Profile", font=FONTS["h2"], text_color=COLORS["clinical"])
+        lbl = ctk.CTkLabel(win, text="Register New Patient", font=FONTS["h2"], text_color=COLORS["clinical"])
         lbl.pack(pady=(16, 10))
         
         form = ctk.CTkFrame(win, fg_color="transparent")
@@ -735,7 +734,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             ("Age & Gender:", "age_gen", "45, Male"),
             ("Mobile Phone:", "phone", "+91 98200 88776"),
             ("Allergies (comma-separated):", "allergies", "Penicillin, Sulfa Drugs"),
-            ("Chronic Conditions:", "conditions", "Hypertension, Type 2 Diabetes"),
+            ("Health Conditions:", "conditions", "Hypertension, Type 2 Diabetes"),
             ("Primary Doctor:", "doc", "Dr. Rajesh Shah (MD)")
         ]
         ents = {}
@@ -772,7 +771,7 @@ Registration:      {self.user_data.get('id', 'PH-MH-44102')}
             add_patient(p_dict)
             self.render_patients()
             win.destroy()
-            show_toast(self, "Patient Saved", f"{name} profile created with {len(al_list)} allergy tags.", "success")
+            show_toast(self, "Patient Saved", f"{name} profile created with {len(al_list)} allergies.", "success")
             
-        btn_s = ctk.CTkButton(win, text="Save Patient Profile", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=save)
+        btn_s = ctk.CTkButton(win, text="Save Patient Record", height=38, font=FONTS["body_bold"], fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF", command=save)
         btn_s.pack(fill="x", padx=24, pady=16)

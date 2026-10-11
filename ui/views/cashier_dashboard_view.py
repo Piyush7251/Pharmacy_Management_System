@@ -52,7 +52,7 @@ class CashierDashboardView(ctk.CTkFrame):
         hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 6))
         hdr.grid_columnconfigure(1, weight=1)
         
-        lbl_brand = ctk.CTkLabel(hdr, text="💳 POS Terminal — Express Counter Checkout & GST Billing", font=FONTS["h2"], text_color=COLORS["commerce"])
+        lbl_brand = ctk.CTkLabel(hdr, text="💳 Billing Counter & Cash Register", font=FONTS["h2"], text_color=COLORS["commerce"])
         lbl_brand.grid(row=0, column=0, padx=16, pady=10, sticky="w")
         
         right_box = ctk.CTkFrame(hdr, fg_color="transparent")
@@ -63,7 +63,7 @@ class CashierDashboardView(ctk.CTkFrame):
         
         btn_import_rx = ctk.CTkButton(
             right_box,
-            text="📥 Import Approved Rx",
+            text="📥 Load Prescription",
             height=30,
             font=FONTS["small_bold"],
             fg_color=COLORS["clinical"],
@@ -86,8 +86,8 @@ class CashierDashboardView(ctk.CTkFrame):
         )
         self.tabview.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 12))
         
-        self.tab_pos = self.tabview.add("🛒 Active Billing Terminal")
-        self.tab_history = self.tabview.add("📑 Sales History & Invoices")
+        self.tab_pos = self.tabview.add("🛒 New Bill / Cart")
+        self.tab_history = self.tabview.add("📑 Past Receipts")
         
         self.setup_pos_tab()
         self.setup_history_tab()
@@ -104,12 +104,12 @@ class CashierDashboardView(ctk.CTkFrame):
         cust_strip.grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=(4, 6))
         cust_strip.grid_columnconfigure(1, weight=1)
         
-        lbl_c_icon = ctk.CTkLabel(cust_strip, text="👤 Customer:", font=FONTS["small_bold"], text_color=COLORS["text_main"])
+        lbl_c_icon = ctk.CTkLabel(cust_strip, text="👤 Customer Mobile:", font=FONTS["small_bold"], text_color=COLORS["text_main"])
         lbl_c_icon.grid(row=0, column=0, padx=(10, 4), pady=6, sticky="w")
         
         self.ent_phone = ctk.CTkEntry(
             cust_strip,
-            placeholder_text="Enter customer mobile number (e.g. 9876543210)",
+            placeholder_text="Enter phone number (e.g. 9876543210)",
             font=FONTS["small"],
             width=240,
             height=28,
@@ -122,8 +122,8 @@ class CashierDashboardView(ctk.CTkFrame):
         
         btn_lookup = ctk.CTkButton(
             cust_strip,
-            text="🔍 Find / Lookup",
-            width=90,
+            text="🔍 Find Customer",
+            width=105,
             height=28,
             font=FONTS["small_bold"],
             fg_color=COLORS["btn_secondary"],
@@ -143,7 +143,7 @@ class CashierDashboardView(ctk.CTkFrame):
         
         self.chk_loyalty = ctk.CTkCheckBox(
             cust_strip,
-            text="Redeem 100 Points (-₹50)",
+            text="Use 100 Points (₹50 Off)",
             font=FONTS["small_bold"],
             text_color=COLORS["clinical"],
             command=self.toggle_loyalty_redemption
@@ -158,7 +158,7 @@ class CashierDashboardView(ctk.CTkFrame):
         
         self.search_ent = ctk.CTkEntry(
             search_box,
-            placeholder_text="🔍 Scan barcode or search medicine, generic salt, batch, rack...",
+            placeholder_text="🔍 Search medicine name, formula, or barcode...",
             font=FONTS["body"],
             fg_color=COLORS["bg_input"],
             text_color=COLORS["text_main"],
@@ -185,17 +185,24 @@ class CashierDashboardView(ctk.CTkFrame):
         cat_bar = ctk.CTkFrame(self.tab_pos, fg_color="transparent")
         cat_bar.grid(row=2, column=0, sticky="ew", padx=(8, 4), pady=(0, 4))
         
-        categories = ["ALL", "Antibiotic", "Gastrointestinal", "Antidiabetic", "Cardiovascular / BP", "Endocrine / Insulin", "Pain / Anti-inflammatory"]
-        for cat in categories:
+        categories = [
+            ("All Medicines", "ALL"),
+            ("Antibiotics", "Antibiotic"),
+            ("Stomach & Gas", "Gastrointestinal"),
+            ("Diabetes", "Antidiabetic"),
+            ("Heart / BP", "Cardiovascular"),
+            ("Pain Relief", "Pain")
+        ]
+        for label, cat_val in categories:
             btn_cat = ctk.CTkButton(
                 cat_bar,
-                text=cat if cat != "ALL" else "✨ All Medicines",
+                text=label,
                 height=24,
                 font=FONTS["small_bold"],
                 fg_color=COLORS["btn_secondary"],
                 hover_color=COLORS["btn_secondary_hover"],
                 text_color=COLORS["btn_secondary_text"],
-                command=lambda c=cat: self.set_category_filter(c)
+                command=lambda c=cat_val: self.set_category_filter(c)
             )
             btn_cat.pack(side="left", padx=2)
             

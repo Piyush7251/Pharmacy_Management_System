@@ -125,9 +125,9 @@ class PharmacyApplication(ctk.CTk):
         role_map = {
             "👑 Store Admin": ("Admin", "Dr. Rajesh Kulkarni", "STF-01"),
             "🩺 Pharmacist": ("Pharmacist", "Pooja Sharma, R.Ph", "STF-02"),
-            "💳 Cashier POS": ("Cashier", "Amit Deshmukh", "STF-03"),
-            "📦 Inventory Hub": ("Inventory Manager", "Vikram Rathore", "STF-04"),
-            "🛵 Delivery Fleet": ("Delivery Agent", "Ramesh Kumar", "STF-05")
+            "💳 Cashier (POS)": ("Cashier", "Amit Deshmukh", "STF-03"),
+            "📦 Stock Manager": ("Inventory Manager", "Vikram Rathore", "STF-04"),
+            "🛵 Delivery Rider": ("Delivery Agent", "Ramesh Kumar", "STF-05")
         }
         
         target = role_map.get(selected_role_text)
@@ -145,7 +145,7 @@ class PharmacyApplication(ctk.CTk):
             self.load_role_dashboard()
             self.show_toast(
                 title=f"Switched to {target[0]}",
-                message=f"Terminal interface reloaded for {target[1]}.",
+                message=f"Logged in as {target[1]}.",
                 toast_type="info"
             )
 
@@ -184,7 +184,7 @@ class PharmacyApplication(ctk.CTk):
         
         lbl_brand = ctk.CTkLabel(
             left_info,
-            text="💊 AegisPharm Enterprise",
+            text="💊 AegisPharm",
             font=FONTS["h2"],
             text_color=COLORS["clinical"]
         )
@@ -212,7 +212,7 @@ class PharmacyApplication(ctk.CTk):
         
         pulse_badge = ctk.CTkLabel(
             mid_info,
-            text=" 🟢 Live Sync (0ms) ",
+            text=" 🟢 System Online ",
             font=FONTS["small_bold"],
             fg_color=COLORS["success_bg"],
             text_color=COLORS["clinical"],
@@ -227,7 +227,7 @@ class PharmacyApplication(ctk.CTk):
         right_info.grid(row=0, column=1, sticky="e", padx=16, pady=10)
         
         # Quick Role Switcher
-        roles_list = ["👑 Store Admin", "🩺 Pharmacist", "💳 Cashier POS", "📦 Inventory Hub", "🛵 Delivery Fleet"]
+        roles_list = ["👑 Store Admin", "🩺 Pharmacist", "💳 Cashier (POS)", "📦 Stock Manager", "🛵 Delivery Rider"]
         current_role_str = next((r for r in roles_list if self.current_user.get("role", "")[:4] in r), roles_list[0])
         
         lbl_switch = ctk.CTkLabel(right_info, text="View:", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
@@ -236,7 +236,7 @@ class PharmacyApplication(ctk.CTk):
         self.role_switcher = ctk.CTkOptionMenu(
             right_info,
             values=roles_list,
-            width=140,
+            width=145,
             height=30,
             font=FONTS["small_bold"],
             dropdown_font=FONTS["small"],

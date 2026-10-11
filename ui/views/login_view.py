@@ -57,7 +57,7 @@ class LoginView(ctk.CTkFrame):
         
         lbl_logo = ctk.CTkLabel(
             brand_box,
-            text="💊 AegisPharm Enterprise",
+            text="💊 AegisPharm",
             font=FONTS["h1"],
             text_color=COLORS["clinical"]
         )
@@ -65,7 +65,7 @@ class LoginView(ctk.CTkFrame):
         
         lbl_sub = ctk.CTkLabel(
             brand_box,
-            text="High-Performance Clinical ERP & Multi-Role Pharmacy Suite",
+            text="Simple, Fast & Reliable Pharmacy Management",
             font=FONTS["body"],
             text_color=COLORS["text_muted"]
         )
@@ -73,7 +73,7 @@ class LoginView(ctk.CTkFrame):
         
         lbl_instr = ctk.CTkLabel(
             brand_box,
-            text="Sign in with your staff credentials or use a 1-click demo role below.",
+            text="Sign in with your staff account or choose a quick role below:",
             font=FONTS["small"],
             text_color=COLORS["text_dim"],
             wraplength=420,
@@ -93,12 +93,12 @@ class LoginView(ctk.CTkFrame):
         form_box.grid_columnconfigure(0, weight=1)
         
         # Username
-        lbl_u = ctk.CTkLabel(form_box, text="Username or Staff ID", font=FONTS["body_bold"], text_color=COLORS["text_main"])
+        lbl_u = ctk.CTkLabel(form_box, text="Username", font=FONTS["body_bold"], text_color=COLORS["text_main"])
         lbl_u.grid(row=0, column=0, sticky="w", pady=(0, 4))
         
         self.ent_username = ctk.CTkEntry(
             form_box,
-            placeholder_text="e.g. admin, pharmacist, cashier",
+            placeholder_text="Enter username (e.g. admin, cashier)",
             font=FONTS["body"],
             fg_color=COLORS["bg_input"],
             text_color=COLORS["text_main"],
@@ -118,7 +118,7 @@ class LoginView(ctk.CTkFrame):
         
         self.ent_password = ctk.CTkEntry(
             pwd_box,
-            placeholder_text="••••••••",
+            placeholder_text="Enter password",
             show="•",
             font=FONTS["body"],
             fg_color=COLORS["bg_input"],
@@ -159,7 +159,7 @@ class LoginView(ctk.CTkFrame):
         demo_box = ctk.CTkFrame(center_card, fg_color=COLORS["bg_surface_alt"], corner_radius=10, border_width=1, border_color=COLORS["border"])
         demo_box.grid(row=4, column=0, sticky="ew", padx=30, pady=(0, 24))
         
-        lbl_demo = ctk.CTkLabel(demo_box, text="⚡ Quick Demo Roles (1-Click Fill & Instant Login):", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
+        lbl_demo = ctk.CTkLabel(demo_box, text="⚡ Quick Login (Click any role to test):", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_demo.pack(anchor="w", padx=12, pady=(10, 6))
         
         btn_grid = ctk.CTkFrame(demo_box, fg_color="transparent")
@@ -167,11 +167,11 @@ class LoginView(ctk.CTkFrame):
         btn_grid.grid_columnconfigure((0, 1, 2), weight=1)
         
         roles = [
-            ("👑 Admin", "admin", "admin123", COLORS["admin"]),
+            ("👑 Store Admin", "admin", "admin123", COLORS["admin"]),
             ("🩺 Pharmacist", "pharmacist", "pharma123", COLORS["clinical"]),
-            ("💳 Cashier", "cashier", "cash123", COLORS["commerce"]),
-            ("📦 Inventory", "inventory", "inv123", COLORS["inventory"]),
-            ("🛵 Delivery", "delivery", "deliv123", COLORS["operations"]),
+            ("💳 Cashier (POS)", "cashier", "cash123", COLORS["commerce"]),
+            ("📦 Stock Manager", "inventory", "inv123", COLORS["inventory"]),
+            ("🛵 Delivery Rider", "delivery", "deliv123", COLORS["operations"]),
         ]
         
         for idx, (label, uname, pwd, col) in enumerate(roles):
