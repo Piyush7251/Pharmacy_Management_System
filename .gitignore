@@ -18,3 +18,8 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# App runtime logs and backups
+logs/*.log
+backups/*.db
+*.db

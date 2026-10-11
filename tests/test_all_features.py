@@ -26,6 +26,13 @@ from core.db import (
     get_refill_schedules, update_refill_status,
     get_dashboard_analytics
 )
+from config.settings import get_settings, save_settings
+from core.logger import (
+    log_activity, get_activity_logs,
+    export_activity_logs_to_csv, backup_sqlite_database
+)
+import time
+import tempfile
 
 class TestAegisPharmFeatures(unittest.TestCase):
     @classmethod
@@ -318,5 +325,71 @@ class TestAegisPharmFeatures(unittest.TestCase):
         self.assertGreater(analytics["total_meds"], 0)
         self.assertGreaterEqual(analytics["gross_sales"], 0.0)
 
+    # --- 11. CENTRALIZED CONFIGURATION SYSTEM ---
+    def test_15_config_settings_load_and_save(self):
+        cfg = get_settings()
+        self.assertIsNotNone(cfg.store)
+        self.assertIsNotNone(cfg.inventory)
+        self.assertIsNotNone(cfg.receipt)
+        self.assertIsNotNone(cfg.system)
+        
+        orig_name = cfg.store.name
+        # Update setting
+        test_new_name = "Apex Health Central Test"
+        saved = save_settings({"store": {"name": test_new_name}})
+        self.assertTrue(saved)
+        
+        updated_cfg = get_settings()
+        self.assertEqual(updated_cfg.store.name, test_new_name)
+        
+        # Restore original setting
+        save_settings({"store": {"name": orig_name}})
+        restored_cfg = get_settings()
+        self.assertEqual(restored_cfg.store.name, orig_name)
+
+    # --- 12. ACTIVITY LOGGING & DATABASE BACKUP ---
+    def test_16_activity_logging_and_backup(self):
+        test_act = f"Automated_Test_Action_{int(datetime.now().timestamp())}"
+        test_detail = "Automated test audit log entry verification"
+        log_activity(
+            action=test_act,
+            details=test_detail,
+            user_name="UnitTester",
+            role="Admin",
+            level="INFO"
+        )
+        # Allow background thread to write to SQLite
+        time.sleep(0.3)
+        
+        # Verify in SQLite query
+        logs = get_activity_logs(limit=20, search=test_act)
+        self.assertTrue(any(l["action"] == test_act for l in logs), f"Log entry {test_act} not found in DB")
+        
+        # Test CSV Export
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp_csv:
+            tmp_path = tmp_csv.name
+            
+        try:
+            success, msg = export_activity_logs_to_csv(tmp_path)
+            self.assertTrue(success, f"Export CSV failed: {msg}")
+            self.assertTrue(os.path.exists(tmp_path))
+            self.assertGreater(os.path.getsize(tmp_path), 0)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                
+        # Test Database Backup
+        temp_dir = tempfile.mkdtemp()
+        try:
+            bk_success, bk_path = backup_sqlite_database(custom_backup_dir=temp_dir)
+            self.assertTrue(bk_success, f"Database backup failed: {bk_path}")
+            self.assertTrue(os.path.exists(bk_path))
+            self.assertGreater(os.path.getsize(bk_path), 0)
+        finally:
+            if os.path.exists(temp_dir):
+                import shutil
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
 if __name__ == "__main__":
     unittest.main()
+

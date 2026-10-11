@@ -116,18 +116,5 @@ class AppConnector:
         self.log_event("Session Disconnected", f"User logged out of {self.app_name}")
 
     def log_event(self, action, details, level="INFO"):
-        threading.Thread(target=self._async_log_event, args=(action, details, level), daemon=True).start()
-
-    def _async_log_event(self, action, details, level):
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        try:
-            conn = get_connection()
-            cur = conn.cursor()
-            cur.execute("""
-            INSERT INTO audit_logs (timestamp, user_name, role, action, details, level)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """, (now, self.user_name, self.role, action, details, level))
-            conn.commit()
-            conn.close()
-        except Exception:
-            pass
+        from core.logger import log_activity
+        log_activity(action=action, details=details, user_name=self.user_name, role=self.role, level=level)

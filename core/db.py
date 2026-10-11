@@ -10,9 +10,16 @@ import os
 import json
 from datetime import datetime, timedelta
 
-DATA_DIR = os.path.expanduser("~/.aegispharm")
+try:
+    from config.settings import get_settings
+    _cfg_db = get_settings().system.db_path
+    DB_PATH = os.path.abspath(os.path.expanduser(_cfg_db))
+    DATA_DIR = os.path.dirname(DB_PATH)
+except Exception:
+    DATA_DIR = os.path.expanduser("~/.aegispharm")
+    DB_PATH = os.path.join(DATA_DIR, "pharmacy_system.db")
+
 os.makedirs(DATA_DIR, exist_ok=True)
-DB_PATH = os.path.join(DATA_DIR, "pharmacy_system.db")
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)

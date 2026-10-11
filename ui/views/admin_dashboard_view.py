@@ -21,6 +21,8 @@ from core.db import (
     get_connection, get_all_staff, create_staff_user, update_staff_user,
     delete_staff_user, get_all_invoices, get_all_medicines
 )
+from config.settings import get_settings, save_settings, reset_to_defaults
+from core.logger import log_activity, export_activity_logs_to_csv, backup_sqlite_database
 
 class AdminDashboardView(ctk.CTkFrame):
     def __init__(self, parent, user_data, connector=None):
@@ -120,11 +122,13 @@ class AdminDashboardView(ctk.CTkFrame):
         self.tab_presence = self.tabview.add("🟢 Online Staff Terminals")
         self.tab_analytics = self.tabview.add("📊 Sales Summary & Cash Report")
         self.tab_audit = self.tabview.add("📡 System Activity Log")
+        self.tab_settings = self.tabview.add("⚙️ System Settings")
         
         self.setup_users_tab()
         self.setup_presence_tab()
         self.setup_analytics_tab()
         self.setup_audit_tab()
+        self.setup_settings_tab()
 
     # --- TAB 1: USER ACCOUNTS & RBAC ---
 
@@ -524,14 +528,19 @@ class AdminDashboardView(ctk.CTkFrame):
 
     def setup_audit_tab(self):
         self.tab_audit.grid_columnconfigure(0, weight=1)
-        self.tab_audit.grid_rowconfigure(1, weight=1)
+        self.tab_audit.grid_rowconfigure(2, weight=1)
         
-        filter_bar = ctk.CTkFrame(self.tab_audit, fg_color="transparent")
-        filter_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
+        # Filter & Export Strip
+        top_bar = ctk.CTkFrame(self.tab_audit, fg_color="transparent")
+        top_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
+        top_bar.grid_columnconfigure(1, weight=1)
+        
+        filter_buttons = ctk.CTkFrame(top_bar, fg_color="transparent")
+        filter_buttons.grid(row=0, column=0, sticky="w")
         
         for flt, label in [("ALL", "All Logs"), ("INFO", "Info"), ("WARN", "Warnings"), ("CRITICAL", "Alerts")]:
             ctk.CTkButton(
-                filter_bar,
+                filter_buttons,
                 text=label,
                 width=80,
                 height=26,
@@ -542,8 +551,34 @@ class AdminDashboardView(ctk.CTkFrame):
                 command=lambda f=flt: self.set_audit_filter(f)
             ).pack(side="left", padx=2)
             
+        btn_exp_logs = ctk.CTkButton(
+            top_bar,
+            text="💾 Export Logs CSV",
+            width=120,
+            height=26,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["commerce"],
+            hover_color=COLORS["commerce_hover"],
+            text_color="#FFFFFF",
+            command=self.export_activity_logs
+        )
+        btn_exp_logs.grid(row=0, column=2, sticky="e")
+        
+        # Search Entry
+        self.ent_log_search = ctk.CTkEntry(
+            self.tab_audit,
+            placeholder_text="🔍 Search activity logs by user, role, action, or details...",
+            font=FONTS["small"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            border_color=COLORS["border"],
+            height=30
+        )
+        self.ent_log_search.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 6))
+        self.ent_log_search.bind("<KeyRelease>", lambda e: self.render_audit_ui(self._last_audit_data or []))
+            
         self.audit_scroll = ctk.CTkScrollableFrame(self.tab_audit, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
-        self.audit_scroll.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.audit_scroll.grid(row=2, column=0, sticky="nsew", padx=10, pady=(0, 10))
         self.audit_scroll.grid_columnconfigure(0, weight=1)
 
     def set_audit_filter(self, flt):
@@ -559,18 +594,267 @@ class AdminDashboardView(ctk.CTkFrame):
         if self.audit_filter != "ALL":
             items = [lg for lg in items if lg.get("level") == self.audit_filter]
 
+        q = self.ent_log_search.get().strip().lower() if hasattr(self, "ent_log_search") else ""
+        if q:
+            items = [
+                lg for lg in items
+                if q in lg.get("user_name", "").lower()
+                or q in lg.get("action", "").lower()
+                or q in lg.get("details", "").lower()
+                or q in lg.get("role", "").lower()
+            ]
+
+        if not items:
+            ctk.CTkLabel(self.audit_scroll, text="No activity logs matching criteria.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=40)
+            return
+
         for lg in items:
             c = ctk.CTkFrame(self.audit_scroll, fg_color=COLORS["bg_card"], corner_radius=6, border_width=1, border_color=COLORS["border"])
             c.pack(fill="x", pady=3, padx=2)
             
             ts = lg["timestamp"].split()[-1] if " " in lg["timestamp"] else lg["timestamp"]
-            lvl_col = COLORS["danger"] if lg.get("level") == "CRITICAL" else (COLORS["warning"] if lg.get("level") == "WARN" else COLORS["info"])
+            lvl = lg.get("level", "INFO")
+            lvl_col = COLORS["danger"] if lvl == "CRITICAL" else (COLORS["warning"] if lvl == "WARN" else COLORS["info"])
             
             lbl_top = ctk.CTkLabel(c, text=f"[{ts}] {lg['user_name']} ({lg['role']}) — {lg['action']}", font=FONTS["small_bold"], text_color=lvl_col)
             lbl_top.pack(anchor="w", padx=10, pady=(4, 1))
             
             lbl_det = ctk.CTkLabel(c, text=lg.get("details", ""), font=FONTS["small"], text_color=COLORS["text_dim"], justify="left")
             lbl_det.pack(anchor="w", padx=10, pady=(0, 4))
+
+    def export_activity_logs(self):
+        path = filedialog.asksaveasfilename(
+            title="Export Activity Logs",
+            defaultextension=".csv",
+            filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
+            initialfile="AegisPharm_Activity_Logs.csv"
+        )
+        if path:
+            success, msg = export_activity_logs_to_csv(path)
+            if success:
+                show_toast(self, "Logs Exported", msg, "success")
+            else:
+                show_toast(self, "Export Failed", msg, "danger")
+
+    # --- TAB 5: SYSTEM SETTINGS ---
+
+    def setup_settings_tab(self):
+        self.tab_settings.grid_columnconfigure(0, weight=1)
+        self.tab_settings.grid_rowconfigure(0, weight=1)
+        
+        self.settings_scroll = ctk.CTkScrollableFrame(self.tab_settings, fg_color=COLORS["bg_base"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+        self.settings_scroll.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        self.settings_scroll.grid_columnconfigure(0, weight=1)
+        
+        cfg = get_settings()
+        self.settings_entries = {}
+
+        # Top Bar: Actions Strip
+        top_strip = ctk.CTkFrame(self.settings_scroll, fg_color="transparent")
+        top_strip.pack(fill="x", padx=12, pady=(8, 12))
+        top_strip.grid_columnconfigure(0, weight=1)
+        
+        lbl_head = ctk.CTkLabel(
+            top_strip,
+            text="⚙️ Store & System Settings Configuration",
+            font=FONTS["h2"],
+            text_color=COLORS["text_main"]
+        )
+        lbl_head.grid(row=0, column=0, sticky="w")
+        
+        btn_box = ctk.CTkFrame(top_strip, fg_color="transparent")
+        btn_box.grid(row=0, column=1, sticky="e")
+        
+        btn_backup = ctk.CTkButton(
+            btn_box,
+            text="💾 Backup Database",
+            height=32,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_secondary"],
+            hover_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["btn_secondary_text"],
+            command=self.backup_database_action
+        )
+        btn_backup.pack(side="left", padx=3)
+        
+        btn_reset = ctk.CTkButton(
+            btn_box,
+            text="🔄 Reset Defaults",
+            height=32,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_danger"],
+            hover_color=COLORS["btn_danger_hover"],
+            text_color="#FFFFFF",
+            command=self.reset_settings_action
+        )
+        btn_reset.pack(side="left", padx=3)
+        
+        btn_save = ctk.CTkButton(
+            btn_box,
+            text="✅ Save Settings",
+            height=32,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["clinical"],
+            hover_color=COLORS["clinical_hover"],
+            text_color="#FFFFFF",
+            command=self.save_settings_action
+        )
+        btn_save.pack(side="left", padx=(3, 0))
+
+        # CARD 1: Store & Pharmacy Profile
+        c1 = ctk.CTkFrame(self.settings_scroll, fg_color=COLORS["bg_card"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        c1.pack(fill="x", padx=12, pady=6)
+        c1.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(c1, text="🏪 Pharmacy Profile & Legal Identifiers", font=FONTS["body_bold"], text_color=COLORS["clinical"]).grid(row=0, column=0, columnspan=2, sticky="w", padx=14, pady=(10, 6))
+        
+        store_fields = [
+            ("Store Name:", "store.name", cfg.store.name),
+            ("Branch Name:", "store.branch", cfg.store.branch),
+            ("Physical Address:", "store.address", cfg.store.address),
+            ("Contact Phone:", "store.phone", cfg.store.phone),
+            ("Email Address:", "store.email", cfg.store.email),
+            ("GSTIN Tax ID:", "store.gstin", cfg.store.gstin),
+            ("Drug License (DL) No:", "store.dl_number", cfg.store.dl_number),
+            ("Currency Symbol:", "store.currency_symbol", cfg.store.currency_symbol)
+        ]
+        
+        for idx, (lbl_txt, key, val) in enumerate(store_fields, start=1):
+            ctk.CTkLabel(c1, text=lbl_txt, font=FONTS["small_bold"], text_color=COLORS["text_main"]).grid(row=idx, column=0, sticky="w", padx=14, pady=4)
+            ent = ctk.CTkEntry(c1, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=30)
+            ent.grid(row=idx, column=1, sticky="ew", padx=14, pady=4)
+            ent.insert(0, str(val))
+            self.settings_entries[key] = ent
+
+        # CARD 2: Inventory & Alert Thresholds
+        c2 = ctk.CTkFrame(self.settings_scroll, fg_color=COLORS["bg_card"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        c2.pack(fill="x", padx=12, pady=6)
+        c2.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(c2, text="📦 Inventory Triggers & Safety Bounds", font=FONTS["body_bold"], text_color=COLORS["inventory"]).grid(row=0, column=0, columnspan=2, sticky="w", padx=14, pady=(10, 6))
+        
+        inv_fields = [
+            ("Low Stock Alert Limit (units):", "inventory.low_stock_threshold", cfg.inventory.low_stock_threshold),
+            ("Expiry Warning Horizon (days):", "inventory.expiring_days_threshold", cfg.inventory.expiring_days_threshold),
+            ("Fridge Min Temperature (°C):", "inventory.cold_chain_min_temp", cfg.inventory.cold_chain_min_temp),
+            ("Fridge Max Temperature (°C):", "inventory.cold_chain_max_temp", cfg.inventory.cold_chain_max_temp),
+            ("Default GST Rate (%):", "inventory.default_gst_percent", cfg.inventory.default_gst_percent)
+        ]
+        
+        for idx, (lbl_txt, key, val) in enumerate(inv_fields, start=1):
+            ctk.CTkLabel(c2, text=lbl_txt, font=FONTS["small_bold"], text_color=COLORS["text_main"]).grid(row=idx, column=0, sticky="w", padx=14, pady=4)
+            ent = ctk.CTkEntry(c2, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=30)
+            ent.grid(row=idx, column=1, sticky="ew", padx=14, pady=4)
+            ent.insert(0, str(val))
+            self.settings_entries[key] = ent
+
+        # CARD 3: Sales Invoice & Receipt Messages
+        c3 = ctk.CTkFrame(self.settings_scroll, fg_color=COLORS["bg_card"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        c3.pack(fill="x", padx=12, pady=6)
+        c3.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(c3, text="🧾 Bill Print Header & Return Terms", font=FONTS["body_bold"], text_color=COLORS["commerce"]).grid(row=0, column=0, columnspan=2, sticky="w", padx=14, pady=(10, 6))
+        
+        rcp_fields = [
+            ("Receipt Header Message:", "receipt.header_message", cfg.receipt.header_message),
+            ("Return Policy / Footer Notice:", "receipt.footer_message", cfg.receipt.footer_message)
+        ]
+        
+        for idx, (lbl_txt, key, val) in enumerate(rcp_fields, start=1):
+            ctk.CTkLabel(c3, text=lbl_txt, font=FONTS["small_bold"], text_color=COLORS["text_main"]).grid(row=idx, column=0, sticky="w", padx=14, pady=4)
+            ent = ctk.CTkEntry(c3, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=30)
+            ent.grid(row=idx, column=1, sticky="ew", padx=14, pady=4)
+            ent.insert(0, str(val))
+            self.settings_entries[key] = ent
+
+        # Bottom Save Strip
+        bot_strip = ctk.CTkFrame(self.settings_scroll, fg_color="transparent")
+        bot_strip.pack(fill="x", padx=12, pady=(10, 16))
+        ctk.CTkButton(
+            bot_strip,
+            text="Save All Configuration Changes",
+            height=40,
+            font=FONTS["body_bold"],
+            fg_color=COLORS["clinical"],
+            hover_color=COLORS["clinical_hover"],
+            text_color="#FFFFFF",
+            command=self.save_settings_action
+        ).pack(fill="x")
+
+    def save_settings_action(self):
+        """Validates and persists updated system settings to config.json."""
+        try:
+            updates = {
+                "store": {
+                    "name": self.settings_entries["store.name"].get().strip(),
+                    "branch": self.settings_entries["store.branch"].get().strip(),
+                    "address": self.settings_entries["store.address"].get().strip(),
+                    "phone": self.settings_entries["store.phone"].get().strip(),
+                    "email": self.settings_entries["store.email"].get().strip(),
+                    "gstin": self.settings_entries["store.gstin"].get().strip(),
+                    "dl_number": self.settings_entries["store.dl_number"].get().strip(),
+                    "currency_symbol": self.settings_entries["store.currency_symbol"].get().strip() or "₹"
+                },
+                "inventory": {
+                    "low_stock_threshold": int(self.settings_entries["inventory.low_stock_threshold"].get().strip() or "20"),
+                    "expiring_days_threshold": int(self.settings_entries["inventory.expiring_days_threshold"].get().strip() or "180"),
+                    "cold_chain_min_temp": float(self.settings_entries["inventory.cold_chain_min_temp"].get().strip() or "2.0"),
+                    "cold_chain_max_temp": float(self.settings_entries["inventory.cold_chain_max_temp"].get().strip() or "8.0"),
+                    "default_gst_percent": float(self.settings_entries["inventory.default_gst_percent"].get().strip() or "12.0")
+                },
+                "receipt": {
+                    "header_message": self.settings_entries["receipt.header_message"].get().strip(),
+                    "footer_message": self.settings_entries["receipt.footer_message"].get().strip()
+                }
+            }
+            
+            success = save_settings(updates)
+            if success:
+                log_activity(
+                    action="Settings Updated",
+                    details=f"Admin {self.user_data['name']} modified system settings in config.json",
+                    user_name=self.user_data["name"],
+                    role=self.user_data["role"],
+                    level="INFO"
+                )
+                show_toast(self, "Settings Saved", "System settings successfully updated and saved to config.json.", "success")
+            else:
+                show_toast(self, "Save Error", "Could not write settings to config.json.", "danger")
+        except ValueError as ve:
+            messagebox.showwarning("Invalid Input", f"Please check numeric fields: {ve}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save settings: {e}")
+
+    def backup_database_action(self):
+        """Creates an immediate snapshot backup of the SQLite database."""
+        success, res = backup_sqlite_database()
+        if success:
+            show_toast(self, "Backup Created", f"Database backed up to:\n{os.path.basename(res)}", "success")
+        else:
+            show_toast(self, "Backup Failed", res, "danger")
+
+    def reset_settings_action(self):
+        """Resets all settings back to default parameters."""
+        confirm = messagebox.askyesno(
+            "Confirm Reset",
+            "Are you sure you want to restore default system settings?\nAll custom store names and thresholds will be reset."
+        )
+        if confirm:
+            cfg = reset_to_defaults()
+            # Repopulate entry fields
+            for key, ent in self.settings_entries.items():
+                section, field_name = key.split(".")
+                val = getattr(getattr(cfg, section), field_name)
+                ent.delete(0, "end")
+                ent.insert(0, str(val))
+            log_activity(
+                action="Settings Reset",
+                details=f"Admin {self.user_data['name']} restored default configuration",
+                user_name=self.user_data["name"],
+                role=self.user_data["role"],
+                level="WARN"
+            )
+            show_toast(self, "Settings Reset", "All settings restored to factory defaults.", "info")
 
     def render_kpis_ui(self, kpi_data):
         self.kpi_sales.configure(text=kpi_data.get("sales", "₹ 0.00"))

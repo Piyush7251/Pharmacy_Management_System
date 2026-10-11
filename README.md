@@ -142,6 +142,33 @@ python apps/delivery_app.py
 python apps/admin_app.py
 ```
 
+### Option C: Automated Full-Feature Test Suite
+Run the 16-point automated test suite covering all security, clinical, pos, inventory, config, and logging functions:
+```bash
+python tests/test_all_features.py
+```
+
+---
+
+## ⚙️ Configuration & System Settings
+
+AegisPharm includes a centralized configuration subsystem with file-based persistence:
+- **`config.json`**: Active JSON configuration file controlling store profile, licensing, inventory alert thresholds, receipt templates, and paths.
+- **`config.example.json`**: Template configuration file for onboarding new store locations or branches.
+- **`config/settings.py`**: Thread-safe `SettingsManager` with strongly typed data classes (`StoreConfig`, `InventoryConfig`, `ReceiptConfig`, `SystemConfig`).
+- **Admin Settings View**: Admins can interactively edit store name, DL number, GSTIN, cold chain min/max bounds, reorder thresholds, and trigger manual database backups directly from the UI.
+
+---
+
+## 📡 Activity & Audit Logging Subsystem
+
+Every event across the system is recorded to both disk and database:
+- **Disk File**: `logs/activity.log` captures standard formatted log entries with timestamps, user credentials, roles, and action details.
+- **SQLite Database**: Table `audit_logs` maintains queryable history.
+- **Search & Filter**: Admin UI supports instant full-text filtering by action, user name, role, or log level (`ALL`, `INFO`, `WARN`, `CRITICAL`).
+- **CSV Export**: 1-click export of the complete audit log to CSV for compliance audits.
+- **Database Backup**: 1-click timestamped snapshot backup to `backups/pharmacy_backup_YYYYMMDD_HHMMSS.db`.
+
 ---
 
 ## 📂 Project Structure
@@ -151,6 +178,13 @@ Pharmacy_Management_System/
 ├── README.md                      # Comprehensive System Documentation
 ├── main.py                        # Unified Application Entry Point
 ├── app.py                         # Application Window & Role-Based Router
+├── config.json                    # Active Centralized Configuration
+├── config.example.json            # Configuration Template
+├── config/                        # Configuration Module
+│   ├── __init__.py                # Package exports
+│   └── settings.py                # Typed Configuration Models & SettingsManager
+├── backups/                       # Timestamped SQLite Database Snapshots
+├── logs/                          # Physical File-based Activity Logs
 ├── apps/                          # Dedicated Standalone Terminal Launchers
 │   ├── admin_app.py               # Standalone Admin Command Center
 │   ├── cashier_app.py             # Standalone Cashier POS Terminal
@@ -159,12 +193,16 @@ Pharmacy_Management_System/
 │   └── pharmacist_app.py          # Standalone Pharmacist Clinical Station
 ├── core/                          # Data, Security & Network Layer
 │   ├── api_client.py              # Asynchronous Presence Heartbeat & Event Logger
-│   └── db.py                      # SQLite Central State Engine & Relational CRUD Layer
+│   ├── db.py                      # SQLite Central State Engine & Relational CRUD Layer
+│   └── logger.py                  # Dual File/DB Activity Logger, CSV Export & Backup
+├── tests/                         # Automated Verification Test Suite
+│   └── test_all_features.py       # 16 Automated Integration & Unit Tests
 ├── ui/                            # Shared UI Theme & Dashboard Views
 │   ├── theme.py                   # Light (Default White) & Dark Color Tokens
+│   ├── components/                # Reusable Widgets (Toasts, Badges, etc.)
 │   └── views/                     # Full-Featured Role Dashboard Views
 │       ├── login_view.py          # Unified Authentication Screen
-│       ├── admin_dashboard_view.py      # Admin Command Center & Staff Management
+│       ├── admin_dashboard_view.py      # Admin Command Center, Staff, Settings & Logs
 │       ├── pharmacist_dashboard_view.py # Pharmacist Clinical & CDSS Station
 │       ├── cashier_dashboard_view.py    # Cashier POS & Billing Terminal
 │       ├── inventory_dashboard_view.py  # Inventory & FEFO Batch Ledger
