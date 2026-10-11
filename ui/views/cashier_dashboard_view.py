@@ -529,7 +529,13 @@ class CashierDashboardView(ctk.CTkFrame):
             lbl_title = ctk.CTkLabel(c, text=f"{rx['rx_id']} — {rx['patient_name']}", font=FONTS["body_bold"], text_color=COLORS["text_main"])
             lbl_title.grid(row=0, column=0, sticky="w", padx=10, pady=(6, 2))
             
-            items_str = ", ".join(it["medicine"] for it in rx.get("items", []))
+            items_list = []
+            for it in rx.get("items", []):
+                if isinstance(it, dict):
+                    items_list.append(it.get("medicine", str(it)))
+                else:
+                    items_list.append(str(it))
+            items_str = ", ".join(items_list)
             lbl_it = ctk.CTkLabel(c, text=f"💊 {items_str}", font=FONTS["small"], text_color=COLORS["text_muted"])
             lbl_it.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 6))
             
@@ -549,11 +555,16 @@ class CashierDashboardView(ctk.CTkFrame):
     def import_rx_items(self, rx, window):
         count = 0
         for it in rx.get("items", []):
-            med_name = it["medicine"].lower()
+            if isinstance(it, dict):
+                med_name = it.get("medicine", "").lower()
+                qty = it.get("qty", 10)
+            else:
+                med_name = str(it).lower()
+                qty = 10
             match = next((m for m in self.medicines if m["name"].lower() in med_name or med_name in m["name"].lower()), None)
             if not match:
                 match = self.medicines[0]
-            self.cart.append({"med": match, "qty": it.get("qty", 10)})
+            self.cart.append({"med": match, "qty": qty})
             count += 1
             
         # Set customer name if present
@@ -754,9 +765,21 @@ Payment Mode: {inv_data['payment_method']}
 Item Name              Batch   Qty    Rate    Amt
 --------------------------------------------------
 """
-        for it in inv_data["items"]:
-            n = (it["name"][:18] + '..') if len(it["name"]) > 20 else it["name"]
-            receipt_text += f"{n:<20} {it['batch'][:6]:<7} {it['qty']:<4} {it['rate']:<6.1f} {it['amount']:>6.2f}\n"
+        for it in inv_data.get("items", []):
+            if isinstance(it, dict):
+                name = it.get("name", "Medicine Item")
+                batch = str(it.get("batch", "GEN-01"))
+                qty = it.get("qty", 1)
+                rate = float(it.get("rate", 0.0))
+                amt = float(it.get("amount", rate * qty))
+            else:
+                name = str(it)
+                batch = "GEN-01"
+                qty = 1
+                rate = 0.0
+                amt = 0.0
+            n = (name[:18] + '..') if len(name) > 20 else name
+            receipt_text += f"{n:<20} {batch[:6]:<7} {qty:<4} {rate:<6.1f} {amt:>6.2f}\n"
 
         receipt_text += f"""--------------------------------------------------
 Subtotal:                              ₹ {inv_data['subtotal']:>8.2f}
@@ -872,8 +895,15 @@ TOTAL AMOUNT PAYABLE:                  ₹ {inv_data['total_amount']:>8.2f}
             lbl_amt.grid(row=0, column=1, sticky="e")
             
             cust_name = inv.get("patient_name", "Counter Walk-in")
-            items_summary = ", ".join(it.get("name", str(it)) for it in inv.get("items", []))
-            info_txt = f"👤 {cust_name} | 🕒 {inv['timestamp']} | Cashier: {inv['cashier_name']}\n📦 Items: {items_summary}"
+            items_raw = inv.get("items", [])
+            items_list = []
+            for it in items_raw:
+                if isinstance(it, dict):
+                    items_list.append(it.get("name", str(it)))
+                else:
+                    items_list.append(str(it))
+            items_summary = ", ".join(items_list) if items_list else "Standard Medicines"
+            info_txt = f"👤 {cust_name} | 🕒 {inv.get('timestamp', '')} | Cashier: {inv.get('cashier_name', 'Counter')}\n📦 Items: {items_summary}"
             lbl_info = ctk.CTkLabel(c, text=info_txt, font=FONTS["small"], text_color=COLORS["text_muted"], justify="left")
             lbl_info.grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
             

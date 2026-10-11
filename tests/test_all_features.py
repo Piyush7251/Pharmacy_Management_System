@@ -390,6 +390,35 @@ class TestAegisPharmFeatures(unittest.TestCase):
                 import shutil
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
+    # --- 13. UI DASHBOARD RENDERING & ERROR RESILIENCE ---
+    def test_17_dashboard_views_instantiation_and_rendering(self):
+        from app import PharmacyApplication
+        app = PharmacyApplication()
+        app.withdraw()
+        try:
+            admin_user = authenticate_user("admin", "admin123")
+            app.handle_login_success(admin_user)
+            app.update()
+            self.assertIsNotNone(app.current_dashboard)
+            
+            roles = [
+                "👑 Store Admin",
+                "🩺 Pharmacist",
+                "💳 Cashier (POS)",
+                "📦 Stock Manager",
+                "🛵 Delivery Rider"
+            ]
+            for role_text in roles:
+                app.switch_role(role_text)
+                app.update()
+                self.assertIsNotNone(app.current_dashboard)
+        finally:
+            if app.connector:
+                app.connector.stop()
+            app.destroy()
+
 if __name__ == "__main__":
     unittest.main()
+
+
 

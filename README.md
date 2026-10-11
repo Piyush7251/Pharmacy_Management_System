@@ -143,7 +143,7 @@ python apps/admin_app.py
 ```
 
 ### Option C: Automated Full-Feature Test Suite
-Run the 16-point automated test suite covering all security, clinical, pos, inventory, config, and logging functions:
+Run the 17-point automated test suite covering all security, clinical, pos, inventory, config, logging, and UI dashboard rendering functions:
 ```bash
 python tests/test_all_features.py
 ```
@@ -196,7 +196,7 @@ Pharmacy_Management_System/
 │   ├── db.py                      # SQLite Central State Engine & Relational CRUD Layer
 │   └── logger.py                  # Dual File/DB Activity Logger, CSV Export & Backup
 ├── tests/                         # Automated Verification Test Suite
-│   └── test_all_features.py       # 16 Automated Integration & Unit Tests
+│   └── test_all_features.py       # 17 Automated Integration & Unit Tests
 ├── ui/                            # Shared UI Theme & Dashboard Views
 │   ├── theme.py                   # Light (Default White) & Dark Color Tokens
 │   ├── components/                # Reusable Widgets (Toasts, Badges, etc.)

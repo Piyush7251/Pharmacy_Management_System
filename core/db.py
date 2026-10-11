@@ -525,7 +525,27 @@ def get_all_prescriptions():
     res = []
     for r in rows:
         d = dict(r)
-        d["items"] = json.loads(d.get("items", "[]"))
+        try:
+            raw_items = json.loads(d.get("items", "[]"))
+        except Exception:
+            raw_items = []
+        norm_items = []
+        for it in raw_items:
+            if isinstance(it, dict):
+                norm_items.append({
+                    "medicine": it.get("medicine", "Medicine"),
+                    "dosage": it.get("dosage", "1 tab daily"),
+                    "qty": it.get("qty", 10),
+                    "duration": it.get("duration", "As directed")
+                })
+            elif isinstance(it, str):
+                norm_items.append({
+                    "medicine": it,
+                    "dosage": "1 tab daily",
+                    "qty": 10,
+                    "duration": "As directed"
+                })
+        d["items"] = norm_items
         res.append(d)
     return res
 
@@ -605,9 +625,36 @@ def get_all_invoices(limit=100):
     res = []
     for r in rows:
         d = dict(r)
-        d["items"] = json.loads(d.get("items_json", "[]"))
+        try:
+            raw_items = json.loads(d.get("items_json", "[]"))
+        except Exception:
+            raw_items = []
+        norm_items = []
+        for it in raw_items:
+            if isinstance(it, dict):
+                norm_items.append({
+                    "med_id": it.get("med_id", "MED-000"),
+                    "name": it.get("name", "Medicine Item"),
+                    "batch": it.get("batch", "STD-01"),
+                    "qty": it.get("qty", 1),
+                    "rate": float(it.get("rate", 0.0)),
+                    "amount": float(it.get("amount", it.get("rate", 0.0) * it.get("qty", 1)))
+                })
+            elif isinstance(it, str):
+                tot = float(d.get("total_amount", 0.0))
+                cnt = max(1, len(raw_items))
+                norm_items.append({
+                    "med_id": "MED-GEN",
+                    "name": it,
+                    "batch": "STD-01",
+                    "qty": 1,
+                    "rate": round(tot / cnt, 2),
+                    "amount": round(tot / cnt, 2)
+                })
+        d["items"] = norm_items
         res.append(d)
     return res
+
 
 
 # --- DELIVERY DISPATCH CRUD FUNCTIONS ---
@@ -739,7 +786,25 @@ def get_all_purchase_orders():
     res = []
     for r in rows:
         d = dict(r)
-        d["items"] = json.loads(d.get("items_json", "[]"))
+        try:
+            raw_items = json.loads(d.get("items_json", "[]"))
+        except Exception:
+            raw_items = []
+        norm_items = []
+        for it in raw_items:
+            if isinstance(it, dict):
+                norm_items.append({
+                    "medicine": it.get("medicine", "Medicine"),
+                    "qty": it.get("qty", 10),
+                    "rate": float(it.get("rate", 0.0))
+                })
+            elif isinstance(it, str):
+                norm_items.append({
+                    "medicine": it,
+                    "qty": 10,
+                    "rate": 0.0
+                })
+        d["items"] = norm_items
         res.append(d)
     return res
 

@@ -259,10 +259,14 @@ class PharmacistDashboardView(ctk.CTkFrame):
             c = ctk.CTkFrame(self.items_scroll, fg_color=COLORS["bg_card"], corner_radius=6, border_width=1, border_color=COLORS["border"])
             c.pack(fill="x", pady=3, padx=2)
             
-            lbl_m = ctk.CTkLabel(c, text=f"💊 {it['medicine']}", font=FONTS["body_bold"], text_color=COLORS["text_main"])
+            med_name = it.get("medicine", str(it)) if isinstance(it, dict) else str(it)
+            lbl_m = ctk.CTkLabel(c, text=f"💊 {med_name}", font=FONTS["body_bold"], text_color=COLORS["text_main"])
             lbl_m.pack(anchor="w", padx=10, pady=(4, 1))
             
-            lbl_d = ctk.CTkLabel(c, text=f"⏱️ Dosage: {it.get('dosage', '1 tab daily')} | Dispense Qty: {it.get('qty', 10)} | Duration: {it.get('duration', 'As directed')}", font=FONTS["small"], text_color=COLORS["text_muted"])
+            dosage = it.get("dosage", "1 tab daily") if isinstance(it, dict) else "1 tab daily"
+            qty = it.get("qty", 10) if isinstance(it, dict) else 10
+            duration = it.get("duration", "As directed") if isinstance(it, dict) else "As directed"
+            lbl_d = ctk.CTkLabel(c, text=f"⏱️ Dosage: {dosage} | Dispense Qty: {qty} | Duration: {duration}", font=FONTS["small"], text_color=COLORS["text_muted"])
             lbl_d.pack(anchor="w", padx=10, pady=(0, 4))
 
     def run_cdss_analysis(self, rx):
@@ -276,17 +280,17 @@ class PharmacistDashboardView(ctk.CTkFrame):
         if matched_patient and matched_patient.get("allergies"):
             for al in matched_patient["allergies"]:
                 for it in rx.get("items", []):
-                    med_name = it["medicine"].lower()
+                    med_name = (it.get("medicine", str(it)) if isinstance(it, dict) else str(it)).lower()
                     if "penicillin" in al.lower() and ("augmentin" in med_name or "amoxicillin" in med_name):
-                        warnings.append(f"⚠️ ALLERGY WARNING: Patient {rx['patient_name']} is allergic to PENICILLIN! Prescribed {it['medicine']} contains Amoxicillin.")
+                        warnings.append(f"⚠️ ALLERGY WARNING: Patient {rx['patient_name']} is allergic to PENICILLIN! Prescribed {med_name} contains Amoxicillin.")
                     if "aspirin" in al.lower() and ("nsaid" in med_name or "aspirin" in med_name or "combiflam" in med_name):
-                        warnings.append(f"⚠️ ALLERGY WARNING: Patient is allergic to NSAIDs/Aspirin! Flagged {it['medicine']}.")
+                        warnings.append(f"⚠️ ALLERGY WARNING: Patient is allergic to NSAIDs/Aspirin! Flagged {med_name}.")
 
         if "allergic to Penicillin" in notes and not any("PENICILLIN" in w for w in warnings):
             warnings.append(f"⚠️ ALLERGY WARNING: {notes}")
             
         # 2. Multi-Drug Interaction Checking
-        rx_med_names = [it["medicine"].lower() for it in rx.get("items", [])]
+        rx_med_names = [(it.get("medicine", str(it)) if isinstance(it, dict) else str(it)).lower() for it in rx.get("items", [])]
         for m in self.all_medicines:
             if any(m["name"].lower() in n or n in m["name"].lower() for n in rx_med_names):
                 interactions = m.get("interactions", [])
@@ -296,7 +300,7 @@ class PharmacistDashboardView(ctk.CTkFrame):
                             warnings.append(f"⚠️ DRUG INTERACTION: {m['name']} may react with {inter} in this prescription.")
 
         # 3. Schedule X / Controlled Drug Check
-        if any("Alprax" in it["medicine"] or "Schedule X" in str(it) for it in rx.get("items", [])) or "Schedule X" in notes:
+        if any("Alprax" in (it.get("medicine", str(it)) if isinstance(it, dict) else str(it)) or "Schedule X" in str(it) for it in rx.get("items", [])) or "Schedule X" in notes:
             warnings.append("⚠️ CONTROLLED MEDICINE: Requires doctor reg number and pharmacist sign-off PIN.")
 
         if warnings:

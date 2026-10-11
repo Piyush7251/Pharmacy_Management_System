@@ -441,7 +441,7 @@ class InventoryDashboardView(ctk.CTkFrame):
             lbl_st = ctk.CTkLabel(r1, text=f" {po['status']} ", font=FONTS["small_bold"], fg_color=st_col, text_color="#FFFFFF", corner_radius=4)
             lbl_st.grid(row=0, column=1, sticky="e")
             
-            items_str = ", ".join(f"{it.get('medicine', 'Item')} (Qty: {it.get('qty', 10)})" for it in po.get("items", []))
+            items_str = ", ".join(f"{it.get('medicine', 'Item')} (Qty: {it.get('qty', 10)})" if isinstance(it, dict) else str(it) for it in po.get("items", []))
             info_txt = f"📅 Date: {po['date']} | Total Value: ₹{po['total_amount']:.2f} | Received by: {po['created_by']}\n📦 Medicines Received: {items_str}"
             lbl_info = ctk.CTkLabel(c, text=info_txt, font=FONTS["small"], text_color=COLORS["text_muted"], justify="left")
             lbl_info.grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
