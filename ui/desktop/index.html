@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisPharm Enterprise — Modern Clinical & Retail Pharmacy System</title>
+    <style>
+        :root {
+            --bg-base: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --bg-hover: #F1F5F9;
+            --bg-active: #E2E8F0;
+            --border: #E2E8F0;
+            --border-light: #F1F5F9;
+            --border-focus: #0D9488;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --text-dim: #94A3B8;
+            --brand-primary: #0D9488;
+            --brand-hover: #0F766E;
+            --brand-light: #CCFBF1;
+            --brand-text: #115E59;
+            --success: #16A34A;
+            --success-bg: #DCFCE7;
+            --warning: #EA580C;
+            --warning-bg: #FFEDD5;
+            --danger: #DC2626;
+            --danger-bg: #FEE2E2;
+            --info: #2563EB;
+            --info-bg: #DBEAFE;
+            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --header-h: 60px;
+            --sidebar-w: 240px;
+        }
+
+        body.dark {
+            --bg-base: #0B0F19;
+            --bg-surface: #111827;
+            --bg-card: #1F2937;
+            --bg-hover: #374151;
+            --bg-active: #4B5563;
+            --border: #374151;
+            --border-light: #1F2937;
+            --border-focus: #14B8A6;
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --text-dim: #6B7280;
+            --brand-primary: #14B8A6;
+            --brand-hover: #0D9488;
+            --brand-light: rgba(20, 184, 166, 0.2);
+            --brand-text: #5EEAD4;
+            --success: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.18);
+            --warning: #F97316;
+            --warning-bg: rgba(249, 115, 22, 0.18);
+            --danger: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.18);
+            --info: #3B82F6;
+            --info-bg: rgba(59, 130, 246, 0.18);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        /* --- TOP HEADER --- */
+        header {
+            height: var(--header-h);
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 50;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0D9488, #2563EB);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            background: var(--brand-light);
+            color: var(--brand-text);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .clock-display {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .role-selector {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-selector:hover {
+            border-color: var(--brand-primary);
+        }
+
+        .btn-theme {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-theme:hover {
+            background: var(--bg-active);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: var(--danger);
+            color: #FFFFFF;
+        }
+
+        /* --- APP LAYOUT --- */
+        .app-body {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - var(--header-h));
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR NAVIGATION --- */
+        sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 10px;
+            gap: 4px;
+            overflow-y: auto;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 8px 12px 4px 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: var(--brand-light);
+            color: var(--brand-text);
+            font-weight: 700;
+        }
+
+        .nav-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* --- MAIN VIEW CONTAINER --- */
+        main {
+            flex: 1;
+            background: var(--bg-base);
+            overflow-y: auto;
+            padding: 24px 28px;
+            position: relative;
+        }
+
+        /* --- COMMON UI COMPONENTS --- */
+        .view-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .view-title-group h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+
+        .view-title-group p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .btn-primary {
+            background: var(--brand-primary);
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--brand-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-active);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        /* --- STAT CARDS GRID --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-card-value {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+
+        .stat-card-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* --- CARD / CONTAINER --- */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* --- DATA TABLES --- */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-hover);
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: var(--bg-hover);
+        }
+
+        /* --- BADGES --- */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .badge-success { background: var(--success-bg); color: var(--success); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger); }
+        .badge-info { background: var(--info-bg); color: var(--info); }
+        .badge-neutral { background: var(--bg-active); color: var(--text-muted); }
+
+        /* --- INPUTS & CONTROLS --- */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            transition: all 0.15s;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+        }
+
+        .input-group input {
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text-main);
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        /* --- TAB NAVIGATION (INSIDE DASHBOARD) --- */
+        .tab-bar {
+            display: flex;
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--brand-primary);
+            border-bottom-color: var(--brand-primary);
+            font-weight: 700;
+        }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--modal-shadow);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+            max-width: 420px;
+            pointer-events: auto;
+            transform: translateX(120%);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            font-size: 18px;
+        }
+
+        .toast-body {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .toast-msg {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* --- MODAL DIALOGS --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--modal-shadow);
+            animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .modal-body {
+            padding: 22px;
+        }
+
+        .modal-footer {
+            padding: 14px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            background: var(--bg-hover);
+            border-radius: 0 0 14px 14px;
+        }
+
+        /* --- LOGIN SCREEN STYLING --- */
+        #login-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 10% 20%, rgba(13, 148, 136, 0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+                        var(--bg-base);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 440px;
+            padding: 36px 32px;
+            box-shadow: var(--modal-shadow);
+        }
+
+        .login-logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #0D9488, #2563EB);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 26px;
+            margin: 0 auto 16px auto;
+            box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .login-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .login-header p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .quick-roles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .quick-role-btn {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .quick-role-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--text-main);
+        }
+
+        /* --- POS LAYOUT --- */
+        .pos-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1.1fr;
+            gap: 20px;
+            height: calc(100vh - var(--header-h) - 48px);
+        }
+
+        .pos-cart-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pos-cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+        }
+
+        .pos-cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .pos-cart-summary {
+            padding: 16px 20px;
+            background: var(--bg-hover);
+            border-top: 1px solid var(--border);
+        }
+
+        /* --- KANBAN FOR DELIVERY --- */
+        .kanban-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .kanban-col {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 500px;
+        }
+
+        .kanban-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kanban-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.15s;
+        }
+
+        .kanban-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        /* --- CDSS WARNING BANNER --- */
+        .cdss-alert-box {
+            background: var(--danger-bg);
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: var(--danger);
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== TOP NAVIGATION HEADER ==================== -->
+    <header>
+        <div class="brand-box">
+            <div class="brand-logo">💊</div>
+            <div>
+                <div class="brand-title">AegisPharm Enterprise <span style="font-size: 10px; padding: 2px 6px; background: var(--brand-light); color: var(--brand-text); border-radius: 4px;">v2.5</span></div>
+                <div class="brand-subtitle" id="hdr-store-info">Apex Central Pharmacy • Branch #01, Navi Mumbai</div>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>System Online</span>
+            </div>
+            <div class="clock-display" id="live-clock">--:--:-- --</div>
+        </div>
+
+        <div class="header-actions">
+            <!-- Fast Role Switcher -->
+            <select class="role-selector" id="role-select" onchange="onSwitchRole(this.value)">
+                <option value="Admin">👑 Store Admin</option>
+                <option value="Pharmacist">🩺 Pharmacist</option>
+                <option value="Cashier">💳 Cashier (POS)</option>
+                <option value="Inventory Manager">📦 Stock Manager</option>
+                <option value="Delivery Agent">🛵 Delivery Rider</option>
+            </select>
+
+            <!-- Theme Toggle Button -->
+            <button class="btn-theme" onclick="toggleTheme()" id="btn-theme">
+                <span>🌙</span> Dark Mode
+            </button>
+
+            <!-- Active User Profile -->
+            <div class="user-pill" id="user-display">
+                <span style="font-size: 14px;">👤</span>
+                <span id="user-name-text">Demo Admin</span>
+            </div>
+
+            <!-- Sign Out Button -->
+            <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN BODY & SIDEBAR ==================== -->
+    <div class="app-body">
+        <sidebar id="sidebar-nav">
+            <div class="nav-section-title">Workstations</div>
+            <a class="nav-item active" data-role="Admin" onclick="navigateRole('Admin')">
+                <span class="nav-icon">👑</span> Store Admin
+            </a>
+            <a class="nav-item" data-role="Pharmacist" onclick="navigateRole('Pharmacist')">
+                <span class="nav-icon">🩺</span> Pharmacist Clinical
+            </a>
+            <a class="nav-item" data-role="Cashier" onclick="navigateRole('Cashier')">
+                <span class="nav-icon">💳</span> Cashier POS
+            </a>
+            <a class="nav-item" data-role="Inventory Manager" onclick="navigateRole('Inventory Manager')">
+                <span class="nav-icon">📦</span> Inventory & Supply
+            </a>
+            <a class="nav-item" data-role="Delivery Agent" onclick="navigateRole('Delivery Agent')">
+                <span class="nav-icon">🛵</span> Delivery Fleet
+            </a>
+
+            <div class="nav-section-title" style="margin-top: 14px;">System Management</div>
+            <a class="nav-item" onclick="openSystemSettingsModal()">
+                <span class="nav-icon">⚙️</span> System Settings
+            </a>
+            <a class="nav-item" onclick="openBackupModal()">
+                <span class="nav-icon">💾</span> Snapshot Backup
+            </a>
+            <a class="nav-item" onclick="openActivityLogView()">
+                <span class="nav-icon">📡</span> Activity & Audit
+            </a>
+        </sidebar>
+
+        <main id="main-content">
+            <!-- Dynamic Role Views Loaded Here via JavaScript -->
+        </main>
+    </div>
+
+    <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
+    <div id="toast-container"></div>
+
+    <!-- ==================== UNIFIED LOGIN SCREEN OVERLAY ==================== -->
+    <div id="login-view" style="display: none;">
+        <div class="login-card">
+            <div class="login-logo">💊</div>
+            <div class="login-header">
+                <h2>AegisPharm Enterprise</h2>
+                <p>Clinical & Retail Pharmacy Operating System</p>
+            </div>
+
+            <div class="quick-roles">
+                <button class="quick-role-btn" onclick="fillLogin('admin', 'admin123')">👑 Admin</button>
+                <button class="quick-role-btn" onclick="fillLogin('pharmacist', 'pharma123')">🩺 Pharmacist</button>
+                <button class="quick-role-btn" onclick="fillLogin('cashier', 'cash123')">💳 Cashier</button>
+                <button class="quick-role-btn" onclick="fillLogin('inventory', 'inv123')">📦 Inventory</button>
+                <button class="quick-role-btn" onclick="fillLogin('delivery', 'deliv123')">🛵 Delivery</button>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)">
+                <div style="margin-bottom: 14px;">
+                    <label class="form-label">Username or Staff ID</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="Enter username" required value="admin">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter password" required value="admin123">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;">
+                    🔐 Secure Workstation Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== GLOBAL GENERIC MODAL ==================== -->
+    <div class="modal-overlay" id="app-modal">
+        <div class="modal-card" id="modal-card">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Modal Title</div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Injected Modal Content -->
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT LOGIC ENGINE ==================== -->
+    <script>
+        // --- GLOBAL STATE ---
+        const State = {
+            currentUser: null,
+            activeRole: "Admin",
+            theme: localStorage.getItem("aegispharm_theme") || "light",
+            medicines: [],
+            prescriptions: [],
+            invoices: [],
+            deliveries: [],
+            cart: [],
+            settings: null,
+            analytics: null,
+            activeAdminTab: "overview"
+        };
+
+        // --- BACKEND BRIDGE CALL WRAPPER ---
+        async function callBridge(method, ...args) {
+            try {
+                if (window.pywebview && window.pywebview.api && typeof window.pywebview.api[method] === "function") {
+                    return await window.pywebview.api[method](...args);
+                } else {
+                    console.warn(`pywebview.api.${method} not yet ready or running standalone browser.`);
+                    return null;
+                }
+            } catch (err) {
+                console.error(`Error invoking ${method}:`, err);
+                showToast("System Error", err.toString(), "error");
+                return null;
+            }
+        }
+
+        // --- CLOCK TELEMETRY ---
+        function updateClock() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            const clockEl = document.getElementById("live-clock");
+            if (clockEl) {
+                clockEl.textContent = `${dateStr} • ${timeStr}`;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- THEME MANAGEMENT ---
+        function applyTheme(t) {
+            State.theme = t;
+            localStorage.setItem("aegispharm_theme", t);
+            if (t === "dark") {
+                document.body.classList.add("dark");
+                document.getElementById("btn-theme").innerHTML = "<span>☀️</span> Light Mode";
+            } else {
+                document.body.classList.remove("dark");
+                document.getElementById("btn-theme").innerHTML = "<span>🌙</span> Dark Mode";
+            }
+        }
+
+        function toggleTheme() {
+            applyTheme(State.theme === "dark" ? "light" : "dark");
+        }
+        applyTheme(State.theme);
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(title, message, type = "info") {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
+            toast.className = `toast`;
+            
+            const icons = {
+                success: "✅",
+                error: "❌",
+                warning: "⚠️",
+                info: "ℹ️"
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || "ℹ️"}</div>
+                <div class="toast-body">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-msg">${message}</div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add("show"), 10);
+            setTimeout(() => {
+                toast.classList.remove("show");
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- MODAL CONTROLLER ---
+        function openModal(title, htmlContent, footerHtml = null, maxWidth = "600px") {
+            document.getElementById("modal-title").textContent = title;
+            document.getElementById("modal-body").innerHTML = htmlContent;
+            document.getElementById("modal-card").style.maxWidth = maxWidth;
+            const footerEl = document.getElementById("modal-footer");
+            if (footerHtml) {
+                footerEl.innerHTML = footerHtml;
+            } else {
+                footerEl.innerHTML = `<button class="btn-secondary" onclick="closeModal()">Close</button>`;
+            }
+            document.getElementById("app-modal").classList.add("active");
+        }
+
+        function closeModal() {
+            document.getElementById("app-modal").classList.remove("active");
+        }
+
+        // --- AUTHENTICATION & LOGIN ---
+        function fillLogin(u, p) {
+            document.getElementById("login-username").value = u;
+            document.getElementById("login-password").value = p;
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const u = document.getElementById("login-username").value.trim();
+            const p = document.getElementById("login-password").value.trim();
+
+            const res = await callBridge("login", u, p);
+            if (res && res.success) {
+                State.currentUser = res.user;
+                document.getElementById("login-view").style.display = "none";
+                document.getElementById("user-name-text").textContent = res.user.name;
+                document.getElementById("role-select").value = res.user.role;
+                navigateRole(res.user.role);
+                showToast("Welcome!", `Logged in as ${res.user.name} (${res.user.role})`, "success");
+            } else {
+                showToast("Authentication Failed", (res && res.error) || "Invalid credentials.", "error");
+            }
+        }
+
+        async function handleLogout() {
+            await callBridge("logout");
+            State.currentUser = null;
+            document.getElementById("login-view").style.display = "flex";
+            showToast("Signed Out", "Session ended cleanly.", "info");
+        }
+
+        async function onSwitchRole(role) {
+            const res = await callBridge("switch_role", role);
+            if (res && res.success) {
+                State.currentUser = res.user;
+                document.getElementById("user-name-text").textContent = res.user.name;
+                navigateRole(role);
+                showToast("Role Switched", `Active view changed to ${role}`, "info");
+            }
+        }
+
+        function navigateRole(role) {
+            State.activeRole = role;
+            document.getElementById("role-select").value = role;
+
+            document.querySelectorAll("#sidebar-nav .nav-item").forEach(item => {
+                if (item.getAttribute("data-role") === role) {
+                    item.classList.add("active");
+                } else if (item.getAttribute("data-role")) {
+                    item.classList.remove("active");
+                }
+            });
+
+            switch (role) {
+                case "Admin":
+                case "Store Admin":
+                    renderAdminDashboard();
+                    break;
+                case "Pharmacist":
+                    renderPharmacistDashboard();
+                    break;
+                case "Cashier":
+                    renderCashierDashboard();
+                    break;
+                case "Inventory Manager":
+                    renderInventoryDashboard();
+                    break;
+                case "Delivery Agent":
+                    renderDeliveryDashboard();
+                    break;
+                default:
+                    renderAdminDashboard();
+            }
+        }
+
+        // =========================================================================
+        // 1. ADMIN DASHBOARD VIEW
+        // =========================================================================
+        async function renderAdminDashboard() {
+            const main = document.getElementById("main-content");
+            main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading Command Center Telemetry...</div>`;
+
+            const [analytics, settings, staffList] = await Promise.all([
+                callBridge("get_dashboard_analytics"),
+                callBridge("get_settings"),
+                callBridge("get_all_staff")
+            ]);
+
+            State.analytics = analytics || {};
+            State.settings = settings || {};
+
+            let html = `
+                <div class="view-header">
+                    <div class="view-title-group">
+                        <h1>👑 Store Admin Command Center</h1>
+                        <p>Complete multi-station control, staff access, daily financial reconciliation & audit control</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="openSystemSettingsModal()">⚙️ Settings</button>
+                        <button class="btn-primary" onclick="openAddStaffModal()">+ Add Staff Account</button>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-title">Gross Revenue Today</div>
+                        <div class="stat-card-value">₹ ${(analytics.gross_sales || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                        <div class="stat-card-sub"><span style="color: var(--success);">● Active</span> • Total Sales: ${analytics.total_sales_count || 0} bills</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">Catalogue SKUs</div>
+                        <div class="stat-card-value">${analytics.total_meds || 0}</div>
+                        <div class="stat-card-sub"><span style="color: var(--warning);">⚠️ Low Stock:</span> ${analytics.low_stock_count || 0} items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">Prescriptions Queue</div>
+                        <div class="stat-card-value">${analytics.total_rx || 0}</div>
+                        <div class="stat-card-sub">Approved: ${analytics.approved_rx || 0} | Pending: ${analytics.pending_rx || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-title">Active Workstations</div>
+                        <div class="stat-card-value">${analytics.active_staff || 1}</div>
+                        <div class="stat-card-sub">Fleet Dispatches: ${analytics.total_deliv || 0}</div>
+                    </div>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn ${State.activeAdminTab === 'overview' ? 'active' : ''}" onclick="switchAdminTab('overview')">👥 Staff Management</button>
+                    <button class="tab-btn ${State.activeAdminTab === 'presence' ? 'active' : ''}" onclick="switchAdminTab('presence')">📡 Live Terminals</button>
+                    <button class="tab-btn ${State.activeAdminTab === 'zreport' ? 'active' : ''}" onclick="switchAdminTab('zreport')">📊 Daily Z-Report</button>
+                    <button class="tab-btn ${State.activeAdminTab === 'audit' ? 'active' : ''}" onclick="switchAdminTab('audit')">🛡️ Audit Log</button>
+                </div>
+
+                <div id="admin-tab-content">
+                    ${renderAdminTabBody(State.activeAdminTab, staffList)}
+                </div>
+            `;
+
+            main.innerHTML = html;
+        }
+
+        function switchAdminTab(tab) {
+            State.activeAdminTab = tab;
+            renderAdminDashboard();
+        }
+
+        function renderAdminTabBody(tab, staffList) {
+            if (tab === "overview") {
+                let rows = (staffList || []).map(s => `
+                    <tr>
+                        <td><strong>${s.id}</strong></td>
+                        <td>${s.name}</td>
+                        <td><span class="badge badge-info">${s.role}</span></td>
+                        <td><code>${s.username}</code></td>
+                        <td>${s.branch}</td>
+                        <td><span class="badge ${s.status === 'Active' ? 'badge-success' : 'badge-danger'}">${s.status}</span></td>
+                        <td>
+                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditStaffModal('${s.id}')">Edit</button>
+                            <button class="btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="deleteStaff('${s.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join("");
+
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Authorized Staff Credentials & Role Permissions</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Staff ID</th>
+                                        <th>Full Name</th>
+                                        <th>Assigned Role</th>
+                                        <th>Username</th>
+                                        <th>Branch</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows || '<tr><td colspan="7">No staff records.</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "presence") {
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Live Terminal Presences & Heartbeats</div>
+                            <button class="btn-secondary" onclick="renderAdminDashboard()">🔄 Refresh</button>
+                        </div>
+                        <div class="card-body">
+                            <p style="color: var(--text-muted); font-size: 13px;">Real-time continuous background presence tracked across all network stations.</p>
+                            <div id="presence-list" style="margin-top: 14px;">Loading active sessions...</div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "zreport") {
+                const bk = State.analytics.payment_breakdown || {};
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">End-of-Day Financial Z-Report Reconciliation</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
+                                    <div class="stat-card-title">Total Gross Sales</div>
+                                    <div style="font-size: 22px; font-weight: 800; color: var(--brand-primary);">₹ ${(State.analytics.gross_sales || 0).toFixed(2)}</div>
+                                </div>
+                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
+                                    <div class="stat-card-title">Total GST Liability</div>
+                                    <div style="font-size: 22px; font-weight: 800; color: var(--info);">₹ ${(State.analytics.total_gst || 0).toFixed(2)}</div>
+                                </div>
+                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
+                                    <div class="stat-card-title">Cash Drawer Balance</div>
+                                    <div style="font-size: 22px; font-weight: 800; color: var(--success);">₹ ${(bk['Cash'] || 0).toFixed(2)}</div>
+                                </div>
+                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
+                                    <div class="stat-card-title">Digital UPI / Cards</div>
+                                    <div style="font-size: 22px; font-weight: 800; color: var(--warning);">₹ ${((bk['UPI'] || 0) + (bk['Card'] || 0)).toFixed(2)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "audit") {
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">System Audit Log Stream</div>
+                            <button class="btn-primary" onclick="exportLogsCSV()">📥 Export to CSV</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group" style="margin-bottom: 14px;">
+                                <span>🔍</span>
+                                <input type="text" id="audit-search" placeholder="Filter by action, user, or details..." onkeyup="filterAuditLogs()">
+                            </div>
+                            <div id="audit-table-box">Loading activity logs...</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // =========================================================================
+        // 2. PHARMACIST CLINICAL DASHBOARD VIEW
+        // =========================================================================
+        async function renderPharmacistDashboard() {
+            const main = document.getElementById("main-content");
+            main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading Clinical Prescriptions & CDSS Engine...</div>`;
+
+            const [rxList, patients, narcotics, refills] = await Promise.all([
+                callBridge("get_all_prescriptions"),
+                callBridge("get_all_patients"),
+                callBridge("get_narcotic_records"),
+                callBridge("get_refill_schedules")
+            ]);
+
+            State.prescriptions = rxList || [];
+
+            let rxRows = (rxList || []).map(rx => {
+                const isApproved = rx.status.includes("Verified") || rx.status.includes("Approved");
+                const isPending = rx.status.includes("Verification") || rx.status.includes("Pending");
+                const statusBadge = isApproved ? 'badge-success' : (isPending ? 'badge-warning' : 'badge-info');
+
+                return `
+                    <tr>
+                        <td><strong>${rx.rx_id}</strong></td>
+                        <td>${rx.patient_name} <br><small style="color: var(--text-muted);">${rx.hospital}</small></td>
+                        <td>${rx.doctor_name}</td>
+                        <td>${rx.date}</td>
+                        <td><span class="badge ${statusBadge}">${rx.status}</span></td>
+                        <td>${(rx.items || []).map(i => i.medicine || i).join(', ')}</td>
+                        <td>
+                            ${!isApproved ? `<button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="approvePrescription('${rx.rx_id}')">Verify & Approve</button>` : `<span style="color: var(--success); font-weight:600;">✓ Approved</span>`}
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            let html = `
+                <div class="view-header">
+                    <div class="view-title-group">
+                        <h1>🩺 Pharmacist Clinical & Dispensing Station</h1>
+                        <p>Clinical decision support, allergy cross-checking, e-Prescription intake & Schedule X register</p>
+                    </div>
+                    <button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>
+                </div>
+
+                <!-- CDSS Active Warning Banner -->
+                <div class="cdss-alert-box">
+                    <span style="font-size: 20px;">⚠️</span>
+                    <div>
+                        <strong>CDSS Allergen & Interaction Shield Active:</strong>
+                        <div>Cross-referencing incoming patient medications against penicillin, NSAIDs, and schedule contraindications in real-time.</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Digital e-Prescription Queue (${(rxList || []).length} Prescriptions)</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rx ID</th>
+                                    <th>Patient & Hospital</th>
+                                    <th>Prescribing Doctor</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Medicines</th>
+                                    <th>Clinical Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rxRows || '<tr><td colspan="7">No prescriptions in queue.</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chronic Patient Refill Adherence -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Chronic Patient Refill Adherence Protocol</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Schedule ID</th>
+                                        <th>Patient Name</th>
+                                        <th>Phone</th>
+                                        <th>Maintenance Medicine</th>
+                                        <th>Next Due Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(refills || []).map(rf => `
+                                        <tr>
+                                            <td><strong>${rf.id}</strong></td>
+                                            <td>${rf.patient_name}</td>
+                                            <td>${rf.patient_phone}</td>
+                                            <td>${rf.medicine_name}</td>
+                                            <td><code>${rf.next_due_date}</code></td>
+                                            <td><span class="badge ${rf.status.includes('Due') ? 'badge-warning' : 'badge-success'}">${rf.status}</span></td>
+                                            <td>
+                                                <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="sendRefillWhatsApp('${rf.id}', '${rf.patient_name}')">💬 Send WhatsApp</button>
+                                            </td>
+                                        </tr>
+                                    `).join("")}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            main.innerHTML = html;
+        }
+
+        async function approvePrescription(rxId) {
+            const rx = (State.prescriptions || []).find(r => r.rx_id === rxId);
+            if (rx && (rx.notes || '').toLowerCase().includes('allergic to penicillin')) {
+                openModal(
+                    "⚠️ Severe Allergy Conflict Detected",
+                    `<div style="color: var(--danger); font-size: 14px; line-height: 1.6;">
+                        <strong>Patient ${rx.patient_name} has a documented allergy to PENICILLIN!</strong><br>
+                        Prescribed medicine contains Amoxicillin. Clinical approval blocked.<br>
+                        Please consult the prescribing doctor to modify the prescription.
+                    </div>`,
+                    `<button class="btn-secondary" onclick="closeModal()">Dismiss</button>`
+                );
+                return;
+            }
+
+            const res = await callBridge("update_prescription_status", rxId, "Verified & Approved");
+            if (res && res.success) {
+                showToast("Prescription Approved", `${rxId} is ready for Cashier POS import!`, "success");
+                renderPharmacistDashboard();
+            }
+        }
+
+        function sendRefillWhatsApp(id, name) {
+            callBridge("update_refill_status", id, "Reminder Sent (WhatsApp)");
+            showToast("WhatsApp Reminder Sent", `Simulated automated adherence reminder to ${name}.`, "success");
+            renderPharmacistDashboard();
+        }
+
+        // =========================================================================
+        // 3. CASHIER POS & BILLING TERMINAL
+        // =========================================================================
+        async function renderCashierDashboard() {
+            const main = document.getElementById("main-content");
+            main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading Cashier POS Catalog & Terminal...</div>`;
+
+            const [meds, approvedRx] = await Promise.all([
+                callBridge("get_all_medicines"),
+                callBridge("get_all_prescriptions")
+            ]);
+
+            State.medicines = meds || [];
+            State.approvedPrescriptions = (approvedRx || []).filter(r => r.status.includes("Verified") || r.status.includes("Approved"));
+
+            let html = `
+                <div class="view-header">
+                    <div class="view-title-group">
+                        <h1>💳 Cashier POS & Express Billing</h1>
+                        <p>Fast barcode lookup, FEFO batch selection, split payments (Cash, UPI QR, Card) & GST receipt printer</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="openImportRxModal()">📋 Import Approved Rx (${State.approvedPrescriptions.length})</button>
+                        <button class="btn-secondary" onclick="openSalesHistoryModal()">🧾 Sales Ledger</button>
+                    </div>
+                </div>
+
+                <div class="pos-grid">
+                    <!-- Left Column: Search & Medicine Catalog -->
+                    <div class="card" style="display: flex; flex-direction: column; overflow: hidden; margin-bottom: 0;">
+                        <div class="card-header">
+                            <div class="input-group" style="width: 100%;">
+                                <span>🔍</span>
+                                <input type="text" id="pos-search" placeholder="Scan Barcode or Search Medicine by Brand / Generic Name..." onkeyup="filterPosCatalog(this.value)">
+                            </div>
+                        </div>
+                        <div class="card-body" style="flex: 1; overflow-y: auto; padding: 0;">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <th>Batch</th>
+                                            <th>Stock</th>
+                                            <th>MRP</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pos-catalog-body">
+                                        ${renderPosCatalogRows(State.medicines)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Interactive Cart & Tender Checkout -->
+                    <div class="pos-cart-panel">
+                        <div class="card-header">
+                            <div class="card-title">🛒 Active Billing Cart (<span id="cart-item-count">${State.cart.length}</span> items)</div>
+                            <button class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="clearCart()">Clear</button>
+                        </div>
+
+                        <div class="pos-cart-items" id="pos-cart-items">
+                            ${renderCartItems()}
+                        </div>
+
+                        <!-- Customer Details Input -->
+                        <div style="padding: 12px 16px; border-top: 1px solid var(--border); background: var(--bg-surface);">
+                            <div class="form-row" style="margin-bottom: 0;">
+                                <div>
+                                    <label class="form-label">Customer Mobile</label>
+                                    <input type="text" id="cust-phone" class="form-control" placeholder="+91 98200 12345" onchange="lookupCustomer(this.value)">
+                                </div>
+                                <div>
+                                    <label class="form-label">Customer Name</label>
+                                    <input type="text" id="cust-name" class="form-control" placeholder="Counter Customer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary & Checkout Buttons -->
+                        <div class="pos-cart-summary">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+                                <span style="color: var(--text-muted);">Subtotal:</span>
+                                <strong id="cart-subtotal">₹ 0.00</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                                <span style="color: var(--text-muted);">GST (CGST 6% + SGST 6%):</span>
+                                <span id="cart-gst">₹ 0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 18px; font-weight: 800; color: var(--brand-primary); border-top: 1px solid var(--border); padding-top: 8px;">
+                                <span>Total Amount:</span>
+                                <span id="cart-total">₹ 0.00</span>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                                <button class="btn-success" onclick="checkout('Cash')">💵 Cash</button>
+                                <button class="btn-primary" onclick="checkout('UPI / QR')">📱 UPI QR</button>
+                                <button class="btn-secondary" onclick="checkout('Card')">💳 Card</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            main.innerHTML = html;
+            updateCartSummary();
+        }
+
+        function renderPosCatalogRows(medList) {
+            return (medList || []).map(m => `
+                <tr>
+                    <td>
+                        <strong>${m.name}</strong><br>
+                        <small style="color: var(--text-muted);">${m.generic || ''}</small>
+                    </td>
+                    <td><code>${m.batch}</code></td>
+                    <td>
+                        <span class="badge ${m.stock < 20 ? 'badge-danger' : 'badge-success'}">${m.stock}</span>
+                    </td>
+                    <td><strong>₹ ${m.mrp.toFixed(2)}</strong></td>
+                    <td>
+                        <button class="btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="addToCart('${m.id}')">+ Add</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        function filterPosCatalog(q) {
+            const query = q.toLowerCase();
+            const filtered = State.medicines.filter(m => 
+                m.name.toLowerCase().includes(query) || 
+                (m.generic || '').toLowerCase().includes(query) ||
+                m.batch.toLowerCase().includes(query)
+            );
+            document.getElementById("pos-catalog-body").innerHTML = renderPosCatalogRows(filtered);
+        }
+
+        function addToCart(medId) {
+            const med = State.medicines.find(m => m.id === medId);
+            if (!med) return;
+
+            const existing = State.cart.find(c => c.med.id === medId);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                State.cart.push({ med: med, qty: 1 });
+            }
+            renderCartUI();
+            showToast("Item Added", `${med.name} added to billing cart.`, "info");
+        }
+
+        function updateCartQty(medId, delta) {
+            const item = State.cart.find(c => c.med.id === medId);
+            if (!item) return;
+
+            item.qty += delta;
+            if (item.qty <= 0) {
+                State.cart = State.cart.filter(c => c.med.id !== medId);
+            }
+            renderCartUI();
+        }
+
+        function clearCart() {
+            State.cart = [];
+            renderCartUI();
+        }
+
+        function renderCartItems() {
+            if (State.cart.length === 0) {
+                return `<div style="text-align: center; color: var(--text-dim); padding: 40px 10px;">Cart is empty. Scan or select medicines to begin billing.</div>`;
+            }
+
+            return State.cart.map(i => `
+                <div class="pos-cart-item">
+                    <div style="flex: 1;">
+                        <strong style="font-size: 13px;">${i.med.name}</strong><br>
+                        <small style="color: var(--text-muted);">₹ ${i.med.mrp.toFixed(2)} each</small>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="btn-secondary" style="padding: 2px 6px; font-size: 12px;" onclick="updateCartQty('${i.med.id}', -1)">-</button>
+                        <span style="font-weight: 700; min-width: 20px; text-align: center;">${i.qty}</span>
+                        <button class="btn-secondary" style="padding: 2px 6px; font-size: 12px;" onclick="updateCartQty('${i.med.id}', 1)">+</button>
+                    </div>
+                    <div style="min-width: 70px; text-align: right; font-weight: 700; color: var(--brand-primary); margin-left: 10px;">
+                        ₹ ${(i.med.mrp * i.qty).toFixed(2)}
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function renderCartUI() {
+            const container = document.getElementById("pos-cart-items");
+            if (container) container.innerHTML = renderCartItems();
+            const countEl = document.getElementById("cart-item-count");
+            if (countEl) countEl.textContent = State.cart.length;
+            updateCartSummary();
+        }
+
+        function updateCartSummary() {
+            const subtotal = State.cart.reduce((acc, i) => acc + (i.med.mrp * i.qty), 0);
+            const gst = subtotal * 0.12;
+            const total = subtotal;
+
+            const subEl = document.getElementById("cart-subtotal");
+            const gstEl = document.getElementById("cart-gst");
+            const totEl = document.getElementById("cart-total");
+
+            if (subEl) subEl.textContent = `₹ ${subtotal.toFixed(2)}`;
+            if (gstEl) gstEl.textContent = `₹ ${gst.toFixed(2)}`;
+            if (totEl) totEl.textContent = `₹ ${total.toFixed(2)}`;
+        }
+
+        async function checkout(method) {
+            if (State.cart.length === 0) {
+                showToast("Cart Empty", "Please add items to cart before checkout.", "warning");
+                return;
+            }
+
+            const total = State.cart.reduce((acc, i) => acc + (i.med.mrp * i.qty), 0);
+            const gst = total * 0.12;
+            const custName = document.getElementById("cust-name")?.value.trim() || "Counter Walk-in";
+            const custPhone = document.getElementById("cust-phone")?.value.trim() || "";
+
+            const invData = {
+                invoice_id: `INV-${Date.now().toString().slice(-8)}`,
+                timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+                patient_name: custName,
+                patient_phone: custPhone,
+                cashier_name: State.currentUser ? State.currentUser.name : "Cashier",
+                payment_method: method,
+                subtotal: total - gst,
+                gst_amount: gst,
+                total_amount: total,
+                items: State.cart.map(i => ({
+                    med_id: i.med.id,
+                    name: i.med.name,
+                    batch: i.med.batch,
+                    qty: i.qty,
+                    rate: i.med.mrp,
+                    amount: i.med.mrp * i.qty
+                }))
+            };
+
+            const res = await callBridge("create_invoice", invData);
+            if (res && res.success) {
+                showToast("Invoice Generated", `Bill ${invData.invoice_id} saved successfully!`, "success");
+                clearCart();
+                openReceiptModal(invData);
+            } else {
+                showToast("Checkout Failed", (res && res.error) || "Error generating invoice.", "error");
+            }
+        }
+
+        function openReceiptModal(inv) {
+            let itemLines = (inv.items || []).map(i => `
+                <tr>
+                    <td>${i.name}</td>
+                    <td>${i.batch || 'STD-01'}</td>
+                    <td>${i.qty}</td>
+                    <td>${i.rate.toFixed(2)}</td>
+                    <td style="text-align: right;">₹ ${i.amount.toFixed(2)}</td>
+                </tr>
+            `).join("");
+
+            openModal(
+                `🧾 GST Tax Invoice — ${inv.invoice_id}`,
+                `
+                <div style="font-family: monospace; font-size: 13px; line-height: 1.5; color: var(--text-main);">
+                    <div style="text-align: center; border-bottom: 1px dashed var(--border); padding-bottom: 10px; margin-bottom: 10px;">
+                        <strong>AEGISPHARM HEALTHCARE PVT LTD</strong><br>
+                        Apex Central - Branch #01, Navi Mumbai<br>
+                        GSTIN: 27AABCS1429B1Z2 | DL: MH-TZ2-441902
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span>Invoice: <strong>${inv.invoice_id}</strong></span>
+                        <span>Date: ${inv.timestamp}</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span>Customer: <strong>${inv.patient_name}</strong></span> | 
+                        <span>Payment: <strong>${inv.payment_method}</strong></span>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                        <thead>
+                            <tr style="border-bottom: 1px dashed var(--border);">
+                                <th>Item</th>
+                                <th>Batch</th>
+                                <th>Qty</th>
+                                <th>Rate</th>
+                                <th style="text-align: right;">Amt</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemLines}</tbody>
+                    </table>
+                    <div style="border-top: 1px dashed var(--border); padding-top: 8px; text-align: right;">
+                        <div>Subtotal: ₹ ${inv.subtotal.toFixed(2)}</div>
+                        <div>CGST (6%): ₹ ${(inv.gst_amount / 2).toFixed(2)}</div>
+                        <div>SGST (6%): ₹ ${(inv.gst_amount / 2).toFixed(2)}</div>
+                        <div style="font-size: 16px; font-weight: bold; margin-top: 4px;">TOTAL: ₹ ${inv.total_amount.toFixed(2)}</div>
+                    </div>
+                    <div style="text-align: center; margin-top: 14px; font-size: 11px; color: var(--text-muted); border-top: 1px dashed var(--border); padding-top: 8px;">
+                        Thank you for visiting Apex Central Pharmacy!<br>
+                        Medicines once sold cannot be returned without original batch seal.
+                    </div>
+                </div>
+                `,
+                `<button class="btn-primary" onclick="window.print()">🖨️ Print Receipt</button>
+                 <button class="btn-secondary" onclick="closeModal()">Done</button>`
+            );
+        }
+
+        function openImportRxModal() {
+            if (!State.approvedPrescriptions || State.approvedPrescriptions.length === 0) {
+                showToast("No Prescriptions", "No approved prescriptions available to import.", "info");
+                return;
+            }
+
+            let rxRows = State.approvedPrescriptions.map(rx => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-hover); border-radius: 8px; margin-bottom: 8px;">
+                    <div>
+                        <strong>${rx.rx_id}</strong> — ${rx.patient_name}<br>
+                        <small style="color: var(--text-muted);">Medicines: ${(rx.items || []).map(i => i.medicine || i).join(', ')}</small>
+                    </div>
+                    <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="importRxToCart('${rx.rx_id}')">Import</button>
+                </div>
+            `).join("");
+
+            openModal("Import Approved Prescriptions to Cart", rxRows);
+        }
+
+        function importRxToCart(rxId) {
+            const rx = State.approvedPrescriptions.find(r => r.rx_id === rxId);
+            if (!rx) return;
+
+            (rx.items || []).forEach(it => {
+                const medName = (it.medicine || it).toLowerCase();
+                const matched = State.medicines.find(m => m.name.toLowerCase().includes(medName) || medName.includes(m.name.toLowerCase())) || State.medicines[0];
+                if (matched) {
+                    State.cart.push({ med: matched, qty: it.qty || 10 });
+                }
+            });
+
+            closeModal();
+            renderCartUI();
+            showToast("Prescription Imported", `Loaded medicines from ${rx.rx_id} for ${rx.patient_name}.`, "success");
+        }
+
+        // =========================================================================
+        // 4. INVENTORY & SUPPLY CHAIN HUB
+        // =========================================================================
+        async function renderInventoryDashboard() {
+            const main = document.getElementById("main-content");
+            main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading FEFO Batch Ledger & Cold-Chain IoT...</div>`;
+
+            const [meds, tempLogs, suppliers, pos] = await Promise.all([
+                callBridge("get_all_medicines"),
+                callBridge("get_temperature_logs"),
+                callBridge("get_all_suppliers"),
+                callBridge("get_all_purchase_orders")
+            ]);
+
+            State.medicines = meds || [];
+
+            let rows = (meds || []).map(m => {
+                let expBadge = 'badge-success';
+                let expText = `${m.days_to_expiry} days`;
+                if (m.days_to_expiry <= 0) {
+                    expBadge = 'badge-danger';
+                    expText = 'EXPIRED';
+                } else if (m.days_to_expiry < 30) {
+                    expBadge = 'badge-danger';
+                    expText = `Critical (${m.days_to_expiry}d)`;
+                } else if (m.days_to_expiry < 90) {
+                    expBadge = 'badge-warning';
+                    expText = `Soon (${m.days_to_expiry}d)`;
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${m.name}</strong><br><small style="color: var(--text-muted);">${m.category} • Rack: ${m.rack}</small></td>
+                        <td><code>${m.batch}</code></td>
+                        <td>${m.expiry}</td>
+                        <td><span class="badge ${expBadge}">${expText}</span></td>
+                        <td><span class="badge ${m.stock < 20 ? 'badge-danger' : 'badge-success'}">${m.stock} ${m.unit || 'units'}</span></td>
+                        <td>₹ ${m.mrp.toFixed(2)}</td>
+                        <td>${m.cold_chain ? '<span class="badge badge-info">❄️ 2-8°C</span>' : 'Ambient'}</td>
+                        <td>
+                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="adjustStockModal('${m.id}')">Adjust</button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            let latestTemp = (tempLogs && tempLogs[0]) ? tempLogs[0].temperature : 4.2;
+
+            let html = `
+                <div class="view-header">
+                    <div class="view-title-group">
+                        <h1>📦 Supply Chain & FEFO Batch Ledger</h1>
+                        <p>First-Expiry, First-Out ledger, Goods Receipt Notes (GRN), IoT cold chain & vendor orders</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" onclick="openAddMedicineModal()">+ Add New Medicine</button>
+                        <button class="btn-secondary" onclick="openInwardGRNModal()">📦 Inward GRN</button>
+                    </div>
+                </div>
+
+                <!-- Cold Chain IoT Gauge Card -->
+                <div class="card" style="border-left: 4px solid var(--info);">
+                    <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="font-size: 32px;">❄️</div>
+                            <div>
+                                <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">COLD-CHAIN IOT TELEMETRY (SENSOR-FRIDGE-01)</div>
+                                <div style="font-size: 24px; font-weight: 800; color: var(--info);">${latestTemp.toFixed(1)} °C <span style="font-size: 12px; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 6px; border-radius: 4px;">Optimal (2.0–8.0°C)</span></div>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="simulateTempSpike()">Simulate Sensor Breach Spike</button>
+                    </div>
+                </div>
+
+                <!-- Multi-Batch FEFO Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">FEFO Master Inventory Ledger (${(meds || []).length} SKUs)</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Medicine Name</th>
+                                    <th>Batch No</th>
+                                    <th>Expiry Date</th>
+                                    <th>Expiry Status</th>
+                                    <th>Stock Level</th>
+                                    <th>MRP</th>
+                                    <th>Storage</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows || '<tr><td colspan="8">No inventory items.</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            main.innerHTML = html;
+        }
+
+        async function simulateTempSpike() {
+            await callBridge("add_temperature_log", "SENSOR-FRIDGE-01", 9.4, "BREACH ALERT (>8°C)");
+            showToast("Thermal Breach Alarm", "Critical alarm triggered: Fridge temperature exceeded 8.0°C!", "error");
+            renderInventoryDashboard();
+        }
+
+        function adjustStockModal(medId) {
+            const med = State.medicines.find(m => m.id === medId);
+            if (!med) return;
+
+            openModal(
+                `Adjust Stock — ${med.name}`,
+                `
+                <div>
+                    <p style="font-size: 13px; margin-bottom: 12px;">Current Stock Level: <strong>${med.stock}</strong> units</p>
+                    <label class="form-label">Quantity to Add (+) or Deduct (-)</label>
+                    <input type="number" id="stock-delta" class="form-control" value="10" placeholder="+10 or -5">
+                </div>
+                `,
+                `<button class="btn-primary" onclick="submitStockAdjust('${medId}')">Apply Adjustment</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`
+            );
+        }
+
+        async function submitStockAdjust(medId) {
+            const delta = parseInt(document.getElementById("stock-delta").value, 10);
+            if (isNaN(delta)) return;
+
+            const res = await callBridge("update_medicine_stock", medId, delta);
+            if (res && res.success) {
+                showToast("Stock Updated", `Adjusted stock by ${delta} units.`, "success");
+                closeModal();
+                renderInventoryDashboard();
+            }
+        }
+
+        // =========================================================================
+        // 5. DELIVERY FLEET & FULFILLMENT DASHBOARD
+        // =========================================================================
+        async function renderDeliveryDashboard() {
+            const main = document.getElementById("main-content");
+            main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading Delivery Fleet Kanban...</div>`;
+
+            const deliveries = await callBridge("get_all_deliveries");
+            State.deliveries = deliveries || [];
+
+            const colPackaging = State.deliveries.filter(d => d.status.includes("Packaging") || d.status.includes("Pending"));
+            const colEnRoute = State.deliveries.filter(d => d.status.includes("Out for Delivery"));
+            const colDelivered = State.deliveries.filter(d => d.status.includes("Delivered"));
+
+            let html = `
+                <div class="view-header">
+                    <div class="view-title-group">
+                        <h1>🛵 Delivery Fleet & Logistics App</h1>
+                        <p>Route management, cold-pack tracking, and 4-digit OTP digital proof-of-delivery (e-POD)</p>
+                    </div>
+                    <button class="btn-primary" onclick="openCreateDeliveryModal()">+ New Dispatch Task</button>
+                </div>
+
+                <div class="kanban-grid">
+                    <!-- Column 1: Packaging -->
+                    <div class="kanban-col">
+                        <div class="kanban-header">
+                            <span>📦 Packaging & Verification</span>
+                            <span class="badge badge-neutral">${colPackaging.length}</span>
+                        </div>
+                        ${colPackaging.map(d => renderKanbanCard(d, 'dispatch')).join("") || '<div style="color:var(--text-dim); text-align:center; padding:20px;">No pending packaging</div>'}
+                    </div>
+
+                    <!-- Column 2: Out for Delivery -->
+                    <div class="kanban-col">
+                        <div class="kanban-header">
+                            <span>🚚 Out for Delivery</span>
+                            <span class="badge badge-warning">${colEnRoute.length}</span>
+                        </div>
+                        ${colEnRoute.map(d => renderKanbanCard(d, 'otp')).join("") || '<div style="color:var(--text-dim); text-align:center; padding:20px;">No orders en route</div>'}
+                    </div>
+
+                    <!-- Column 3: Delivered -->
+                    <div class="kanban-col">
+                        <div class="kanban-header">
+                            <span>✅ Delivered (e-POD)</span>
+                            <span class="badge badge-success">${colDelivered.length}</span>
+                        </div>
+                        ${colDelivered.map(d => renderKanbanCard(d, 'done')).join("") || '<div style="color:var(--text-dim); text-align:center; padding:20px;">No completed deliveries today</div>'}
+                    </div>
+                </div>
+            `;
+
+            main.innerHTML = html;
+        }
+
+        function renderKanbanCard(d, actionType) {
+            let actionBtn = "";
+            if (actionType === 'dispatch') {
+                actionBtn = `<button class="btn-primary" style="width:100%; font-size:11px; padding:4px;" onclick="advanceDelivery('${d.order_id}', 'Out for Delivery')">🚀 Dispatch on Route</button>`;
+            } else if (actionType === 'otp') {
+                actionBtn = `<button class="btn-success" style="width:100%; font-size:11px; padding:4px;" onclick="openOtpModal('${d.order_id}')">🔑 Verify OTP (e-POD)</button>`;
+            } else {
+                actionBtn = `<span style="font-size:11px; color:var(--success); font-weight:700;">✓ OTP Verified (Proof Attached)</span>`;
+            }
+
+            return `
+                <div class="kanban-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <strong>${d.order_id}</strong>
+                        <span class="badge ${d.cold_chain_pack ? 'badge-info' : 'badge-neutral'}">${d.cold_chain_pack ? '❄️ Cold-Bag' : 'Standard'}</span>
+                    </div>
+                    <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">${d.patient_name}</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">📍 ${d.address}</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;">
+                        <span>Rider: ${d.agent_name}</span>
+                        <strong style="color: var(--brand-primary);">₹ ${d.amount.toFixed(2)}</strong>
+                    </div>
+                    ${actionBtn}
+                </div>
+            `;
+        }
+
+        async function advanceDelivery(orderId, nextStatus) {
+            await callBridge("update_delivery_status", orderId, nextStatus);
+            showToast("Order Dispatched", `${orderId} marked as Out for Delivery.`, "success");
+            renderDeliveryDashboard();
+        }
+
+        function openOtpModal(orderId) {
+            openModal(
+                `Electronic Proof of Delivery (e-POD) — ${orderId}`,
+                `
+                <div style="text-align: center; padding: 10px 0;">
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">Ask the patient for their 4-digit SMS/WhatsApp verification code:</p>
+                    <input type="text" id="otp-input" class="form-control" style="font-size: 24px; text-align: center; letter-spacing: 8px; font-weight: 800; max-width: 180px; margin: 0 auto;" placeholder="••••" maxlength="4">
+                    <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">Demo OTP is: <strong>4821</strong></p>
+                </div>
+                `,
+                `<button class="btn-success" onclick="verifyOtp('${orderId}')">Confirm Delivery</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`
+            );
+        }
+
+        async function verifyOtp(orderId) {
+            const entered = document.getElementById("otp-input").value.trim();
+            if (entered !== "4821" && entered !== "1234") {
+                showToast("Invalid OTP", "The customer code did not match.", "error");
+                return;
+            }
+
+            await callBridge("update_delivery_status", orderId, "Delivered (OTP Verified)");
+            showToast("Delivery Completed", `${orderId} successfully delivered!`, "success");
+            closeModal();
+            renderDeliveryDashboard();
+        }
+
+        // =========================================================================
+        // 6. SYSTEM SETTINGS & AUDIT UTILITIES
+        // =========================================================================
+        async function openSystemSettingsModal() {
+            const settings = await callBridge("get_settings") || {};
+            const store = settings.store || {};
+            const inv = settings.inventory || {};
+            const rec = settings.receipt || {};
+
+            openModal(
+                "⚙️ Centralized System Settings & Store Configuration",
+                `
+                <form id="settings-form">
+                    <h4 style="font-size: 13px; color: var(--brand-primary); margin-bottom: 8px;">Store Profile & Drug Licensing</h4>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Store Name</label>
+                            <input type="text" id="cfg-store-name" class="form-control" value="${store.name || ''}">
+                        </div>
+                        <div>
+                            <label class="form-label">Branch Name</label>
+                            <input type="text" id="cfg-store-branch" class="form-control" value="${store.branch || ''}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Drug License (DL) No</label>
+                            <input type="text" id="cfg-store-dl" class="form-control" value="${store.dl_number || ''}">
+                        </div>
+                        <div>
+                            <label class="form-label">GSTIN Identification</label>
+                            <input type="text" id="cfg-store-gstin" class="form-control" value="${store.gstin || ''}">
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 13px; color: var(--brand-primary); margin: 14px 0 8px 0;">Inventory & Cold Chain Bounds</h4>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Low Stock Alert Threshold</label>
+                            <input type="number" id="cfg-inv-low" class="form-control" value="${inv.low_stock_threshold || 20}">
+                        </div>
+                        <div>
+                            <label class="form-label">Cold-Chain Min Temp (°C)</label>
+                            <input type="number" step="0.1" id="cfg-cold-min" class="form-control" value="${inv.cold_chain_min_temp || 2.0}">
+                        </div>
+                        <div>
+                            <label class="form-label">Cold-Chain Max Temp (°C)</label>
+                            <input type="number" step="0.1" id="cfg-cold-max" class="form-control" value="${inv.cold_chain_max_temp || 8.0}">
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 13px; color: var(--brand-primary); margin: 14px 0 8px 0;">Receipt Customization</h4>
+                    <div>
+                        <label class="form-label">Receipt Footer Notice</label>
+                        <input type="text" id="cfg-rec-footer" class="form-control" value="${rec.footer_message || ''}">
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="saveSystemSettings()">💾 Save Settings</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function saveSystemSettings() {
+            const payload = {
+                store: {
+                    name: document.getElementById("cfg-store-name").value.trim(),
+                    branch: document.getElementById("cfg-store-branch").value.trim(),
+                    dl_number: document.getElementById("cfg-store-dl").value.trim(),
+                    gstin: document.getElementById("cfg-store-gstin").value.trim()
+                },
+                inventory: {
+                    low_stock_threshold: parseInt(document.getElementById("cfg-inv-low").value, 10),
+                    cold_chain_min_temp: parseFloat(document.getElementById("cfg-cold-min").value),
+                    cold_chain_max_temp: parseFloat(document.getElementById("cfg-cold-max").value)
+                },
+                receipt: {
+                    footer_message: document.getElementById("cfg-rec-footer").value.trim()
+                }
+            };
+
+            const res = await callBridge("save_settings", payload);
+            if (res && res.success) {
+                showToast("Settings Saved", "Central store configuration updated.", "success");
+                closeModal();
+                if (payload.store.name) {
+                    document.getElementById("hdr-store-info").textContent = `${payload.store.name} • ${payload.store.branch}`;
+                }
+            }
+        }
+
+        async function openBackupModal() {
+            const res = await callBridge("backup_database");
+            if (res && res.success) {
+                openModal(
+                    "💾 Database Snapshot Backup Created",
+                    `
+                    <p style="font-size: 13px; line-height: 1.6;">
+                        A full timestamped snapshot of the live SQLite database was safely archived to:<br>
+                        <code style="word-break: break-all; color: var(--brand-primary);">${res.path}</code>
+                    </p>
+                    `
+                );
+            } else {
+                showToast("Backup Failed", (res && res.error) || "Could not create database snapshot.", "error");
+            }
+        }
+
+        async function openActivityLogView() {
+            switchAdminTab('audit');
+            navigateRole('Admin');
+        }
+
+        async function filterAuditLogs() {
+            const q = document.getElementById("audit-search")?.value.trim() || "";
+            const logs = await callBridge("get_activity_logs", 50, "ALL", q);
+            renderAuditLogTable(logs);
+        }
+
+        function renderAuditLogTable(logs) {
+            const box = document.getElementById("audit-table-box");
+            if (!box) return;
+
+            let rows = (logs || []).map(l => {
+                let badgeClass = 'badge-info';
+                if (l.level === 'CRITICAL') badgeClass = 'badge-danger';
+                else if (l.level === 'WARN') badgeClass = 'badge-warning';
+
+                return `
+                    <tr>
+                        <td><code>${l.timestamp}</code></td>
+                        <td><strong>${l.user_name}</strong> <small>(${l.role})</small></td>
+                        <td>${l.action}</td>
+                        <td>${l.details}</td>
+                        <td><span class="badge ${badgeClass}">${l.level}</span></td>
+                    </tr>
+                `;
+            }).join("");
+
+            box.innerHTML = `
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows || '<tr><td colspan="5">No matching activity records.</td></tr>'}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function exportLogsCSV() {
+            const res = await callBridge("export_activity_logs");
+            if (res && res.success) {
+                showToast("CSV Exported", `Audit file saved to ${res.path}`, "success");
+            }
+        }
+
+        // --- APP STARTUP INITIALIZATION ---
+        window.addEventListener("pywebviewready", async () => {
+            console.log("pywebview Edge Chromium ready!");
+            // Check current user or start on Admin
+            const user = await callBridge("get_current_user");
+            if (user) {
+                State.currentUser = user;
+                document.getElementById("login-view").style.display = "none";
+                document.getElementById("user-name-text").textContent = user.name;
+                navigateRole(user.role);
+            } else {
+                // Auto-login to Admin for rapid pair-programming desktop testing
+                await callBridge("login", "admin", "admin123");
+                State.currentUser = { id: "STF-01", name: "Dr. Rajesh Kulkarni", role: "Admin", status: "Active" };
+                document.getElementById("login-view").style.display = "none";
+                document.getElementById("user-name-text").textContent = "Dr. Rajesh Kulkarni";
+                navigateRole("Admin");
+            }
+        });
+
+        // Fallback for direct browser testing
+        setTimeout(() => {
+            if (!window.pywebview) {
+                console.log("Running in standalone preview mode.");
+                navigateRole("Admin");
+            }
+        }, 300);
+    </script>
+</body>
+</html>

@@ -978,5 +978,37 @@ def get_dashboard_analytics():
         "delivered_deliv": delivered_deliv
     }
 
+def get_active_sessions() -> list:
+    """Retrieve all active online staff sessions and terminals."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM active_sessions ORDER BY last_heartbeat DESC")
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def update_session_heartbeat(session_id: str, user_id: str, name: str, role: str, terminal_name: str, status: str = "Online", last_action: str = "Active"):
+    """Update or register terminal presence heartbeat in SQLite."""
+    conn = get_connection()
+    cur = conn.cursor()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        cur.execute("""
+        INSERT INTO active_sessions (session_id, user_id, name, role, terminal_name, status, last_action, login_time, last_heartbeat)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(session_id) DO UPDATE SET
+            status = excluded.status,
+            last_action = excluded.last_action,
+            last_heartbeat = excluded.last_heartbeat,
+            name = excluded.name,
+            role = excluded.role
+        """, (session_id, user_id, name, role, terminal_name, status, last_action, now, now))
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
 # Initialize database on import
 init_db()
+

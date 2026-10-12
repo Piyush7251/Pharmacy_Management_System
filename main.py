@@ -1,10 +1,24 @@
 """
-AegisPharm Enterprise — Application Entry Point.
-Executes the unified Pharmacy desktop application with Login & Role-based Dashboard.
+AegisPharm Enterprise — Primary Unified Application Entry Point.
+Launches the modern, hardware-accelerated Edge Chromium desktop experience by default,
+or falls back to legacy CustomTkinter interface if requested via --legacy.
 """
 
-from app import PharmacyApplication
+import sys
 
 if __name__ == "__main__":
-    app = PharmacyApplication()
-    app.mainloop()
+    if "--legacy" in sys.argv:
+        print("[AegisPharm] Launching in Legacy CustomTkinter mode...")
+        from app import PharmacyApplication
+        app = PharmacyApplication()
+        app.mainloop()
+    else:
+        try:
+            print("[AegisPharm] Launching Next-Gen Hardware-Accelerated Desktop UI...")
+            from desktop_app import run_desktop_app
+            run_desktop_app()
+        except Exception as e:
+            print(f"[AegisPharm] Notice: Failed to start WebView2 ({e}). Falling back to CustomTkinter...")
+            from app import PharmacyApplication
+            app = PharmacyApplication()
+            app.mainloop()

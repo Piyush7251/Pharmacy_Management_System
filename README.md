@@ -115,16 +115,24 @@ pip install customtkinter pillow requests
 
 ## 🖥️ Running the Application
 
-### Option A: Unified Application (Recommended)
-Launches the single unified application with authentication and dynamic role dashboard loading:
+### Option A: Next-Gen Hardware-Accelerated Desktop UI (Recommended)
+Launches the silky-smooth, zero-lag Edge Chromium WebView2 desktop app with modern aesthetics, animations, and instant role switching:
 ```bash
 python main.py
+# or
+python desktop_app.py
+```
+
+### Option B: Legacy CustomTkinter Mode
+If you prefer the original Tkinter canvas interface:
+```bash
+python main.py --legacy
 # or
 python app.py
 ```
 
-### Option B: Dedicated Standalone Terminals
-Each station can also be launched directly as a standalone kiosk for dedicated multi-terminal setups:
+### Option C: Dedicated Standalone Terminals
+Each station can also be launched directly as a standalone kiosk:
 ```bash
 # Pharmacist Station
 python apps/pharmacist_app.py
@@ -142,8 +150,8 @@ python apps/delivery_app.py
 python apps/admin_app.py
 ```
 
-### Option C: Automated Full-Feature Test Suite
-Run the 17-point automated test suite covering all security, clinical, pos, inventory, config, logging, and UI dashboard rendering functions:
+### Option D: Automated Full-Feature Test Suite
+Run the 18-point automated test suite covering all security, clinical, pos, inventory, config, logging, UI rendering, and desktop bridge functions:
 ```bash
 python tests/test_all_features.py
 ```
@@ -176,8 +184,9 @@ Every event across the system is recorded to both disk and database:
 ```
 Pharmacy_Management_System/
 ├── README.md                      # Comprehensive System Documentation
-├── main.py                        # Unified Application Entry Point
-├── app.py                         # Application Window & Role-Based Router
+├── main.py                        # Primary Unified Entry Point (Auto-detects WebView2/Legacy)
+├── desktop_app.py                 # Next-Gen Hardware-Accelerated WebView2 Desktop Runner
+├── app.py                         # Legacy CustomTkinter Desktop Application
 ├── config.json                    # Active Centralized Configuration
 ├── config.example.json            # Configuration Template
 ├── config/                        # Configuration Module
@@ -192,15 +201,18 @@ Pharmacy_Management_System/
 │   ├── inventory_app.py           # Standalone Inventory Hub Terminal
 │   └── pharmacist_app.py          # Standalone Pharmacist Clinical Station
 ├── core/                          # Data, Security & Network Layer
+│   ├── bridge.py                  # Python Native RPC Bridge for Desktop Frontend
 │   ├── api_client.py              # Asynchronous Presence Heartbeat & Event Logger
 │   ├── db.py                      # SQLite Central State Engine & Relational CRUD Layer
 │   └── logger.py                  # Dual File/DB Activity Logger, CSV Export & Backup
 ├── tests/                         # Automated Verification Test Suite
-│   └── test_all_features.py       # 17 Automated Integration & Unit Tests
-├── ui/                            # Shared UI Theme & Dashboard Views
+│   └── test_all_features.py       # 18 Automated Integration & Unit Tests
+├── ui/                            # Desktop & CustomTkinter UI
+│   ├── desktop/                   # Next-Gen Hardware-Accelerated UI
+│   │   └── index.html             # Responsive Single-Page Desktop Application
 │   ├── theme.py                   # Light (Default White) & Dark Color Tokens
 │   ├── components/                # Reusable Widgets (Toasts, Badges, etc.)
-│   └── views/                     # Full-Featured Role Dashboard Views
+│   └── views/                     # CustomTkinter Role Dashboard Views
 │       ├── login_view.py          # Unified Authentication Screen
 │       ├── admin_dashboard_view.py      # Admin Command Center, Staff, Settings & Logs
 │       ├── pharmacist_dashboard_view.py # Pharmacist Clinical & CDSS Station

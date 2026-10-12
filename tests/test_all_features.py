@@ -417,8 +417,50 @@ class TestAegisPharmFeatures(unittest.TestCase):
                 app.connector.stop()
             app.destroy()
 
+    # --- 14. NEXT-GEN DESKTOP BRIDGE & INTERFACE INTEGRITY ---
+    def test_18_desktop_bridge_api_operations(self):
+        from core.bridge import PharmacyBridge
+        bridge = PharmacyBridge()
+        
+        # Test authentication
+        login_res = bridge.login("admin", "admin123")
+        self.assertTrue(login_res["success"])
+        self.assertEqual(login_res["user"]["role"], "Admin")
+        
+        # Test role switching
+        sw_res = bridge.switch_role("Cashier")
+        self.assertTrue(sw_res["success"])
+        self.assertEqual(sw_res["user"]["role"], "Cashier")
+        
+        # Test data fetch operations
+        meds = bridge.get_all_medicines()
+        self.assertGreater(len(meds), 0)
+        
+        rxs = bridge.get_all_prescriptions()
+        self.assertGreater(len(rxs), 0)
+        
+        delivs = bridge.get_all_deliveries()
+        self.assertGreater(len(delivs), 0)
+        
+        analytics = bridge.get_dashboard_analytics()
+        self.assertIn("gross_sales", analytics)
+        
+        settings = bridge.get_settings()
+        self.assertIn("store", settings)
+        
+        # Test logout
+        logout_res = bridge.logout()
+        self.assertTrue(logout_res["success"])
+        self.assertIsNone(bridge.get_current_user())
+        
+        # Test desktop HTML presence
+        desktop_html = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ui", "desktop", "index.html")
+        self.assertTrue(os.path.exists(desktop_html))
+        self.assertGreater(os.path.getsize(desktop_html), 1000)
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
