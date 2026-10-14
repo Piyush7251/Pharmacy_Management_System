@@ -1453,7 +1453,9 @@
             cart: [],
             settings: null,
             analytics: null,
-            activeAdminTab: "overview"
+            activeAdminTab: "overview",
+            activePharmaTab: "rxs",
+            activeInvTab: "catalog"
         };
 
         // --- BACKEND BRIDGE CALL WRAPPER ---
@@ -1979,11 +1981,43 @@
             `;
 
             main.innerHTML = html;
+            if (State.activeAdminTab === "presence") {
+                setTimeout(loadPresenceList, 50);
+            } else if (State.activeAdminTab === "audit") {
+                setTimeout(filterAuditLogs, 50);
+            }
         }
 
         function switchAdminTab(tab) {
             State.activeAdminTab = tab;
             renderAdminDashboard();
+            if (tab === "presence") {
+                setTimeout(loadPresenceList, 50);
+            } else if (tab === "audit") {
+                setTimeout(filterAuditLogs, 50);
+            }
+        }
+
+        async function loadPresenceList() {
+            const container = document.getElementById("presence-list");
+            if (!container) return;
+            const sessions = await callBridge("get_active_sessions");
+            if (!sessions || sessions.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-dim); padding: 20px 0;">No active terminal sessions detected.</div>';
+                return;
+            }
+            container.innerHTML = sessions.map(s => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-hover); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>${s.user_name}</strong> <small style="color: var(--text-muted);">(${s.role})</small><br>
+                            <small style="color: var(--text-dim);">${s.app_name} • Last heartbeat: ${s.last_seen}</small>
+                        </div>
+                    </div>
+                    <span class="badge badge-success">Online</span>
+                </div>
+            `).join("");
         }
 
         function renderAdminTabBody(tab, staffList) {
@@ -2043,8 +2077,9 @@
                 const bk = State.analytics.payment_breakdown || {};
                 return `
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                             <div class="card-title">End-of-Day Financial Z-Report Reconciliation</div>
+                            <button class="btn-primary" onclick="window.print()">🖨️ Print Reconciliation Slip</button>
                         </div>
                         <div class="card-body">
                             <div class="form-row">
@@ -2087,6 +2122,209 @@
             }
         }
 
+        // --- STAFF MANAGEMENT MODALS & HANDLERS ---
+        function openAddStaffModal() {
+            const randNum = Math.floor(10 + Math.random() * 90);
+            const defaultId = `STF-${randNum}`;
+            openModal(
+                "➕ Add Authorized Staff Account",
+                `
+                <form id="add-staff-form" onsubmit="event.preventDefault(); submitAddStaff();">
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Staff ID</label>
+                            <input type="text" id="new-staff-id" class="form-control" value="${defaultId}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Full Legal Name</label>
+                            <input type="text" id="new-staff-name" class="form-control" placeholder="e.g. Kavita Patel, R.Ph" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Assigned Workstation Role</label>
+                            <select id="new-staff-role" class="form-control">
+                                <option value="Admin">👑 Store Admin</option>
+                                <option value="Pharmacist">🩺 Clinical Pharmacist</option>
+                                <option value="Cashier" selected>💳 Cashier POS</option>
+                                <option value="Inventory Manager">📦 Inventory Manager</option>
+                                <option value="Delivery Agent">🛵 Delivery Agent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">System Username</label>
+                            <input type="text" id="new-staff-username" class="form-control" placeholder="e.g. kavita.pos" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Secure Password</label>
+                            <input type="password" id="new-staff-password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Contact Phone</label>
+                            <input type="text" id="new-staff-phone" class="form-control" placeholder="+91 98201 0000X">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="new-staff-email" class="form-control" placeholder="staff@aegispharm.com">
+                        </div>
+                        <div>
+                            <label class="form-label">Branch Assignment</label>
+                            <input type="text" id="new-staff-branch" class="form-control" value="Apex Central - Branch #01">
+                        </div>
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="submitAddStaff()">Create Account</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitAddStaff() {
+            const staffId = document.getElementById("new-staff-id").value.trim();
+            const name = document.getElementById("new-staff-name").value.trim();
+            const role = document.getElementById("new-staff-role").value;
+            const username = document.getElementById("new-staff-username").value.trim();
+            const password = document.getElementById("new-staff-password").value;
+            const phone = document.getElementById("new-staff-phone").value.trim();
+            const email = document.getElementById("new-staff-email").value.trim();
+            const branch = document.getElementById("new-staff-branch").value.trim();
+
+            if (!staffId || !name || !username || !password) {
+                showToast("Missing Fields", "Please fill all required fields.", "warning");
+                return;
+            }
+
+            const res = await callBridge("create_staff_user", staffId, name, role, username, password, email, phone, branch);
+            if (res && res.success) {
+                showToast("Staff Account Created", `Account for ${name} (${role}) is now active.`, "success");
+                closeModal();
+                renderAdminDashboard();
+            } else {
+                showToast("Creation Failed", (res && res.error) || "Error creating staff user.", "error");
+            }
+        }
+
+        async function openEditStaffModal(staffId) {
+            const staffList = await callBridge("get_all_staff");
+            const staff = (staffList || []).find(s => s.id === staffId);
+            if (!staff) {
+                showToast("Error", "Staff member not found.", "error");
+                return;
+            }
+
+            openModal(
+                `✏️ Edit Staff Account — ${staff.name} (${staff.id})`,
+                `
+                <form id="edit-staff-form" onsubmit="event.preventDefault(); submitEditStaff('${staff.id}');">
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Staff ID</label>
+                            <input type="text" id="edit-staff-id" class="form-control" value="${staff.id}" disabled>
+                        </div>
+                        <div>
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="edit-staff-name" class="form-control" value="${staff.name}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Role</label>
+                            <select id="edit-staff-role" class="form-control">
+                                <option value="Admin" ${staff.role === 'Admin' ? 'selected' : ''}>👑 Store Admin</option>
+                                <option value="Pharmacist" ${staff.role === 'Pharmacist' ? 'selected' : ''}>🩺 Clinical Pharmacist</option>
+                                <option value="Cashier" ${staff.role === 'Cashier' ? 'selected' : ''}>💳 Cashier POS</option>
+                                <option value="Inventory Manager" ${staff.role === 'Inventory Manager' ? 'selected' : ''}>📦 Inventory Manager</option>
+                                <option value="Delivery Agent" ${staff.role === 'Delivery Agent' ? 'selected' : ''}>🛵 Delivery Agent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Username</label>
+                            <input type="text" id="edit-staff-username" class="form-control" value="${staff.username}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">New Password (leave blank to keep current)</label>
+                            <input type="password" id="edit-staff-password" class="form-control" placeholder="Leave empty to preserve current password">
+                        </div>
+                        <div>
+                            <label class="form-label">Account Status</label>
+                            <select id="edit-staff-status" class="form-control">
+                                <option value="Active" ${staff.status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Suspended" ${staff.status === 'Suspended' ? 'selected' : ''}>Suspended</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Contact Phone</label>
+                            <input type="text" id="edit-staff-phone" class="form-control" value="${staff.phone || ''}">
+                        </div>
+                        <div>
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="edit-staff-email" class="form-control" value="${staff.email || ''}">
+                        </div>
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="submitEditStaff('${staff.id}', '${staff.password}')">Save Changes</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitEditStaff(staffId, oldPassword) {
+            const name = document.getElementById("edit-staff-name").value.trim();
+            const role = document.getElementById("edit-staff-role").value;
+            const username = document.getElementById("edit-staff-username").value.trim();
+            const newPassword = document.getElementById("edit-staff-password").value;
+            const password = newPassword ? newPassword : oldPassword;
+            const status = document.getElementById("edit-staff-status").value;
+            const phone = document.getElementById("edit-staff-phone").value.trim();
+            const email = document.getElementById("edit-staff-email").value.trim();
+            const branch = "Apex Central - Branch #01";
+
+            const res = await callBridge("update_staff_user", staffId, name, role, username, password, email, phone, branch, status);
+            if (res && res.success) {
+                showToast("Account Updated", `Staff account for ${name} updated.`, "success");
+                closeModal();
+                renderAdminDashboard();
+            } else {
+                showToast("Update Failed", (res && res.error) || "Could not update staff account.", "error");
+            }
+        }
+
+        function deleteStaff(staffId) {
+            openModal(
+                "⚠️ Confirm Account Deletion",
+                `
+                <div style="font-size: 14px; line-height: 1.6; color: var(--text-main);">
+                    Are you sure you want to permanently delete staff user <strong>${staffId}</strong>?<br>
+                    <span style="color: var(--danger); font-size: 12px;">This action will immediately terminate station access for this user.</span>
+                </div>
+                `,
+                `<button class="btn-danger" onclick="confirmDeleteStaff('${staffId}')">Delete Account</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "450px"
+            );
+        }
+
+        async function confirmDeleteStaff(staffId) {
+            const res = await callBridge("delete_staff_user", staffId);
+            if (res && res.success) {
+                showToast("Account Deleted", `Staff account ${staffId} deleted.`, "success");
+                closeModal();
+                renderAdminDashboard();
+            } else {
+                showToast("Delete Failed", (res && res.error) || "Could not delete staff user.", "error");
+            }
+        }
+
         // =========================================================================
         // 2. PHARMACIST CLINICAL DASHBOARD VIEW
         // =========================================================================
@@ -2117,7 +2355,12 @@
                         <td><span class="badge ${statusBadge}">${rx.status}</span></td>
                         <td>${(rx.items || []).map(i => i.medicine || i).join(', ')}</td>
                         <td>
-                            ${!isApproved ? `<button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="approvePrescription('${rx.rx_id}')">Verify & Approve</button>` : `<span style="color: var(--success); font-weight:600;">✓ Approved</span>`}
+                            ${!isApproved ? `
+                                <div style="display: flex; gap: 4px;">
+                                    <button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="approvePrescription('${rx.rx_id}')">Verify & Approve</button>
+                                    <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="rejectPrescription('${rx.rx_id}')">Reject</button>
+                                </div>
+                            ` : `<span style="color: var(--success); font-weight:600;">✓ Approved</span>`}
                         </td>
                     </tr>
                 `;
@@ -2129,7 +2372,10 @@
                         <h1>🩺 Pharmacist Clinical & Dispensing Station</h1>
                         <p>Clinical decision support, allergy cross-checking, e-Prescription intake & Schedule X register</p>
                     </div>
-                    <button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-danger" onclick="openAddNarcoticModal()">🔒 Schedule X Sign-off</button>
+                        <button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>
+                    </div>
                 </div>
 
                 <!-- CDSS Active Warning Banner -->
@@ -2201,6 +2447,46 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Schedule X Controlled Substances Register -->
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="card-title">🔒 Schedule X Controlled Substances Register (NDPS Compliance)</div>
+                        <button class="btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="openAddNarcoticModal()">+ Record Schedule X Dispensation</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Entry ID</th>
+                                        <th>Patient Name</th>
+                                        <th>Doctor & Reg No</th>
+                                        <th>Medicine</th>
+                                        <th>Batch</th>
+                                        <th>Quantity</th>
+                                        <th>Pharmacist Signature</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(narcotics || []).map(nr => `
+                                        <tr>
+                                            <td><strong>${nr.id}</strong></td>
+                                            <td>${nr.patient_name}</td>
+                                            <td>${nr.doctor_name} <br><small style="color: var(--text-muted);">${nr.doctor_reg_no || 'REG-PENDING'}</small></td>
+                                            <td><span class="badge badge-danger">🔒 ${nr.medicine_name}</span></td>
+                                            <td><code>${nr.batch_no || 'N/A'}</code></td>
+                                            <td><strong>${nr.quantity}</strong></td>
+                                            <td>${nr.pharmacist_name}</td>
+                                            <td><small style="color: var(--text-muted);">${nr.timestamp || 'Recorded'}</small></td>
+                                        </tr>
+                                    `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No Schedule X dispensations recorded today.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             `;
 
             main.innerHTML = html;
@@ -2232,6 +2518,192 @@
             callBridge("update_refill_status", id, "Reminder Sent (WhatsApp)");
             showToast("WhatsApp Reminder Sent", `Simulated automated adherence reminder to ${name}.`, "success");
             renderPharmacistDashboard();
+        }
+
+        async function rejectPrescription(rxId) {
+            const res = await callBridge("update_prescription_status", rxId, "Rejected (Clinical Contraindication)");
+            if (res && res.success) {
+                showToast("Prescription Rejected", `${rxId} marked as clinically rejected.`, "warning");
+                renderPharmacistDashboard();
+            }
+        }
+
+        function openAddRxModal() {
+            const randId = `RX-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+            openModal(
+                "📋 New Digital Prescription Intake",
+                `
+                <form id="add-rx-form" onsubmit="event.preventDefault(); submitAddRx();">
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Prescription ID</label>
+                            <input type="text" id="new-rx-id" class="form-control" value="${randId}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Patient Name</label>
+                            <input type="text" id="new-rx-patient" class="form-control" placeholder="e.g. Ramesh Deshmukh" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Prescribing Physician</label>
+                            <input type="text" id="new-rx-doctor" class="form-control" placeholder="Dr. S. Kulkarni, M.D." required>
+                        </div>
+                        <div>
+                            <label class="form-label">Hospital / Clinic</label>
+                            <input type="text" id="new-rx-hospital" class="form-control" value="Apex Multispecialty Hospital">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Prescribed Medicines (Comma separated)</label>
+                            <input type="text" id="new-rx-items" class="form-control" placeholder="e.g. Azithromycin 500mg, Paracetamol 650mg" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Diagnosis / Indication</label>
+                            <input type="text" id="new-rx-diag" class="form-control" placeholder="Acute Bronchitis">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Clinical / Allergy Notes</label>
+                        <input type="text" id="new-rx-notes" class="form-control" placeholder="e.g. No known drug allergies, take after food">
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="submitAddRx()">Intake Prescription</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitAddRx() {
+            const rxId = document.getElementById("new-rx-id").value.trim();
+            const patientName = document.getElementById("new-rx-patient").value.trim();
+            const doctorName = document.getElementById("new-rx-doctor").value.trim();
+            const hospital = document.getElementById("new-rx-hospital").value.trim();
+            const diag = document.getElementById("new-rx-diag").value.trim();
+            const notes = document.getElementById("new-rx-notes").value.trim();
+            const items = document.getElementById("new-rx-items").value.split(",").map(i => i.trim()).filter(Boolean);
+
+            if (!rxId || !patientName || !doctorName || items.length === 0) {
+                showToast("Missing Fields", "Please enter patient name, physician, and medicines.", "warning");
+                return;
+            }
+
+            const rxData = {
+                rx_id: rxId,
+                patient_name: patientName,
+                doctor_name: doctorName,
+                hospital: hospital,
+                date: new Date().toISOString().slice(0, 10),
+                status: "Pending Clinical Verification",
+                diagnosis: diag || "Clinical Consultation",
+                notes: notes,
+                items: items
+            };
+
+            const res = await callBridge("add_prescription", rxData);
+            if (res && res.success) {
+                showToast("Prescription Registered", `${rxData.rx_id} added to clinical queue.`, "success");
+                closeModal();
+                renderPharmacistDashboard();
+            } else {
+                showToast("Error", (res && res.error) || "Could not intake prescription.", "error");
+            }
+        }
+
+        function openAddNarcoticModal() {
+            openModal(
+                "📑 Record Schedule X Controlled Substance Dispensation",
+                `
+                <form id="narcotic-form" onsubmit="event.preventDefault(); submitAddNarcotic();">
+                    <div style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--danger);">
+                        ⚠️ Strict Compliance Notice: Schedule X NDPS drugs require double-signoff, prescriber registry number, and dual pharmacist authorization PIN.
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Associated Rx ID</label>
+                            <input type="text" id="narc-rx-id" class="form-control" placeholder="e.g. RX-2026-901" value="RX-2026-NDPS" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Patient Full Name</label>
+                            <input type="text" id="narc-patient" class="form-control" placeholder="e.g. Smt. Sunita Joshi" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Prescribing Physician</label>
+                            <input type="text" id="narc-doctor" class="form-control" placeholder="Dr. S. Kulkarni, M.D." required>
+                        </div>
+                        <div>
+                            <label class="form-label">Doctor Reg No (MCI)</label>
+                            <input type="text" id="narc-doc-reg" class="form-control" placeholder="MCI-48201" value="MCI-48201" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Controlled Medicine SKU</label>
+                            <select id="narc-med" class="form-control">
+                                <option value="Morphine Sulfate 10mg Tab">Morphine Sulfate 10mg Tab (Sch X)</option>
+                                <option value="Fentanyl 25mcg Patch">Fentanyl 25mcg Transdermal Patch (Sch X)</option>
+                                <option value="Ketamine Inj 50mg/ml">Ketamine Inj 50mg/ml (Sch X)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Batch & Quantity</label>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="narc-batch" class="form-control" value="BATCH-NX01" placeholder="Batch">
+                                <input type="number" id="narc-qty" class="form-control" value="10" min="1" max="100" style="max-width: 80px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Dispensing Pharmacist</label>
+                            <input type="text" id="narc-pharma" class="form-control" value="${State.currentUser ? State.currentUser.name : 'Pooja Sharma, R.Ph'}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">4-Digit Security Sign-Off PIN</label>
+                            <input type="password" id="narc-pin" class="form-control" placeholder="••••" maxlength="4" value="4821" required>
+                        </div>
+                    </div>
+                </form>
+                `,
+                `<button class="btn-danger" onclick="submitAddNarcotic()">Sign & Record Dispensation</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitAddNarcotic() {
+            const pin = document.getElementById("narc-pin").value.trim();
+            if (pin.length < 4) {
+                showToast("Security PIN Required", "Please enter 4-digit pharmacist authorization PIN.", "warning");
+                return;
+            }
+
+            const recData = {
+                rx_id: document.getElementById("narc-rx-id").value.trim(),
+                patient_name: document.getElementById("narc-patient").value.trim(),
+                patient_phone: "+91 98201 00000",
+                doctor_name: document.getElementById("narc-doctor").value.trim(),
+                doctor_reg_no: document.getElementById("narc-doc-reg").value.trim(),
+                medicine_name: document.getElementById("narc-med").value,
+                batch_no: document.getElementById("narc-batch").value.trim(),
+                quantity: parseInt(document.getElementById("narc-qty").value, 10),
+                pharmacist_name: document.getElementById("narc-pharma").value.trim(),
+                pharmacist_reg_no: "MH-REG-84920",
+                auth_pin_verified: true
+            };
+
+            const res = await callBridge("add_narcotic_record", recData);
+            if (res && res.success) {
+                showToast("Schedule X Logged", `Recorded dispensation of ${recData.medicine_name}.`, "success");
+                closeModal();
+                renderPharmacistDashboard();
+            } else {
+                showToast("Submission Failed", (res && res.error) || "Error recording narcotic entry.", "error");
+            }
         }
 
         // =========================================================================
@@ -2546,6 +3018,70 @@
             );
         }
 
+        async function lookupCustomer(phone) {
+            const cleanPhone = phone ? phone.trim() : "";
+            if (!cleanPhone || cleanPhone.length < 5) return;
+            const patient = await callBridge("get_patient_by_phone", cleanPhone);
+            const nameEl = document.getElementById("cust-name");
+            if (patient && nameEl) {
+                nameEl.value = patient.name;
+                showToast("Patient Profile Found", `${patient.name} (Loyalty Points: ${patient.loyalty_points || 0})`, "info");
+            }
+        }
+
+        async function openSalesHistoryModal() {
+            const invoices = await callBridge("get_all_invoices", 50);
+            let rows = (invoices || []).map(inv => {
+                const total = typeof inv.total_amount === 'number' ? inv.total_amount : parseFloat(inv.total_amount || 0);
+                return `
+                    <tr>
+                        <td><strong>${inv.invoice_id}</strong></td>
+                        <td>${inv.timestamp}</td>
+                        <td>${inv.patient_name || 'Counter Walk-in'}</td>
+                        <td><span class="badge badge-info">${inv.payment_method}</span></td>
+                        <td><strong>₹ ${total.toFixed(2)}</strong></td>
+                        <td>${inv.cashier_name || 'Staff'}</td>
+                        <td>
+                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick='viewHistoricReceipt("${inv.invoice_id}")'>🧾 Receipt</button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            window._historicInvoices = invoices || [];
+
+            openModal(
+                "📋 Sales Ledger & Past Invoices",
+                `
+                <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Invoice ID</th>
+                                <th>Date & Time</th>
+                                <th>Customer</th>
+                                <th>Payment</th>
+                                <th>Amount</th>
+                                <th>Cashier</th>
+                                <th>Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows || '<tr><td colspan="7">No recorded invoices yet.</td></tr>'}</tbody>
+                    </table>
+                </div>
+                `,
+                `<button class="btn-secondary" onclick="closeModal()">Close</button>`,
+                "850px"
+            );
+        }
+
+        function viewHistoricReceipt(invId) {
+            const inv = (window._historicInvoices || []).find(i => i.invoice_id === invId);
+            if (inv) {
+                openReceiptModal(inv);
+            }
+        }
+
         function openImportRxModal() {
             if (!State.approvedPrescriptions || State.approvedPrescriptions.length === 0) {
                 showToast("No Prescriptions", "No approved prescriptions available to import.", "info");
@@ -2622,7 +3158,10 @@
                         <td>₹ ${m.mrp.toFixed(2)}</td>
                         <td>${m.cold_chain ? '<span class="badge badge-info">❄️ 2-8°C</span>' : 'Ambient'}</td>
                         <td>
-                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="adjustStockModal('${m.id}')">Adjust</button>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="adjustStockModal('${m.id}')">Adjust</button>
+                                <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteMedicineModal('${m.id}', '${m.name.replace(/'/g, "\\'")}')">Delete</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -2658,8 +3197,12 @@
 
                 <!-- Multi-Batch FEFO Table -->
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">FEFO Master Inventory Ledger (${(meds || []).length} SKUs)</div>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div class="card-title">FEFO Master Inventory Ledger (<span id="inv-count">${(meds || []).length}</span> SKUs)</div>
+                        <div class="input-group" style="max-width: 380px;">
+                            <span>🔍</span>
+                            <input type="text" id="inventory-search" placeholder="Search by brand, generic formula, or batch..." onkeyup="filterInventoryCatalog(this.value)">
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table>
@@ -2675,8 +3218,48 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>${rows || '<tr><td colspan="8">No inventory items.</td></tr>'}</tbody>
+                            <tbody id="inventory-table-body">${rows || '<tr><td colspan="8">No inventory items.</td></tr>'}</tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Goods Receipt Notes (GRN) & Vendor Purchase Orders Ledger -->
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="card-title">📦 Goods Receipt Notes (GRN) & Inwarded Purchase Orders (${(pos || []).length} Consignments)</div>
+                        <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openInwardGRNModal()">+ Inward New Consignment</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>PO / GRN ID</th>
+                                        <th>Supplier Name</th>
+                                        <th>Medicine SKU</th>
+                                        <th>Ordered Quantity</th>
+                                        <th>Invoice Amount</th>
+                                        <th>Order Date</th>
+                                        <th>Cold-Chain</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(pos || []).map(po => `
+                                        <tr>
+                                            <td><strong>${po.po_id}</strong></td>
+                                            <td>${po.supplier_name}</td>
+                                            <td>${po.medicine_name || po.medicine_id || 'Batch Consignment'}</td>
+                                            <td><strong>${po.quantity || 100}</strong> units</td>
+                                            <td>₹ ${(po.total_amount || 0).toFixed(2)}</td>
+                                            <td>${po.created_at || 'Today'}</td>
+                                            <td>${po.cold_chain_verified ? '<span class="badge badge-info">❄️ Cold-Chain Verified</span>' : '<span class="badge badge-neutral">Ambient</span>'}</td>
+                                            <td><span class="badge ${po.status.includes('Completed') || po.status.includes('Inwarded') ? 'badge-success' : 'badge-warning'}">${po.status}</span></td>
+                                        </tr>
+                                    `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No purchase orders inwarded yet.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             `;
@@ -2706,6 +3289,84 @@
                 `<button class="btn-primary" onclick="submitStockAdjust('${medId}')">Apply Adjustment</button>
                  <button class="btn-secondary" onclick="closeModal()">Cancel</button>`
             );
+        }
+
+        
+        function filterInventoryCatalog(query) {
+            const q = query.toLowerCase();
+            const filtered = (State.medicines || []).filter(m =>
+                m.name.toLowerCase().includes(q) ||
+                (m.category || '').toLowerCase().includes(q) ||
+                (m.batch || '').toLowerCase().includes(q) ||
+                (m.rack || '').toLowerCase().includes(q)
+            );
+            const countEl = document.getElementById("inv-count");
+            if (countEl) countEl.innerText = filtered.length;
+
+            const tbody = document.getElementById("inventory-table-body");
+            if (!tbody) return;
+
+            tbody.innerHTML = filtered.map(m => {
+                let expBadge = 'badge-success';
+                let expText = `${m.days_to_expiry} days`;
+                if (m.days_to_expiry <= 0) {
+                    expBadge = 'badge-danger';
+                    expText = 'EXPIRED';
+                } else if (m.days_to_expiry < 30) {
+                    expBadge = 'badge-danger';
+                    expText = `Critical (${m.days_to_expiry}d)`;
+                } else if (m.days_to_expiry < 90) {
+                    expBadge = 'badge-warning';
+                    expText = `Soon (${m.days_to_expiry}d)`;
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${m.name}</strong><br><small style="color: var(--text-muted);">${m.category} • Rack: ${m.rack}</small></td>
+                        <td><code>${m.batch}</code></td>
+                        <td>${m.expiry}</td>
+                        <td><span class="badge ${expBadge}">${expText}</span></td>
+                        <td><span class="badge ${m.stock < 20 ? 'badge-danger' : 'badge-success'}">${m.stock} ${m.unit || 'units'}</span></td>
+                        <td>₹ ${m.mrp.toFixed(2)}</td>
+                        <td>${m.cold_chain ? '<span class="badge badge-info">❄️ 2-8°C</span>' : 'Ambient'}</td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="adjustStockModal('${m.id}')">Adjust</button>
+                                <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteMedicineModal('${m.id}', '${m.name.replace(/'/g, "\\'")}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No medicines matching search criteria.</td></tr>';
+        }
+
+        function deleteMedicineModal(medId, medName) {
+            openModal(
+                "🗑️ Delete Medicine from Catalogue",
+                `
+                <div style="padding: 6px 0;">
+                    <p style="font-size: 14px; color: var(--text-main); margin-bottom: 8px;">
+                        Are you sure you want to permanently delete <strong>${medName}</strong> (ID: <code>${medId}</code>) from the pharmacy catalog?
+                    </p>
+                    <p style="font-size: 12px; color: var(--danger);">
+                        ⚠️ This will remove the medicine, batch details, and shelf allocation from active billing.
+                    </p>
+                </div>
+                `,
+                `<button class="btn-danger" onclick="confirmDeleteMedicine('${medId}')">Delete Medicine</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`
+            );
+        }
+
+        async function confirmDeleteMedicine(medId) {
+            const res = await callBridge("delete_medicine", medId);
+            if (res && res.success) {
+                showToast("Medicine Removed", "Medicine item deleted successfully from catalogue.", "success");
+                closeModal();
+                renderInventoryDashboard();
+            } else {
+                showToast("Action Denied", res && res.error ? res.error : "Failed to delete medicine.", "error");
+            }
         }
 
         async function submitStockAdjust(medId) {
@@ -2837,6 +3498,269 @@
             renderDeliveryDashboard();
         }
 
+        function openAddMedicineModal() {
+            const randId = `MED-${Math.floor(100 + Math.random() * 900)}`;
+            openModal(
+                "➕ Add New Medicine to Inventory",
+                `
+                <form id="add-med-form" onsubmit="event.preventDefault(); submitAddMedicine();">
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Medicine SKU ID</label>
+                            <input type="text" id="new-med-id" class="form-control" value="${randId}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Brand / Trade Name</label>
+                            <input type="text" id="new-med-name" class="form-control" placeholder="e.g. Dolo 650 Tablet" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Generic Formula</label>
+                            <input type="text" id="new-med-generic" class="form-control" placeholder="e.g. Paracetamol 650mg">
+                        </div>
+                        <div>
+                            <label class="form-label">Therapeutic Category</label>
+                            <input type="text" id="new-med-category" class="form-control" placeholder="e.g. Analgesic / Antipyretic">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Batch Number</label>
+                            <input type="text" id="new-med-batch" class="form-control" placeholder="e.g. DL-2026-B1" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Expiry Date</label>
+                            <input type="date" id="new-med-expiry" class="form-control" value="2027-12-31" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Stock Quantity</label>
+                            <input type="number" id="new-med-stock" class="form-control" value="100" min="1" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Unit Price (MRP ₹)</label>
+                            <input type="number" step="0.01" id="new-med-mrp" class="form-control" value="35.00" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Storage Requirement</label>
+                            <select id="new-med-cold" class="form-control">
+                                <option value="0">Ambient Room Temperature (15-25°C)</option>
+                                <option value="1">❄️ Cold-Chain Refrigerator (2-8°C)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Storage Rack / Bin</label>
+                            <input type="text" id="new-med-rack" class="form-control" value="Rack A-01">
+                        </div>
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="submitAddMedicine()">Add to Inventory</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitAddMedicine() {
+            const medData = {
+                id: document.getElementById("new-med-id").value.trim(),
+                name: document.getElementById("new-med-name").value.trim(),
+                generic: document.getElementById("new-med-generic").value.trim(),
+                category: document.getElementById("new-med-category").value.trim(),
+                batch: document.getElementById("new-med-batch").value.trim(),
+                expiry: document.getElementById("new-med-expiry").value,
+                stock: parseInt(document.getElementById("new-med-stock").value, 10),
+                cost: parseFloat(document.getElementById("new-med-mrp").value) * 0.7,
+                mrp: parseFloat(document.getElementById("new-med-mrp").value),
+                cold_chain: document.getElementById("new-med-cold").value === "1",
+                rack: document.getElementById("new-med-rack").value.trim(),
+                dosage_form: "Tablet",
+                schedule_type: "Schedule H"
+            };
+
+            if (!medData.name || !medData.batch || isNaN(medData.stock) || isNaN(medData.mrp)) {
+                showToast("Missing Fields", "Please enter valid medicine name, batch, stock, and MRP.", "warning");
+                return;
+            }
+
+            const res = await callBridge("add_medicine", medData);
+            if (res && res.success) {
+                showToast("Medicine Added", `${medData.name} (Batch: ${medData.batch}) added to inventory.`, "success");
+                closeModal();
+                renderInventoryDashboard();
+            } else {
+                showToast("Error", (res && res.error) || "Could not add medicine.", "error");
+            }
+        }
+
+        function openInwardGRNModal() {
+            const randPo = `PO-2026-${Math.floor(100 + Math.random() * 900)}`;
+            openModal(
+                "📦 Inward Goods Received Note (GRN)",
+                `
+                <form id="grn-form" onsubmit="event.preventDefault(); submitInwardGRN();">
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Purchase Order (PO) ID</label>
+                            <input type="text" id="grn-po-id" class="form-control" value="${randPo}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Pharmaceutical Supplier</label>
+                            <select id="grn-supplier" class="form-control">
+                                <option value="Cipla Healthcare Distributors">Cipla Healthcare Distributors</option>
+                                <option value="Sun Pharma Logistics">Sun Pharma Logistics</option>
+                                <option value="Abbott India Depot">Abbott India Depot</option>
+                                <option value="Dr. Reddy's Central Wholesale">Dr. Reddy's Central Wholesale</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Inwarding Medicine SKU</label>
+                            <select id="grn-med-select" class="form-control">
+                                ${State.medicines.map(m => `<option value="${m.id}">${m.name} (${m.batch})</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Received Stock Quantity</label>
+                            <input type="number" id="grn-qty" class="form-control" value="50" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Invoice / Challan Value (₹)</label>
+                            <input type="number" step="0.01" id="grn-amount" class="form-control" value="1250.00" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Cold-Chain Check</label>
+                            <select id="grn-cold" class="form-control">
+                                <option value="Verified">✓ Cold Chain Verified (2-8°C)</option>
+                                <option value="Ambient">Standard Ambient Inward</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="submitInwardGRN()">Accept & Inward Stock</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitInwardGRN() {
+            const poId = document.getElementById("grn-po-id").value.trim();
+            const supplier = document.getElementById("grn-supplier").value;
+            const medId = document.getElementById("grn-med-select").value;
+            const qty = parseInt(document.getElementById("grn-qty").value, 10);
+            const amt = parseFloat(document.getElementById("grn-amount").value);
+
+            if (!poId || isNaN(qty) || isNaN(amt)) {
+                showToast("Missing Fields", "Please enter valid PO details and quantity.", "warning");
+                return;
+            }
+
+            const poData = {
+                po_id: poId,
+                supplier_name: supplier,
+                order_date: new Date().toISOString().slice(0, 10),
+                total_amount: amt,
+                status: "Received & Stocked",
+                items: [{ med_id: medId, qty: qty }]
+            };
+
+            await callBridge("add_purchase_order", poData);
+            await callBridge("update_medicine_stock", medId, qty);
+            showToast("GRN Inwarded", `Received ${qty} units for ${poId}. Stock incremented!`, "success");
+            closeModal();
+            renderInventoryDashboard();
+        }
+
+        function openCreateDeliveryModal() {
+            const randOrder = `ORD-${Date.now().toString().slice(-6)}`;
+            openModal(
+                "🛵 Create Delivery Dispatch Order",
+                `
+                <form id="create-deliv-form" onsubmit="event.preventDefault(); submitCreateDelivery();">
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Order / Task ID</label>
+                            <input type="text" id="new-deliv-id" class="form-control" value="${randOrder}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Patient / Customer Name</label>
+                            <input type="text" id="new-deliv-name" class="form-control" placeholder="e.g. Anjali Deshmukh" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Customer Contact</label>
+                            <input type="text" id="new-deliv-phone" class="form-control" placeholder="+91 98201 12345" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Cash on Delivery (COD ₹)</label>
+                            <input type="number" step="0.01" id="new-deliv-amt" class="form-control" value="450.00">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Delivery Destination Address</label>
+                        <input type="text" id="new-deliv-addr" class="form-control" placeholder="Flat 402, Seawoods Palm Beach, Sector 19" required>
+                    </div>
+                    <div class="form-row" style="margin-top: 10px;">
+                        <div>
+                            <label class="form-label">Assigned Delivery Rider</label>
+                            <select id="new-deliv-agent" class="form-control">
+                                <option value="Ramesh Kumar (Logistics)">Ramesh Kumar (Bike Fleet #01)</option>
+                                <option value="Suresh Patil (Express)">Suresh Patil (Bike Fleet #02)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Cold-Chain Insulated Bag</label>
+                            <select id="new-deliv-cold" class="form-control">
+                                <option value="0">Standard Parcel</option>
+                                <option value="1">❄️ Insulated Ice-Pack (2-8°C)</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                `,
+                `<button class="btn-primary" onclick="submitCreateDelivery()">Dispatch Task</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "650px"
+            );
+        }
+
+        async function submitCreateDelivery() {
+            const delivData = {
+                order_id: document.getElementById("new-deliv-id").value.trim(),
+                patient_name: document.getElementById("new-deliv-name").value.trim(),
+                patient_phone: document.getElementById("new-deliv-phone").value.trim(),
+                address: document.getElementById("new-deliv-addr").value.trim(),
+                agent_name: document.getElementById("new-deliv-agent").value,
+                amount: parseFloat(document.getElementById("new-deliv-amt").value) || 0.0,
+                cold_chain_pack: document.getElementById("new-deliv-cold").value === "1",
+                status: "Packaging & Verification",
+                otp: "4821"
+            };
+
+            if (!delivData.patient_name || !delivData.address) {
+                showToast("Missing Fields", "Please enter patient name and address.", "warning");
+                return;
+            }
+
+            const res = await callBridge("create_delivery_order", delivData);
+            if (res && res.success) {
+                showToast("Delivery Dispatched", `Task ${delivData.order_id} created for ${delivData.agent_name}.`, "success");
+                closeModal();
+                renderDeliveryDashboard();
+            } else {
+                showToast("Error", (res && res.error) || "Could not create delivery.", "error");
+            }
+        }
+
         // =========================================================================
         // 6. SYSTEM SETTINGS & AUDIT UTILITIES
         // =========================================================================
@@ -2895,10 +3819,25 @@
                     </div>
                 </form>
                 `,
-                `<button class="btn-primary" onclick="saveSystemSettings()">💾 Save Settings</button>
-                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                `<div style="display: flex; justify-content: space-between; width: 100%;">
+                    <button class="btn-danger" style="font-size: 11px;" onclick="resetSystemSettings()">🔄 Restore Factory Defaults</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-primary" onclick="saveSystemSettings()">💾 Save Settings</button>
+                        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                    </div>
+                 </div>`,
                 "650px"
             );
+        }
+
+        async function resetSystemSettings() {
+            if (!confirm("Are you sure you want to restore factory default configuration?")) return;
+            const res = await callBridge("reset_settings");
+            if (res && res.success) {
+                showToast("Settings Reset", "Restored system parameters to factory defaults.", "success");
+                closeModal();
+                renderAdminDashboard();
+            }
         }
 
         async function saveSystemSettings() {

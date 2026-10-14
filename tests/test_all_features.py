@@ -498,6 +498,38 @@ class TestAegisPharmFeatures(unittest.TestCase):
         self.assertIn("supervisorInspect", html_text)
         self.assertNotIn('<select class="role-selector"', html_text)
 
+        # Verify all interactive options & modals are declared and implemented
+        required_interactive_options = [
+            "openAddStaffModal", "openEditStaffModal", "deleteStaff", "submitAddStaff", "submitEditStaff", "confirmDeleteStaff",
+            "openSalesHistoryModal", "viewHistoricReceipt", "lookupCustomer",
+            "openAddMedicineModal", "submitAddMedicine", "adjustStockModal", "submitStockAdjust", "deleteMedicineModal", "confirmDeleteMedicine", "filterInventoryCatalog",
+            "openInwardGRNModal", "submitInwardGRN",
+            "openAddRxModal", "submitAddRx", "approvePrescription", "rejectPrescription",
+            "openAddNarcoticModal", "submitAddNarcotic", "sendRefillWhatsApp",
+            "openCreateDeliveryModal", "submitCreateDelivery", "advanceDelivery", "openOtpModal", "verifyOtp",
+            "openSystemSettingsModal", "saveSystemSettings", "resetSystemSettings"
+        ]
+        for opt in required_interactive_options:
+            self.assertIn(opt, html_text, f"Interactive option missing in HTML/JS: {opt}")
+
+        # Verify zero unhandled inline event callbacks
+        import re
+        inline_calls = re.findall(r'on[a-zA-Z]+\s*=\s*["\']([^"\']+)["\']', html_text)
+        functions_called = set()
+        for call in inline_calls:
+            for stmt in call.split(';'):
+                stmt = stmt.strip()
+                m = re.match(r'^([a-zA-Z0-9_$]+)\s*\(', stmt)
+                if m:
+                    func = m.group(1)
+                    if func not in ('alert', 'confirm', 'console', 'preventDefault', 'stopPropagation', 'parseInt', 'parseFloat', 'String', 'Number', 'window'):
+                        functions_called.add(func)
+
+        declared_functions = set(re.findall(r'(?:function\s+([a-zA-Z0-9_$]+)|(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>|(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?function|window\.([a-zA-Z0-9_$]+)\s*=)', html_text))
+        flattened_declared = {item for tup in declared_functions for item in tup if item}
+        missing_handlers = [f for f in functions_called if f not in flattened_declared]
+        self.assertEqual(len(missing_handlers), 0, f"Found unhandled inline functions in desktop HTML: {missing_handlers}")
+
 if __name__ == "__main__":
     unittest.main()
 
