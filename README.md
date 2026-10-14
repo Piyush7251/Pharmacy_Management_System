@@ -21,9 +21,13 @@ AegisPharm features an intuitive, modern clinical UI:
 
 ---
 
-## 🔐 Role-Based Login & Default Credentials
+## 🔐 Workstation Login Dashboard Portal & Default Credentials
 
-The application opens to a single unified **Authentication Screen**. You can log in using pre-configured staff accounts or any new staff credentials created by the Admin:
+The application boots directly to a high-performance **Workstation Login Dashboard Portal**:
+- **Interactive Station Persona Grid**: Visual station tiles (👑 Store Admin, 🩺 Clinical Pharmacist, 💳 Cashier POS, 📦 Inventory Manager, 🛵 Delivery Rider) that instantly pre-fill credentials and display workstation responsibilities.
+- **Terminal Location Selector**: Assign sessions to physical terminals (Front Counter A, Clinical Kiosk B, Inwarding Bay, Store Admin HQ, Delivery Bay).
+- **Security & Telemetry Header**: Displays real-time database connection status, live digital clock, instant Light/Dark mode switcher, and Station Guide modal.
+- **Show/Hide Password & 1-Click Fast Login**: Seamless developer/user testing with 1-click login and 256-bit AES encrypted local sessions.
 
 | Role | Username | Password | Assigned Dashboard & Responsibilities |
 | :--- | :--- | :--- | :--- |

@@ -453,10 +453,18 @@ class TestAegisPharmFeatures(unittest.TestCase):
         self.assertTrue(logout_res["success"])
         self.assertIsNone(bridge.get_current_user())
         
-        # Test desktop HTML presence
+        # Test desktop HTML presence and Login Dashboard components
         desktop_html = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ui", "desktop", "index.html")
         self.assertTrue(os.path.exists(desktop_html))
         self.assertGreater(os.path.getsize(desktop_html), 1000)
+        with open(desktop_html, "r", encoding="utf-8") as f:
+            html_text = f.read()
+        self.assertIn("login-top-bar", html_text)
+        self.assertIn("station-selection-card", html_text)
+        self.assertIn("station-tile", html_text)
+        self.assertIn("login-form-card", html_text)
+        self.assertIn("selectStationRole", html_text)
+        self.assertIn("quickInstantLogin", html_text)
 
 if __name__ == "__main__":
     unittest.main()

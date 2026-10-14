@@ -757,86 +757,202 @@
             border-radius: 0 0 14px 14px;
         }
 
-        /* --- LOGIN SCREEN STYLING --- */
+        /* --- RICH LOGIN DASHBOARD PORTAL --- */
         #login-view {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at 10% 20%, rgba(13, 148, 136, 0.08) 0%, transparent 40%),
-                        radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+            background: radial-gradient(circle at 15% 15%, rgba(13, 148, 136, 0.08) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 85%, rgba(37, 99, 235, 0.08) 0%, transparent 45%),
                         var(--bg-base);
             z-index: 200;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            overflow-y: auto;
         }
 
-        .login-card {
+        .login-top-bar {
+            height: 62px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            flex-shrink: 0;
+        }
+
+        .login-main-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 28px;
+            max-width: 1360px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .login-dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 28px;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        @media (max-width: 1040px) {
+            .login-dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Workstation Role Cards Section */
+        .station-selection-card {
             background: var(--bg-surface);
             border: 1px solid var(--border);
             border-radius: 16px;
-            width: 100%;
-            max-width: 440px;
-            padding: 36px 32px;
-            box-shadow: var(--modal-shadow);
+            padding: 26px 28px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        .login-logo {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #0D9488, #2563EB);
+        .station-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 18px 0;
+        }
+
+        .station-tile {
+            background: var(--bg-hover);
+            border: 2px solid var(--border);
             border-radius: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .station-tile:hover {
+            border-color: var(--brand-primary);
+            transform: translateX(3px);
+            background: var(--bg-active);
+        }
+
+        .station-tile.active {
+            border-color: var(--brand-primary);
+            background: var(--brand-light);
+            box-shadow: 0 0 0 1px var(--brand-primary);
+        }
+
+        .station-tile-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .station-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: var(--bg-surface);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 26px;
-            margin: 0 auto 16px auto;
-            box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+            font-size: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            flex-shrink: 0;
         }
 
-        .login-header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .login-header h2 {
-            font-size: 22px;
-            font-weight: 800;
+        .station-details h4 {
+            font-size: 14px;
+            font-weight: 700;
             color: var(--text-main);
-        }
-
-        .login-header p {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .quick-roles {
             display: flex;
-            flex-wrap: wrap;
+            align-items: center;
             gap: 6px;
-            margin-bottom: 20px;
-            justify-content: center;
         }
 
-        .quick-role-btn {
-            background: var(--bg-hover);
-            border: 1px solid var(--border);
+        .station-details p {
+            font-size: 11.5px;
             color: var(--text-muted);
-            padding: 5px 10px;
-            border-radius: 6px;
+            margin-top: 2px;
+        }
+
+        .station-creds-chip {
+            font-family: monospace;
             font-size: 11px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
+            padding: 4px 8px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            white-space: nowrap;
         }
 
-        .quick-role-btn:hover {
-            border-color: var(--brand-primary);
+        /* Right Column Form Card */
+        .login-form-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px 28px;
+            box-shadow: var(--modal-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .login-form-header {
+            margin-bottom: 20px;
+        }
+
+        .station-badge-target {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            background: var(--brand-light);
+            color: var(--brand-text);
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .login-form-header h3 {
+            font-size: 20px;
+            font-weight: 800;
             color: var(--text-main);
+            letter-spacing: -0.3px;
+        }
+
+        .login-form-header p {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .login-alert-banner {
+            display: none;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            align-items: center;
+            gap: 8px;
         }
 
         /* --- POS LAYOUT --- */
@@ -1021,36 +1137,190 @@
     <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
     <div id="toast-container"></div>
 
-    <!-- ==================== UNIFIED LOGIN SCREEN OVERLAY ==================== -->
-    <div id="login-view" style="display: none;">
-        <div class="login-card">
-            <div class="login-logo">💊</div>
-            <div class="login-header">
-                <h2>AegisPharm Enterprise</h2>
-                <p>Clinical & Retail Pharmacy Operating System</p>
+    <!-- ==================== UNIFIED LOGIN DASHBOARD PORTAL ==================== -->
+    <div id="login-view">
+        <!-- Login Portal Top Bar -->
+        <div class="login-top-bar">
+            <div class="brand-box">
+                <div class="brand-logo">💊</div>
+                <div>
+                    <div class="brand-title">AegisPharm Enterprise <span style="font-size: 10px; padding: 2px 6px; background: var(--brand-light); color: var(--brand-text); border-radius: 4px;">v2.5</span></div>
+                    <div class="brand-subtitle">Apex Central Pharmacy • Branch #01, Navi Mumbai</div>
+                </div>
             </div>
 
-            <div class="quick-roles">
-                <button class="quick-role-btn" onclick="fillLogin('admin', 'admin123')">👑 Admin</button>
-                <button class="quick-role-btn" onclick="fillLogin('pharmacist', 'pharma123')">🩺 Pharmacist</button>
-                <button class="quick-role-btn" onclick="fillLogin('cashier', 'cash123')">💳 Cashier</button>
-                <button class="quick-role-btn" onclick="fillLogin('inventory', 'inv123')">📦 Inventory</button>
-                <button class="quick-role-btn" onclick="fillLogin('delivery', 'deliv123')">🛵 Delivery</button>
+            <div class="header-center">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>System Online • SQLite v3 Active</span>
+                </div>
+                <div class="clock-display" id="login-live-clock">--:--:-- --</div>
             </div>
 
-            <form onsubmit="handleLoginSubmit(event)">
-                <div style="margin-bottom: 14px;">
-                    <label class="form-label">Username or Staff ID</label>
-                    <input type="text" id="login-username" class="form-control" placeholder="Enter username" required value="admin">
-                </div>
-                <div style="margin-bottom: 20px;">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Enter password" required value="admin123">
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;">
-                    🔐 Secure Workstation Sign In
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn-theme" onclick="toggleTheme()" id="btn-theme-login">
+                    <span>🌙</span> Dark Mode
                 </button>
-            </form>
+                <button class="btn-secondary" onclick="openStationGuideModal()">
+                    <span>ℹ️</span> Station Guide
+                </button>
+            </div>
+        </div>
+
+        <!-- Login Portal Main Grid -->
+        <div class="login-main-container">
+            <div class="login-dashboard-grid">
+                
+                <!-- Left: Workstation Persona Selection -->
+                <div class="station-selection-card">
+                    <div>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main);">Workstation Dashboard Portal</h2>
+                                <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 3px;">Select your operational station tile below to automatically prepare credentials.</p>
+                            </div>
+                            <span class="badge badge-info" style="font-size: 11px;">5 Stations Ready</span>
+                        </div>
+
+                        <!-- Role Station Tiles -->
+                        <div class="station-list">
+                            <div class="station-tile active" id="tile-Admin" onclick="selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)')">
+                                <div class="station-tile-info">
+                                    <div class="station-icon">👑</div>
+                                    <div class="station-details">
+                                        <h4>Store Admin <span class="badge badge-info" style="font-size: 10px;">HQ Command</span></h4>
+                                        <p>Staff RBAC, daily Z-Report, financial cash reconciliation & system audit trail</p>
+                                    </div>
+                                </div>
+                                <div class="station-creds-chip">admin / admin123</div>
+                            </div>
+
+                            <div class="station-tile" id="tile-Pharmacist" onclick="selectStationRole('Pharmacist', 'pharmacist', 'pharma123', 'Terminal 02 — Clinical Kiosk B (Pharmacist Station)')">
+                                <div class="station-tile-info">
+                                    <div class="station-icon">🩺</div>
+                                    <div class="station-details">
+                                        <h4>Clinical Pharmacist <span class="badge badge-success" style="font-size: 10px;">CDSS Shield</span></h4>
+                                        <p>e-Prescription queue, allergy contraindications, Schedule X NDPS sign-off</p>
+                                    </div>
+                                </div>
+                                <div class="station-creds-chip">pharmacist / pharma123</div>
+                            </div>
+
+                            <div class="station-tile" id="tile-Cashier" onclick="selectStationRole('Cashier', 'cashier', 'cash123', 'Terminal 01 — Counter Station A (Billing & POS)')">
+                                <div class="station-tile-info">
+                                    <div class="station-icon">💳</div>
+                                    <div class="station-details">
+                                        <h4>Cashier (POS) <span class="badge badge-warning" style="font-size: 10px;">Express Billing</span></h4>
+                                        <p>Barcode scanning, FEFO cart, split payment (Cash, dynamic UPI, Card), GST receipt</p>
+                                    </div>
+                                </div>
+                                <div class="station-creds-chip">cashier / cash123</div>
+                            </div>
+
+                            <div class="station-tile" id="tile-Inventory" onclick="selectStationRole('Inventory Manager', 'inventory', 'inv123', 'Terminal 03 — Inwarding & Cold Hub (Inventory)')">
+                                <div class="station-tile-info">
+                                    <div class="station-icon">📦</div>
+                                    <div class="station-details">
+                                        <h4>Inventory Manager <span class="badge badge-info" style="font-size: 10px;">FEFO Supply</span></h4>
+                                        <p>Multi-batch FEFO ledger, low stock alerts, GRN inwarding, IoT cold-chain 2-8°C</p>
+                                    </div>
+                                </div>
+                                <div class="station-creds-chip">inventory / inv123</div>
+                            </div>
+
+                            <div class="station-tile" id="tile-Delivery" onclick="selectStationRole('Delivery Agent', 'delivery', 'deliv123', 'Terminal 05 — Delivery Bay (Logistics & Fleet)')">
+                                <div class="station-tile-info">
+                                    <div class="station-icon">🛵</div>
+                                    <div class="station-details">
+                                        <h4>Delivery Rider <span class="badge badge-neutral" style="font-size: 10px;">e-POD Fleet</span></h4>
+                                        <p>Route Kanban dispatch board, cold-bag checklist, customer 4-digit OTP proof</p>
+                                    </div>
+                                </div>
+                                <div class="station-creds-chip">delivery / deliv123</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Metadata & Compliance Notice -->
+                    <div style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted);">
+                        <span>DL: <strong>MH-TZ2-441902</strong> • GSTIN: <strong>27AABCS1429B1Z2</strong></span>
+                        <span style="display: flex; align-items: center; gap: 4px;">🛡️ <strong>Encrypted Local Storage</strong></span>
+                    </div>
+                </div>
+
+                <!-- Right: Sign-in Terminal Form Card -->
+                <div class="login-form-card">
+                    <div>
+                        <div class="login-form-header">
+                            <span id="selected-station-badge" class="station-badge-target">👑 Store Admin Station</span>
+                            <h3>Workstation Sign In</h3>
+                            <p>Verify your credentials to unlock terminal permissions.</p>
+                        </div>
+
+                        <!-- Dynamic Alert Banner -->
+                        <div class="login-alert-banner" id="login-alert-banner">
+                            <span>⚠️</span> <span id="login-alert-text">Invalid credentials. Please verify your staff password.</span>
+                        </div>
+
+                        <form onsubmit="handleLoginSubmit(event)" id="login-form">
+                            <!-- Terminal Selection -->
+                            <div style="margin-bottom: 14px;">
+                                <label class="form-label">Terminal Kiosk Location</label>
+                                <select id="login-terminal" class="form-control">
+                                    <option value="Terminal 04 — Store Admin HQ (Command Center)">Terminal 04 — Store Admin HQ (Command Center)</option>
+                                    <option value="Terminal 01 — Counter Station A (Billing & POS)">Terminal 01 — Counter Station A (Billing & POS)</option>
+                                    <option value="Terminal 02 — Clinical Kiosk B (Pharmacist Station)">Terminal 02 — Clinical Kiosk B (Pharmacist Station)</option>
+                                    <option value="Terminal 03 — Inwarding & Cold Hub (Inventory)">Terminal 03 — Inwarding & Cold Hub (Inventory)</option>
+                                    <option value="Terminal 05 — Delivery Bay (Logistics & Fleet)">Terminal 05 — Delivery Bay (Logistics & Fleet)</option>
+                                </select>
+                            </div>
+
+                            <!-- Username -->
+                            <div style="margin-bottom: 14px;">
+                                <label class="form-label">Staff Username or ID</label>
+                                <div class="input-group">
+                                    <span>👤</span>
+                                    <input type="text" id="login-username" placeholder="Enter username or ID" required value="admin">
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div style="margin-bottom: 16px;">
+                                <label class="form-label">Security Password</label>
+                                <div class="input-group">
+                                    <span>🔒</span>
+                                    <input type="password" id="login-password" placeholder="Enter password" required value="admin123">
+                                    <span style="cursor: pointer; font-size: 14px;" onclick="togglePasswordVisibility()" id="btn-pwd-toggle" title="Show/Hide Password">👁️</span>
+                                </div>
+                            </div>
+
+                            <!-- Remember Session -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; font-size: 12px; color: var(--text-muted);">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" id="chk-remember" checked> Keep workstation active
+                                </label>
+                                <span style="color: var(--brand-primary); cursor: pointer; font-weight: 600;" onclick="showToast('Password Reset', 'Contact Store Administrator to reset staff passwords.', 'info')">Need help?</span>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 11px; font-size: 14px;" id="btn-login-submit">
+                                    🔐 Sign In to Workstation
+                                </button>
+                                <button type="button" class="btn-secondary" style="width: 100%; justify-content: center; padding: 8px; font-size: 12.5px;" onclick="quickInstantLogin()">
+                                    ⚡ 1-Click Instant Login
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Security Notice -->
+                    <div style="text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 20px; border-top: 1px solid var(--border); padding-top: 12px;">
+                        Zero cloud dependencies • 100% On-Premise Clinical Data Storage
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -1112,6 +1382,10 @@
             if (clockEl) {
                 clockEl.textContent = `${dateStr} • ${timeStr}`;
             }
+            const loginClockEl = document.getElementById("login-live-clock");
+            if (loginClockEl) {
+                loginClockEl.textContent = `${dateStr} • ${timeStr}`;
+            }
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -1120,13 +1394,17 @@
         function applyTheme(t) {
             State.theme = t;
             localStorage.setItem("aegispharm_theme", t);
-            if (t === "dark") {
+            const isDark = (t === "dark");
+            if (isDark) {
                 document.body.classList.add("dark");
-                document.getElementById("btn-theme").innerHTML = "<span>☀️</span> Light Mode";
             } else {
                 document.body.classList.remove("dark");
-                document.getElementById("btn-theme").innerHTML = "<span>🌙</span> Dark Mode";
             }
+            const themeTxt = isDark ? "<span>☀️</span> Light Mode" : "<span>🌙</span> Dark Mode";
+            const btnTh = document.getElementById("btn-theme");
+            if (btnTh) btnTh.innerHTML = themeTxt;
+            const btnThLogin = document.getElementById("btn-theme-login");
+            if (btnThLogin) btnThLogin.innerHTML = themeTxt;
         }
 
         function toggleTheme() {
@@ -1181,27 +1459,124 @@
             document.getElementById("app-modal").classList.remove("active");
         }
 
-        // --- AUTHENTICATION & LOGIN ---
-        function fillLogin(u, p) {
-            document.getElementById("login-username").value = u;
-            document.getElementById("login-password").value = p;
+        // --- LOGIN DASHBOARD & AUTHENTICATION HANDLERS ---
+        function selectStationRole(role, username, password, terminalName) {
+            document.querySelectorAll(".station-tile").forEach(t => t.classList.remove("active"));
+            const targetTile = document.getElementById(`tile-${role.split(" ")[0]}`);
+            if (targetTile) targetTile.classList.add("active");
+
+            const badgeMap = {
+                "Admin": "👑 Store Admin Station (HQ)",
+                "Pharmacist": "🩺 Clinical Pharmacist Station",
+                "Cashier": "💳 Cashier POS Express Station",
+                "Inventory Manager": "📦 Inventory & FEFO Station",
+                "Delivery Agent": "🛵 Delivery Dispatch Fleet"
+            };
+            const badgeEl = document.getElementById("selected-station-badge");
+            if (badgeEl) badgeEl.textContent = badgeMap[role] || `${role} Station`;
+
+            const uInput = document.getElementById("login-username");
+            if (uInput) uInput.value = username;
+
+            const pInput = document.getElementById("login-password");
+            if (pInput) pInput.value = password;
+
+            const termSelect = document.getElementById("login-terminal");
+            if (termSelect && terminalName) termSelect.value = terminalName;
+
+            const alertBanner = document.getElementById("login-alert-banner");
+            if (alertBanner) alertBanner.style.display = "none";
+        }
+
+        function togglePasswordVisibility() {
+            const pInput = document.getElementById("login-password");
+            const btn = document.getElementById("btn-pwd-toggle");
+            if (!pInput || !btn) return;
+            if (pInput.type === "password") {
+                pInput.type = "text";
+                btn.textContent = "🙈";
+                btn.title = "Hide Password";
+            } else {
+                pInput.type = "password";
+                btn.textContent = "👁️";
+                btn.title = "Show Password";
+            }
+        }
+
+        function quickInstantLogin() {
+            const fakeEvent = { preventDefault: () => {} };
+            handleLoginSubmit(fakeEvent);
+        }
+
+        function openStationGuideModal() {
+            openModal(
+                "📋 Workstation Role & Credentials Guide",
+                `
+                <div style="font-size: 13px; line-height: 1.6; color: var(--text-main);">
+                    <p style="color: var(--text-muted); margin-bottom: 14px;">AegisPharm Enterprise provides 5 dedicated workstation personas. Sign in with standard credentials or custom staff accounts created in Admin HQ:</p>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="background: var(--bg-hover); padding: 12px; border-radius: 8px;">
+                            <strong>👑 Store Admin:</strong> <code>admin</code> / <code>admin123</code><br>
+                            <small style="color: var(--text-muted);">Staff user credentials management, daily Z-Report, financial cash reconciliation, system settings, activity audit stream, database snapshots.</small>
+                        </div>
+                        <div style="background: var(--bg-hover); padding: 12px; border-radius: 8px;">
+                            <strong>🩺 Clinical Pharmacist:</strong> <code>pharmacist</code> / <code>pharma123</code><br>
+                            <small style="color: var(--text-muted);">Incoming e-Prescriptions queue, CDSS allergy shield (Penicillin/Aspirin flags), Schedule X narcotic sign-off PIN, chronic refill adherence.</small>
+                        </div>
+                        <div style="background: var(--bg-hover); padding: 12px; border-radius: 8px;">
+                            <strong>💳 Cashier (POS):</strong> <code>cashier</code> / <code>cash123</code><br>
+                            <small style="color: var(--text-muted);">1-Click approved Rx import, barcode search, FEFO batch selection, split payments (Cash change calculator, Dynamic UPI QR, Card), 80mm GST receipt.</small>
+                        </div>
+                        <div style="background: var(--bg-hover); padding: 12px; border-radius: 8px;">
+                            <strong>📦 Inventory Manager:</strong> <code>inventory</code> / <code>inv123</code><br>
+                            <small style="color: var(--text-muted);">FEFO multi-batch ledger, real-time stock adjustments, Goods Receipt Notes (GRN), IoT cold-chain 2-8°C live temperature monitor & alarms.</small>
+                        </div>
+                        <div style="background: var(--bg-hover); padding: 12px; border-radius: 8px;">
+                            <strong>🛵 Delivery Rider:</strong> <code>delivery</code> / <code>deliv123</code><br>
+                            <small style="color: var(--text-muted);">Active dispatch Kanban board, cold-bag checklist, customer 4-digit OTP digital proof-of-delivery (e-POD).</small>
+                        </div>
+                    </div>
+                </div>
+                `,
+                `<button class="btn-primary" onclick="closeModal()">Got it</button>`,
+                "650px"
+            );
         }
 
         async function handleLoginSubmit(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             const u = document.getElementById("login-username").value.trim();
             const p = document.getElementById("login-password").value.trim();
+            const alertBanner = document.getElementById("login-alert-banner");
+            const alertText = document.getElementById("login-alert-text");
+
+            const btnSubmit = document.getElementById("btn-login-submit");
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = `<span>⏳</span> Signing In...`;
+            }
 
             const res = await callBridge("login", u, p);
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `🔐 Sign In to Workstation`;
+            }
+
             if (res && res.success) {
+                if (alertBanner) alertBanner.style.display = "none";
                 State.currentUser = res.user;
                 document.getElementById("login-view").style.display = "none";
                 document.getElementById("user-name-text").textContent = res.user.name;
                 document.getElementById("role-select").value = res.user.role;
                 navigateRole(res.user.role);
-                showToast("Welcome!", `Logged in as ${res.user.name} (${res.user.role})`, "success");
+                showToast("Welcome!", `Logged into ${res.user.role} Workstation as ${res.user.name}`, "success");
             } else {
-                showToast("Authentication Failed", (res && res.error) || "Invalid credentials.", "error");
+                const errMsg = (res && res.error) || "Invalid credentials. Please verify your staff ID and password.";
+                if (alertBanner && alertText) {
+                    alertText.textContent = errMsg;
+                    alertBanner.style.display = "flex";
+                }
+                showToast("Authentication Failed", errMsg, "error");
             }
         }
 
@@ -1209,7 +1584,8 @@
             await callBridge("logout");
             State.currentUser = null;
             document.getElementById("login-view").style.display = "flex";
-            showToast("Signed Out", "Session ended cleanly.", "info");
+            selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
+            showToast("Signed Out", "Workstation session ended cleanly.", "info");
         }
 
         async function onSwitchRole(role) {
@@ -2348,7 +2724,10 @@
         // --- APP STARTUP INITIALIZATION ---
         window.addEventListener("pywebviewready", async () => {
             console.log("pywebview Edge Chromium ready!");
-            // Check current user or start on Admin
+            // Initialize default role on Login Dashboard
+            selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
+
+            // Check if there is an active session already
             const user = await callBridge("get_current_user");
             if (user) {
                 State.currentUser = user;
@@ -2356,22 +2735,19 @@
                 document.getElementById("user-name-text").textContent = user.name;
                 navigateRole(user.role);
             } else {
-                // Auto-login to Admin for rapid pair-programming desktop testing
-                await callBridge("login", "admin", "admin123");
-                State.currentUser = { id: "STF-01", name: "Dr. Rajesh Kulkarni", role: "Admin", status: "Active" };
-                document.getElementById("login-view").style.display = "none";
-                document.getElementById("user-name-text").textContent = "Dr. Rajesh Kulkarni";
-                navigateRole("Admin");
+                // Keep Login Dashboard open and ready for user authentication
+                document.getElementById("login-view").style.display = "flex";
             }
         });
 
-        // Fallback for direct browser testing
+        // Fallback for standalone browser testing
         setTimeout(() => {
             if (!window.pywebview) {
-                console.log("Running in standalone preview mode.");
-                navigateRole("Admin");
+                console.log("Running in standalone preview mode with Login Dashboard.");
+                selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
+                document.getElementById("login-view").style.display = "flex";
             }
-        }, 300);
+        }, 200);
     </script>
 </body>
 </html>
