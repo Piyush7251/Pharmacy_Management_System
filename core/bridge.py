@@ -36,12 +36,12 @@ class PharmacyBridge:
         const res = await window.pywebview.api.<method_name>(...args);
     """
     def __init__(self, window=None):
-        self.window = window
-        self.current_user = None
-        self.connector = None
+        self._window = window
+        self._current_user = None
+        self._connector = None
 
     def set_window(self, window):
-        self.window = window
+        self._window = window
 
     # --- 1. AUTHENTICATION & SESSION MANAGEMENT ---
 
@@ -49,16 +49,16 @@ class PharmacyBridge:
         """Authenticate user against database credentials."""
         user = authenticate_user(username, password)
         if user:
-            self.current_user = user
-            if self.connector:
-                self.connector.stop()
-            self.connector = AppConnector(
+            self._current_user = user
+            if self._connector:
+                self._connector.stop()
+            self._connector = AppConnector(
                 user_id=user["id"],
                 user_name=user["name"],
                 role=user["role"],
                 app_name=f"{user['role']} Workstation"
             )
-            self.connector.start()
+            self._connector.start()
             
             log_activity(
                 action="User Login",
@@ -72,9 +72,9 @@ class PharmacyBridge:
 
     def logout(self) -> Dict[str, Any]:
         """Sign out current user and terminate presence heartbeat."""
-        if self.current_user:
-            user_name = self.current_user.get("name", "User")
-            role = self.current_user.get("role", "Staff")
+        if self._current_user:
+            user_name = self._current_user.get("name", "User")
+            role = self._current_user.get("role", "Staff")
             log_activity(
                 action="User Sign Out",
                 details=f"{user_name} signed out cleanly.",
@@ -82,15 +82,15 @@ class PharmacyBridge:
                 role=role,
                 level="INFO"
             )
-        if self.connector:
-            self.connector.stop()
-            self.connector = None
-        self.current_user = None
+        if self._connector:
+            self._connector.stop()
+            self._connector = None
+        self._current_user = None
         return {"success": True}
 
     def get_current_user(self) -> Optional[Dict[str, Any]]:
         """Return currently signed in staff profile."""
-        return self.current_user
+        return self._current_user
 
     def switch_role(self, role_name: str) -> Dict[str, Any]:
         """Quickly switch active role persona for testing and multi-role operations."""
@@ -104,18 +104,18 @@ class PharmacyBridge:
         }
         target = role_map.get(role_name)
         if target:
-            if not self.current_user:
-                self.current_user = {"id": target[2], "name": target[1], "role": target[0], "status": "Active"}
+            if not self._current_user:
+                self._current_user = {"id": target[2], "name": target[1], "role": target[0], "status": "Active"}
             else:
-                self.current_user["role"] = target[0]
-                self.current_user["name"] = target[1]
-                self.current_user["id"] = target[2]
+                self._current_user["role"] = target[0]
+                self._current_user["name"] = target[1]
+                self._current_user["id"] = target[2]
             
-            if self.connector:
-                self.connector.role = target[0]
-                self.connector.user_name = target[1]
-                self.connector.user_id = target[2]
-                self.connector.update_action(f"Switched view to {target[0]}")
+            if self._connector:
+                self._connector.role = target[0]
+                self._connector.user_name = target[1]
+                self._connector.user_id = target[2]
+                self._connector.update_action(f"Switched view to {target[0]}")
             
             log_activity(
                 action="Role Switched",
@@ -124,7 +124,7 @@ class PharmacyBridge:
                 role=target[0],
                 level="INFO"
             )
-            return {"success": True, "user": self.current_user}
+            return {"success": True, "user": self._current_user}
         return {"success": False, "error": f"Unknown role persona: {role_name}"}
 
     def get_active_sessions(self) -> List[Dict[str, Any]]:
@@ -144,8 +144,8 @@ class PharmacyBridge:
             log_activity(
                 action="Medicine Added",
                 details=f"Added {med_data.get('name')} (Batch: {med_data.get('batch')}, Stock: {med_data.get('stock')})",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
-                role=self.current_user.get("role", "Inventory") if self.current_user else "Inventory",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
+                role=self._current_user.get("role", "Inventory") if self._current_user else "Inventory",
                 level="INFO"
             )
             return {"success": True}
@@ -158,8 +158,8 @@ class PharmacyBridge:
             log_activity(
                 action="Stock Adjusted",
                 details=f"Adjusted medicine {med_id} by {delta:+d} units.",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
-                role=self.current_user.get("role", "Inventory") if self.current_user else "Inventory",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
+                role=self._current_user.get("role", "Inventory") if self._current_user else "Inventory",
                 level="INFO"
             )
             return {"success": True}
@@ -172,8 +172,8 @@ class PharmacyBridge:
             log_activity(
                 action="Medicine Deleted",
                 details=f"Removed medicine ID {med_id} from catalog.",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
-                role=self.current_user.get("role", "Inventory") if self.current_user else "Inventory",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
+                role=self._current_user.get("role", "Inventory") if self._current_user else "Inventory",
                 level="WARN"
             )
             return {"success": True}
@@ -192,8 +192,8 @@ class PharmacyBridge:
             log_activity(
                 action="Prescription Created",
                 details=f"New prescription {rx_data.get('rx_id')} for {rx_data.get('patient_name')}.",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
-                role=self.current_user.get("role", "Clinical") if self.current_user else "Clinical",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
+                role=self._current_user.get("role", "Clinical") if self._current_user else "Clinical",
                 level="INFO"
             )
             return {"success": True}
@@ -201,7 +201,7 @@ class PharmacyBridge:
 
     def update_prescription_status(self, rx_id: str, status: str, verified_by: Optional[str] = None) -> Dict[str, Any]:
         """Update e-Prescription status (e.g. Verified & Approved, Dispensed)."""
-        v_by = verified_by or (self.current_user.get("name") if self.current_user else "Pharmacist")
+        v_by = verified_by or (self._current_user.get("name") if self._current_user else "Pharmacist")
         success = update_prescription_status(rx_id, status, v_by)
         if success:
             log_activity(
@@ -225,7 +225,7 @@ class PharmacyBridge:
             log_activity(
                 action="Patient Registered",
                 details=f"Added patient {p_data.get('name')} (Phone: {p_data.get('phone')}).",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
                 role="Clinical",
                 level="INFO"
             )
@@ -294,7 +294,7 @@ class PharmacyBridge:
             log_activity(
                 action="Delivery Created",
                 details=f"Order {deliv_data.get('order_id')} for {deliv_data.get('patient_name')} (Agent: {deliv_data.get('agent_name')}).",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
                 role="Delivery",
                 level="INFO"
             )
@@ -308,7 +308,7 @@ class PharmacyBridge:
             log_activity(
                 action="Delivery Status Updated",
                 details=f"Order {order_id} marked as '{status}'.",
-                user_name=self.current_user.get("name", "Agent") if self.current_user else "Agent",
+                user_name=self._current_user.get("name", "Agent") if self._current_user else "Agent",
                 role="Delivery",
                 level="INFO"
             )
@@ -332,7 +332,7 @@ class PharmacyBridge:
             log_activity(
                 action="PO Created",
                 details=f"Created {po_data.get('po_id')} for supplier {po_data.get('supplier_name')} (₹ {po_data.get('total_amount'):.2f}).",
-                user_name=self.current_user.get("name", "Staff") if self.current_user else "Staff",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
                 role="Inventory",
                 level="INFO"
             )
@@ -389,7 +389,7 @@ class PharmacyBridge:
             log_activity(
                 action="Staff User Created",
                 details=f"Created staff account {username} ({name}, Role: {role}).",
-                user_name=self.current_user.get("name", "Admin") if self.current_user else "Admin",
+                user_name=self._current_user.get("name", "Admin") if self._current_user else "Admin",
                 role="Admin",
                 level="INFO"
             )
@@ -403,7 +403,7 @@ class PharmacyBridge:
             log_activity(
                 action="Staff User Updated",
                 details=f"Updated staff account {username} (Status: {status}).",
-                user_name=self.current_user.get("name", "Admin") if self.current_user else "Admin",
+                user_name=self._current_user.get("name", "Admin") if self._current_user else "Admin",
                 role="Admin",
                 level="INFO"
             )
@@ -417,7 +417,7 @@ class PharmacyBridge:
             log_activity(
                 action="Staff User Deleted",
                 details=f"Deleted staff user ID {staff_id}.",
-                user_name=self.current_user.get("name", "Admin") if self.current_user else "Admin",
+                user_name=self._current_user.get("name", "Admin") if self._current_user else "Admin",
                 role="Admin",
                 level="WARN"
             )
@@ -437,7 +437,7 @@ class PharmacyBridge:
             log_activity(
                 action="Settings Updated",
                 details="Updated store configuration and parameters.",
-                user_name=self.current_user.get("name", "Admin") if self.current_user else "Admin",
+                user_name=self._current_user.get("name", "Admin") if self._current_user else "Admin",
                 role="Admin",
                 level="INFO"
             )
@@ -450,7 +450,7 @@ class PharmacyBridge:
         log_activity(
             action="Settings Reset",
             details="Restored system configuration to out-of-the-box defaults.",
-            user_name=self.current_user.get("name", "Admin") if self.current_user else "Admin",
+            user_name=self._current_user.get("name", "Admin") if self._current_user else "Admin",
             role="Admin",
             level="WARN"
         )
@@ -478,6 +478,6 @@ class PharmacyBridge:
 
     def log_event(self, action: str, details: str, level: str = "INFO") -> None:
         """Generic client-side action logger."""
-        u_name = self.current_user.get("name", "User") if self.current_user else "User"
-        role = self.current_user.get("role", "Staff") if self.current_user else "Staff"
+        u_name = self._current_user.get("name", "User") if self._current_user else "User"
+        role = self._current_user.get("role", "Staff") if self._current_user else "Staff"
         log_activity(action, details, u_name, role, level)
