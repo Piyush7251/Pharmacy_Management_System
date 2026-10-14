@@ -121,7 +121,15 @@ class PharmacyApplication(ctk.CTk):
         )
 
     def switch_role(self, selected_role_text):
-        """Quickly switch active workspace view without logging out."""
+        """Restricted to Store Admin for supervisor inspection."""
+        if not self.current_user or self.current_user.get("role") != "Admin":
+            self.show_toast(
+                title="Access Denied",
+                message="Role switching is disabled for security compliance. Please Lock / Sign Out to change users.",
+                toast_type="error"
+            )
+            return
+
         role_map = {
             "👑 Store Admin": ("Admin", "Dr. Rajesh Kulkarni", "STF-01"),
             "🩺 Pharmacist": ("Pharmacist", "Pooja Sharma, R.Ph", "STF-02"),
@@ -140,12 +148,12 @@ class PharmacyApplication(ctk.CTk):
                 self.connector.role = target[0]
                 self.connector.user_name = target[1]
                 self.connector.user_id = target[2]
-                self.connector.update_action(f"Switched view to {target[0]}")
+                self.connector.update_action(f"Supervisor inspected view {target[0]}")
                 
             self.load_role_dashboard()
             self.show_toast(
-                title=f"Switched to {target[0]}",
-                message=f"Logged in as {target[1]}.",
+                title=f"Supervisor View: {target[0]}",
+                message=f"Inspecting department as {self.current_user['name']}.",
                 toast_type="info"
             )
 
@@ -222,31 +230,9 @@ class PharmacyApplication(ctk.CTk):
         
         self.update_clock()
         
-        # Right: Quick Role Switcher, Theme Switcher, Profile Chip & Logout
+        # Right: Theme Switcher, Certified Identity Chip & Lock Station
         right_info = ctk.CTkFrame(topbar, fg_color="transparent")
         right_info.grid(row=0, column=1, sticky="e", padx=16, pady=10)
-        
-        # Quick Role Switcher
-        roles_list = ["👑 Store Admin", "🩺 Pharmacist", "💳 Cashier (POS)", "📦 Stock Manager", "🛵 Delivery Rider"]
-        current_role_str = next((r for r in roles_list if self.current_user.get("role", "")[:4] in r), roles_list[0])
-        
-        lbl_switch = ctk.CTkLabel(right_info, text="View:", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
-        lbl_switch.pack(side="left", padx=(0, 4))
-        
-        self.role_switcher = ctk.CTkOptionMenu(
-            right_info,
-            values=roles_list,
-            width=145,
-            height=30,
-            font=FONTS["small_bold"],
-            dropdown_font=FONTS["small"],
-            fg_color=COLORS["btn_secondary"],
-            button_color=COLORS["btn_secondary_hover"],
-            text_color=COLORS["text_main"],
-            command=self.switch_role
-        )
-        self.role_switcher.set(current_role_str)
-        self.role_switcher.pack(side="left", padx=(0, 10))
         
         theme_btn_text = "🌙 Dark Mode" if self.current_theme == "Light" else "☀️ Light Mode"
         self.btn_theme = ctk.CTkButton(
@@ -262,31 +248,33 @@ class PharmacyApplication(ctk.CTk):
         )
         self.btn_theme.pack(side="left", padx=(0, 10))
         
-        role_icon = "👑" if "Admin" in self.current_user["role"] else ("🩺" if "Pharmacist" in self.current_user["role"] else ("💳" if "Cashier" in self.current_user["role"] else "📦"))
+        role_str = self.current_user.get("role", "Staff")
+        role_icon = "👑" if "Admin" in role_str else ("🩺" if "Pharmacist" in role_str else ("💳" if "Cashier" in role_str else ("📦" if "Inventory" in role_str else "🛵")))
         
-        # User profile chip
+        # Certified Workstation Identity Chip (Read-Only RBAC)
         user_chip = ctk.CTkFrame(right_info, fg_color=COLORS["badge_bg"], corner_radius=6, border_width=1, border_color=COLORS["border"])
         user_chip.pack(side="left", padx=(0, 10))
         
         lbl_user = ctk.CTkLabel(
             user_chip,
-            text=f" {role_icon} {self.current_user['name']} ",
+            text=f" {role_icon} {self.current_user.get('name', 'User')}  •  [{role_str}]  •  ID: {self.current_user.get('id', 'STF-XX')} ",
             font=FONTS["small_bold"],
             text_color=COLORS["text_main"],
-            padx=8,
-            pady=3
+            padx=10,
+            pady=4
         )
         lbl_user.pack()
         
         btn_logout = ctk.CTkButton(
             right_info,
-            text="🚪 Sign Out",
-            width=80,
+            text=" 🔒 Lock / Sign Out ",
+            width=115,
             height=30,
             font=FONTS["small_bold"],
-            fg_color=COLORS["btn_secondary"],
-            hover_color=COLORS["btn_danger"],
-            text_color=COLORS["btn_secondary_text"],
+            fg_color=COLORS["btn_danger"],
+            hover_color=COLORS["btn_danger_hover"],
+            text_color="#FFFFFF",
+            corner_radius=6,
             command=self.logout
         )
         btn_logout.pack(side="left")

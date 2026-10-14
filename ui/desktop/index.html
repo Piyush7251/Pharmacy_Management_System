@@ -178,23 +178,6 @@
             gap: 12px;
         }
 
-        .role-selector {
-            background: var(--bg-hover);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .role-selector:hover {
-            border-color: var(--brand-primary);
-        }
-
         .btn-theme {
             background: var(--bg-hover);
             border: 1px solid var(--border);
@@ -214,16 +197,130 @@
             background: var(--bg-active);
         }
 
-        .user-pill {
+        .user-identity-chip {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 4px 10px;
+            gap: 10px;
+            padding: 4px 12px;
             background: var(--bg-hover);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 999px;
+            cursor: default;
+            user-select: none;
+        }
+
+        .user-avatar-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--brand-light);
+            color: var(--brand-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border: 1px solid var(--border);
+        }
+
+        .user-identity-meta {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .user-name-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .staff-id-tag {
+            font-size: 10px;
+            padding: 1px 5px;
+            background: var(--brand-light);
+            color: var(--brand-text);
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
+        }
+
+        .user-role-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .role-security-badge {
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 9px;
+        }
+
+        .role-badge-Admin { background: rgba(99, 102, 241, 0.15); color: #818CF8; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .role-badge-Pharmacist { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .role-badge-Cashier { background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .role-badge-Inventory { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .role-badge-Delivery { background: rgba(168, 85, 247, 0.15); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+        .terminal-tag {
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .supervisor-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.15), rgba(234, 88, 12, 0.05));
+            border: 1px solid rgba(234, 88, 12, 0.4);
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .supervisor-badge {
+            background: #EA580C;
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .supervisor-text {
+            font-size: 12px;
+            color: var(--text-main);
+            flex: 1;
+            margin: 0 16px;
+        }
+
+        .btn-return-admin {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-return-admin:hover {
+            border-color: #EA580C;
+            color: #EA580C;
+            background: rgba(234, 88, 12, 0.1);
         }
 
         .btn-logout {
@@ -1072,28 +1169,30 @@
         </div>
 
         <div class="header-actions">
-            <!-- Fast Role Switcher -->
-            <select class="role-selector" id="role-select" onchange="onSwitchRole(this.value)">
-                <option value="Admin">👑 Store Admin</option>
-                <option value="Pharmacist">🩺 Pharmacist</option>
-                <option value="Cashier">💳 Cashier (POS)</option>
-                <option value="Inventory Manager">📦 Stock Manager</option>
-                <option value="Delivery Agent">🛵 Delivery Rider</option>
-            </select>
-
             <!-- Theme Toggle Button -->
             <button class="btn-theme" onclick="toggleTheme()" id="btn-theme">
                 <span>🌙</span> Dark Mode
             </button>
 
-            <!-- Active User Profile -->
-            <div class="user-pill" id="user-display">
-                <span style="font-size: 14px;">👤</span>
-                <span id="user-name-text">Demo Admin</span>
+            <!-- Certified Workstation Identity Chip (Read-Only RBAC) -->
+            <div class="user-identity-chip" id="user-display" title="Active Certified Workstation Session">
+                <div class="user-avatar-badge" id="user-avatar-badge">👑</div>
+                <div class="user-identity-meta">
+                    <div class="user-name-line">
+                        <span id="user-name-text">Dr. Rajesh Kulkarni</span>
+                        <span class="staff-id-tag" id="user-staff-id">STF-01</span>
+                    </div>
+                    <div class="user-role-line">
+                        <span class="role-security-badge role-badge-Admin" id="user-role-badge">Store Admin</span>
+                        <span class="terminal-tag" id="user-terminal-tag">Terminal 04</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Sign Out Button -->
-            <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+            <!-- Sign Out / Workstation Lock Button -->
+            <button class="btn-logout" onclick="handleLogout()" title="Lock workstation and end authenticated session">
+                <span>🔒</span> Lock / Sign Out
+            </button>
         </div>
     </header>
 
@@ -1566,10 +1665,10 @@
                 if (alertBanner) alertBanner.style.display = "none";
                 State.currentUser = res.user;
                 document.getElementById("login-view").style.display = "none";
-                document.getElementById("user-name-text").textContent = res.user.name;
-                document.getElementById("role-select").value = res.user.role;
+                updateHeaderIdentity(res.user);
+                updateSidebarForRole(res.user.role);
                 navigateRole(res.user.role);
-                showToast("Welcome!", `Logged into ${res.user.role} Workstation as ${res.user.name}`, "success");
+                showToast("Workstation Ready", `Authenticated as ${res.user.name} (${res.user.role})`, "success");
             } else {
                 const errMsg = (res && res.error) || "Invalid credentials. Please verify your staff ID and password.";
                 if (alertBanner && alertText) {
@@ -1585,22 +1684,204 @@
             State.currentUser = null;
             document.getElementById("login-view").style.display = "flex";
             selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
-            showToast("Signed Out", "Workstation session ended cleanly.", "info");
+            showToast("Workstation Locked", "Session terminated cleanly. Please sign in to resume.", "info");
         }
 
-        async function onSwitchRole(role) {
-            const res = await callBridge("switch_role", role);
-            if (res && res.success) {
-                State.currentUser = res.user;
-                document.getElementById("user-name-text").textContent = res.user.name;
-                navigateRole(role);
-                showToast("Role Switched", `Active view changed to ${role}`, "info");
+        function updateHeaderIdentity(user) {
+            if (!user) return;
+            const nameEl = document.getElementById("user-name-text");
+            const staffIdEl = document.getElementById("user-staff-id");
+            const roleBadgeEl = document.getElementById("user-role-badge");
+            const avatarEl = document.getElementById("user-avatar-badge");
+            const terminalEl = document.getElementById("user-terminal-tag");
+
+            const roleIcons = {
+                "Admin": "👑",
+                "Store Admin": "👑",
+                "Pharmacist": "🩺",
+                "Cashier": "💳",
+                "Inventory Manager": "📦",
+                "Delivery Agent": "🛵"
+            };
+            const roleShort = user.role.includes("Inventory") ? "Inventory" : (user.role.includes("Delivery") ? "Delivery" : user.role);
+
+            if (nameEl) nameEl.textContent = user.name;
+            if (staffIdEl) staffIdEl.textContent = user.id || "STF-XX";
+            if (avatarEl) avatarEl.textContent = roleIcons[user.role] || "👤";
+            if (roleBadgeEl) {
+                roleBadgeEl.textContent = user.role;
+                roleBadgeEl.className = `role-security-badge role-badge-${roleShort}`;
+            }
+            if (terminalEl) {
+                const termInput = document.getElementById("kiosk-terminal-id");
+                const termVal = termInput ? termInput.value.split("—")[0].trim() : "Terminal 01";
+                terminalEl.textContent = termVal;
             }
         }
 
-        function navigateRole(role) {
+        function updateSidebarForRole(role) {
+            const sidebar = document.getElementById("sidebar-nav");
+            if (!sidebar) return;
+
+            let html = "";
+            if (role === "Admin" || role === "Store Admin") {
+                html = `
+                    <div class="nav-section-title">Executive Operations</div>
+                    <a class="nav-item active" data-role="Admin" onclick="navigateRole('Admin')">
+                        <span class="nav-icon">👑</span> Store Admin HQ
+                    </a>
+                    
+                    <div class="nav-section-title" style="margin-top: 14px;">Enterprise Governance</div>
+                    <a class="nav-item" onclick="openSystemSettingsModal()">
+                        <span class="nav-icon">⚙️</span> System Settings
+                    </a>
+                    <a class="nav-item" onclick="openBackupModal()">
+                        <span class="nav-icon">💾</span> Snapshot Backup
+                    </a>
+                    <a class="nav-item" onclick="openActivityLogView()">
+                        <span class="nav-icon">📡</span> Activity & Audit
+                    </a>
+                    
+                    <div class="nav-section-title" style="margin-top: 14px;">Supervisor Inspection</div>
+                    <a class="nav-item" data-role="Pharmacist" onclick="supervisorInspect('Pharmacist')">
+                        <span class="nav-icon">🩺</span> Clinical Station
+                    </a>
+                    <a class="nav-item" data-role="Cashier" onclick="supervisorInspect('Cashier')">
+                        <span class="nav-icon">💳</span> Cashier POS
+                    </a>
+                    <a class="nav-item" data-role="Inventory Manager" onclick="supervisorInspect('Inventory Manager')">
+                        <span class="nav-icon">📦</span> Inventory Vault
+                    </a>
+                    <a class="nav-item" data-role="Delivery Agent" onclick="supervisorInspect('Delivery Agent')">
+                        <span class="nav-icon">🛵</span> Delivery Fleet
+                    </a>
+                `;
+            } else if (role === "Cashier") {
+                html = `
+                    <div class="nav-section-title">POS Workstation</div>
+                    <a class="nav-item active" data-role="Cashier" onclick="navigateRole('Cashier')">
+                        <span class="nav-icon">💳</span> Express Billing Counter
+                    </a>
+                    
+                    <div class="nav-section-title" style="margin-top: 14px;">Quick Actions</div>
+                    <a class="nav-item" onclick="openImportRxModal()">
+                        <span class="nav-icon">📋</span> Import Approved Rx
+                    </a>
+                    <a class="nav-item" onclick="openSalesHistoryModal()">
+                        <span class="nav-icon">🧾</span> Sales Ledger History
+                    </a>
+                `;
+            } else if (role === "Pharmacist") {
+                html = `
+                    <div class="nav-section-title">Clinical Pharmacy Station</div>
+                    <a class="nav-item active" data-role="Pharmacist" onclick="navigateRole('Pharmacist')">
+                        <span class="nav-icon">🩺</span> Prescription Verification
+                    </a>
+                    
+                    <div class="nav-section-title" style="margin-top: 14px;">Clinical Compliance</div>
+                    <a class="nav-item" onclick="renderPharmacistDashboard()">
+                        <span class="nav-icon">⚠️</span> Drug Interactions (CDSS)
+                    </a>
+                    <a class="nav-item" onclick="renderPharmacistDashboard()">
+                        <span class="nav-icon">📑</span> Schedule X NDPS Register
+                    </a>
+                `;
+            } else if (role === "Inventory Manager") {
+                html = `
+                    <div class="nav-section-title">Inventory & Supply Chain</div>
+                    <a class="nav-item active" data-role="Inventory Manager" onclick="navigateRole('Inventory Manager')">
+                        <span class="nav-icon">📦</span> Stock Catalog & Levels
+                    </a>
+                    
+                    <div class="nav-section-title" style="margin-top: 14px;">Procurement & Telemetry</div>
+                    <a class="nav-item" onclick="openAddMedicineModal()">
+                        <span class="nav-icon">➕</span> Add New Medicine SKU
+                    </a>
+                    <a class="nav-item" onclick="renderInventoryDashboard()">
+                        <span class="nav-icon">📑</span> Purchase Orders (GRN)
+                    </a>
+                    <a class="nav-item" onclick="renderInventoryDashboard()">
+                        <span class="nav-icon">❄️</span> Cold Chain IoT Fridge
+                    </a>
+                `;
+            } else if (role === "Delivery Agent") {
+                html = `
+                    <div class="nav-section-title">Delivery Dispatch Fleet</div>
+                    <a class="nav-item active" data-role="Delivery Agent" onclick="navigateRole('Delivery Agent')">
+                        <span class="nav-icon">🛵</span> Dispatch Queue & Routes
+                    </a>
+                `;
+            }
+            sidebar.innerHTML = html;
+        }
+
+        function supervisorInspect(role) {
+            if (!State.currentUser || (State.currentUser.role !== "Admin" && State.currentUser.role !== "Store Admin")) {
+                showToast("Access Denied", "Supervisor inspection requires Store Administrator clearance.", "error");
+                return;
+            }
             State.activeRole = role;
-            document.getElementById("role-select").value = role;
+
+            document.querySelectorAll("#sidebar-nav .nav-item").forEach(item => {
+                if (item.getAttribute("data-role") === role) {
+                    item.classList.add("active");
+                } else if (item.getAttribute("data-role")) {
+                    item.classList.remove("active");
+                }
+            });
+
+            switch (role) {
+                case "Pharmacist":
+                    renderPharmacistDashboard();
+                    break;
+                case "Cashier":
+                    renderCashierDashboard();
+                    break;
+                case "Inventory Manager":
+                    renderInventoryDashboard();
+                    break;
+                case "Delivery Agent":
+                    renderDeliveryDashboard();
+                    break;
+            }
+
+            setTimeout(() => {
+                const main = document.getElementById("main-content");
+                if (main && !document.getElementById("supervisor-audit-banner")) {
+                    const banner = document.createElement("div");
+                    banner.id = "supervisor-audit-banner";
+                    banner.className = "supervisor-banner";
+                    banner.innerHTML = `
+                        <div class="supervisor-badge">🛡️ SUPERVISOR AUDIT MODE</div>
+                        <div class="supervisor-text">
+                            Inspecting <strong>${role} Workstation</strong> under Administrative Oversight (<strong>${State.currentUser.name}</strong> • ${State.currentUser.id || 'STF-01'}). All view interactions are audit-logged.
+                        </div>
+                        <button class="btn-return-admin" onclick="navigateRole('Admin')">
+                            🔙 Return to Admin HQ
+                        </button>
+                    `;
+                    main.insertBefore(banner, main.firstChild);
+                }
+            }, 100);
+        }
+
+        function navigateRole(role) {
+            if (!State.currentUser) {
+                handleLogout();
+                return;
+            }
+
+            const isUserAdmin = State.currentUser.role === "Admin" || State.currentUser.role === "Store Admin";
+            if (!isUserAdmin && role !== State.currentUser.role) {
+                showToast(
+                    "Access Denied",
+                    `Station identity is locked to ${State.currentUser.name} (${State.currentUser.role}). Please Lock / Sign Out to access another workstation.`,
+                    "error"
+                );
+                return;
+            }
+
+            State.activeRole = role;
 
             document.querySelectorAll("#sidebar-nav .nav-item").forEach(item => {
                 if (item.getAttribute("data-role") === role) {
@@ -2732,7 +3013,8 @@
             if (user) {
                 State.currentUser = user;
                 document.getElementById("login-view").style.display = "none";
-                document.getElementById("user-name-text").textContent = user.name;
+                updateHeaderIdentity(user);
+                updateSidebarForRole(user.role);
                 navigateRole(user.role);
             } else {
                 // Keep Login Dashboard open and ready for user authentication

@@ -93,7 +93,24 @@ class PharmacyBridge:
         return self._current_user
 
     def switch_role(self, role_name: str) -> Dict[str, Any]:
-        """Quickly switch active role persona for testing and multi-role operations."""
+        """Switch active role persona for supervisor inspection (Restricted to Store Admin)."""
+        if not self._current_user:
+            return {"success": False, "error": "Authentication required. Please sign in to a workstation first."}
+
+        # Regulatory & Security Compliance: In production, non-admin staff cannot switch identity without logging out
+        if self._current_user.get("role") != "Admin":
+            log_activity(
+                action="Unauthorized Role Switch Attempt",
+                details=f"{self._current_user.get('name')} ({self._current_user.get('role')}) attempted to switch to {role_name}.",
+                user_name=self._current_user.get("name", "Unknown"),
+                role=self._current_user.get("role", "Staff"),
+                level="WARN"
+            )
+            return {
+                "success": False,
+                "error": f"Access Denied: Station identity is locked to {self._current_user.get('name')} ({self._current_user.get('role')}). Please Lock / Sign Out to log in as another user."
+            }
+
         role_map = {
             "Admin": ("Admin", "Dr. Rajesh Kulkarni", "STF-01"),
             "Store Admin": ("Admin", "Dr. Rajesh Kulkarni", "STF-01"),
@@ -104,22 +121,19 @@ class PharmacyBridge:
         }
         target = role_map.get(role_name)
         if target:
-            if not self._current_user:
-                self._current_user = {"id": target[2], "name": target[1], "role": target[0], "status": "Active"}
-            else:
-                self._current_user["role"] = target[0]
-                self._current_user["name"] = target[1]
-                self._current_user["id"] = target[2]
-            
+            self._current_user["role"] = target[0]
+            self._current_user["name"] = target[1]
+            self._current_user["id"] = target[2]
+
             if self._connector:
                 self._connector.role = target[0]
                 self._connector.user_name = target[1]
                 self._connector.user_id = target[2]
-                self._connector.update_action(f"Switched view to {target[0]}")
-            
+                self._connector.update_action(f"Supervisor inspected {target[0]}")
+
             log_activity(
-                action="Role Switched",
-                details=f"Workstation switched to {target[0]} persona.",
+                action="Supervisor View Switched",
+                details=f"Admin switched workstation view to {target[0]} for supervisor inspection.",
                 user_name=target[1],
                 role=target[0],
                 level="INFO"
@@ -166,7 +180,9 @@ class PharmacyBridge:
         return {"success": False, "error": "Failed to adjust stock."}
 
     def delete_medicine(self, med_id: str) -> Dict[str, Any]:
-        """Remove medicine item from inventory."""
+        """Remove medicine item from inventory (Inventory Manager or Admin Only)."""
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Inventory Manager"):
+            return {"success": False, "error": "Access Denied: Only Inventory Managers and Administrators can delete items from catalog."}
         success = delete_medicine(med_id)
         if success:
             log_activity(
@@ -241,7 +257,9 @@ class PharmacyBridge:
         return get_narcotic_records()
 
     def add_narcotic_record(self, rec_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Record Schedule X double sign-off into official register."""
+        """Record Schedule X double sign-off into official register (Pharmacist or Admin Only)."""
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Pharmacist"):
+            return {"success": False, "error": "Access Denied: Schedule X NDPS dispensation requires a Registered Pharmacist."}
         success = add_narcotic_record(rec_data)
         if success:
             log_activity(
@@ -383,7 +401,9 @@ class PharmacyBridge:
         return get_all_staff()
 
     def create_staff_user(self, staff_id: str, name: str, role: str, username: str, password: str, email: str, phone: str, branch: str) -> Dict[str, Any]:
-        """Create new staff account."""
+        """Create new staff account (Admin Only)."""
+        if self._current_user and self._current_user.get("role") != "Admin":
+            return {"success": False, "error": "Access Denied: Only Store Administrators can manage staff accounts."}
         success, err = create_staff_user(staff_id, name, role, username, password, email, phone, branch)
         if success:
             log_activity(
@@ -397,7 +417,9 @@ class PharmacyBridge:
         return {"success": False, "error": err}
 
     def update_staff_user(self, staff_id: str, name: str, role: str, username: str, password: str, email: str, phone: str, branch: str, status: str = "Active") -> Dict[str, Any]:
-        """Update existing staff account."""
+        """Update existing staff account (Admin Only)."""
+        if self._current_user and self._current_user.get("role") != "Admin":
+            return {"success": False, "error": "Access Denied: Only Store Administrators can manage staff accounts."}
         success, err = update_staff_user(staff_id, name, role, username, password, email, phone, branch, status)
         if success:
             log_activity(
@@ -411,7 +433,9 @@ class PharmacyBridge:
         return {"success": False, "error": err}
 
     def delete_staff_user(self, staff_id: str) -> Dict[str, Any]:
-        """Delete staff account."""
+        """Delete staff account (Admin Only)."""
+        if self._current_user and self._current_user.get("role") != "Admin":
+            return {"success": False, "error": "Access Denied: Only Store Administrators can delete staff accounts."}
         success = delete_staff_user(staff_id)
         if success:
             log_activity(
@@ -431,7 +455,9 @@ class PharmacyBridge:
         return get_settings().to_dict()
 
     def save_settings(self, settings_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Persist updated system configuration."""
+        """Persist updated system configuration (Admin Only)."""
+        if self._current_user and self._current_user.get("role") != "Admin":
+            return {"success": False, "error": "Access Denied: Only Store Administrators can modify system configuration."}
         success = save_settings(settings_data)
         if success:
             log_activity(
@@ -445,7 +471,9 @@ class PharmacyBridge:
         return {"success": False, "error": "Failed to save settings."}
 
     def reset_settings(self) -> Dict[str, Any]:
-        """Reset system configuration back to factory defaults."""
+        """Reset system configuration back to factory defaults (Admin Only)."""
+        if self._current_user and self._current_user.get("role") != "Admin":
+            return {"success": False, "error": "Access Denied: Only Store Administrators can reset system configuration."}
         cfg = reset_to_defaults()
         log_activity(
             action="Settings Reset",
@@ -472,7 +500,9 @@ class PharmacyBridge:
         return {"success": success, "message": msg, "path": target_path}
 
     def backup_database(self) -> Dict[str, Any]:
-        """Create timestamped snapshot of central database."""
+        """Create timestamped snapshot of central database (Admin Only)."""
+        if self._current_user and self._current_user.get("role") != "Admin":
+            return {"success": False, "error": "Access Denied: Only Store Administrators can perform database backups."}
         success, result_path = backup_sqlite_database()
         return {"success": success, "path": result_path if success else "", "error": "" if success else result_path}
 

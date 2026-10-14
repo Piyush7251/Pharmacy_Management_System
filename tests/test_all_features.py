@@ -452,8 +452,35 @@ class TestAegisPharmFeatures(unittest.TestCase):
         logout_res = bridge.logout()
         self.assertTrue(logout_res["success"])
         self.assertIsNone(bridge.get_current_user())
-        
-        # Test desktop HTML presence and Login Dashboard components
+
+        # Test Cashier login and strict RBAC enforcement
+        cashier_login = bridge.login("cashier", "cash123")
+        self.assertTrue(cashier_login["success"])
+        self.assertEqual(cashier_login["user"]["role"], "Cashier")
+
+        # Cashier CANNOT switch role to Admin without logging out
+        unauth_switch = bridge.switch_role("Admin")
+        self.assertFalse(unauth_switch["success"])
+        self.assertIn("Access Denied", unauth_switch["error"])
+
+        # Cashier CANNOT manage staff
+        unauth_staff = bridge.create_staff_user("STF-99", "Hacker", "Admin", "hack", "hack123", "h@h.com", "9999", "HQ")
+        self.assertFalse(unauth_staff["success"])
+        self.assertIn("Access Denied", unauth_staff["error"])
+
+        # Cashier CANNOT alter store settings
+        unauth_settings = bridge.save_settings({"store": {"name": "Hacked"}})
+        self.assertFalse(unauth_settings["success"])
+        self.assertIn("Access Denied", unauth_settings["error"])
+
+        # Cashier CANNOT delete catalog medicines
+        unauth_del = bridge.delete_medicine("MED-001")
+        self.assertFalse(unauth_del["success"])
+        self.assertIn("Access Denied", unauth_del["error"])
+
+        bridge.logout()
+
+        # Test desktop HTML presence, RBAC integrity, and Login Dashboard components
         desktop_html = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ui", "desktop", "index.html")
         self.assertTrue(os.path.exists(desktop_html))
         self.assertGreater(os.path.getsize(desktop_html), 1000)
@@ -465,6 +492,11 @@ class TestAegisPharmFeatures(unittest.TestCase):
         self.assertIn("login-form-card", html_text)
         self.assertIn("selectStationRole", html_text)
         self.assertIn("quickInstantLogin", html_text)
+        self.assertIn("user-identity-chip", html_text)
+        self.assertIn("role-security-badge", html_text)
+        self.assertIn("updateSidebarForRole", html_text)
+        self.assertIn("supervisorInspect", html_text)
+        self.assertNotIn('<select class="role-selector"', html_text)
 
 if __name__ == "__main__":
     unittest.main()
