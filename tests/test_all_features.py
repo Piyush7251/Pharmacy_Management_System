@@ -507,10 +507,17 @@ class TestAegisPharmFeatures(unittest.TestCase):
             "openAddRxModal", "submitAddRx", "approvePrescription", "rejectPrescription",
             "openAddNarcoticModal", "submitAddNarcotic", "sendRefillWhatsApp",
             "openCreateDeliveryModal", "submitCreateDelivery", "advanceDelivery", "openOtpModal", "verifyOtp",
-            "openSystemSettingsModal", "saveSystemSettings", "resetSystemSettings"
+            "openSystemSettingsModal", "saveSystemSettings", "resetSystemSettings",
+            "switchPharmacistTab", "switchInventoryTab", "runCDSSAnalysis", "filterNarcotics", "filterPrescriptionQueue"
         ]
         for opt in required_interactive_options:
             self.assertIn(opt, html_text, f"Interactive option missing in HTML/JS: {opt}")
+
+        self.assertIn("pharma-nav-cdss", html_text)
+        self.assertIn("pharma-nav-narcotics", html_text)
+        self.assertIn("inv-nav-grn", html_text)
+        self.assertIn("inv-nav-coldchain", html_text)
+
 
         # Verify zero unhandled inline event callbacks
         import re

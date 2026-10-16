@@ -1766,24 +1766,29 @@
                     </a>
                 `;
             } else if (role === "Pharmacist") {
+                const currentTab = State.activePharmaTab || "rxs";
                 html = `
                     <div class="nav-section-title">Clinical Pharmacy Station</div>
-                    <a class="nav-item active" data-role="Pharmacist" onclick="navigateRole('Pharmacist')">
+                    <a class="nav-item ${currentTab === 'rxs' ? 'active' : ''}" id="pharma-nav-rxs" onclick="switchPharmacistTab('rxs')">
                         <span class="nav-icon">🩺</span> Prescription Verification
                     </a>
                     
                     <div class="nav-section-title" style="margin-top: 14px;">Clinical Compliance</div>
-                    <a class="nav-item" onclick="renderPharmacistDashboard()">
+                    <a class="nav-item ${currentTab === 'cdss' ? 'active' : ''}" id="pharma-nav-cdss" onclick="switchPharmacistTab('cdss')">
                         <span class="nav-icon">⚠️</span> Drug Interactions (CDSS)
                     </a>
-                    <a class="nav-item" onclick="renderPharmacistDashboard()">
+                    <a class="nav-item ${currentTab === 'narcotics' ? 'active' : ''}" id="pharma-nav-narcotics" onclick="switchPharmacistTab('narcotics')">
                         <span class="nav-icon">📑</span> Schedule X NDPS Register
+                    </a>
+                    <a class="nav-item ${currentTab === 'refills' ? 'active' : ''}" id="pharma-nav-refills" onclick="switchPharmacistTab('refills')">
+                        <span class="nav-icon">💬</span> Refill Adherence
                     </a>
                 `;
             } else if (role === "Inventory Manager") {
+                const currentTab = State.activeInvTab || "catalog";
                 html = `
                     <div class="nav-section-title">Inventory & Supply Chain</div>
-                    <a class="nav-item active" data-role="Inventory Manager" onclick="navigateRole('Inventory Manager')">
+                    <a class="nav-item ${currentTab === 'catalog' ? 'active' : ''}" id="inv-nav-catalog" onclick="switchInventoryTab('catalog')">
                         <span class="nav-icon">📦</span> Stock Catalog & Levels
                     </a>
                     
@@ -1791,10 +1796,10 @@
                     <a class="nav-item" onclick="openAddMedicineModal()">
                         <span class="nav-icon">➕</span> Add New Medicine SKU
                     </a>
-                    <a class="nav-item" onclick="renderInventoryDashboard()">
+                    <a class="nav-item ${currentTab === 'grn' ? 'active' : ''}" id="inv-nav-grn" onclick="switchInventoryTab('grn')">
                         <span class="nav-icon">📑</span> Purchase Orders (GRN)
                     </a>
-                    <a class="nav-item" onclick="renderInventoryDashboard()">
+                    <a class="nav-item ${currentTab === 'coldchain' ? 'active' : ''}" id="inv-nav-coldchain" onclick="switchInventoryTab('coldchain')">
                         <span class="nav-icon">❄️</span> Cold Chain IoT Fridge
                     </a>
                 `;
@@ -2318,26 +2323,379 @@
         }
 
         // =========================================================================
-        // 2. PHARMACIST CLINICAL DASHBOARD VIEW
+        // 2. PHARMACIST CLINICAL DASHBOARD VIEW & CDSS ENGINE
         // =========================================================================
         async function renderPharmacistDashboard() {
             const main = document.getElementById("main-content");
             main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading Clinical Prescriptions & CDSS Engine...</div>`;
 
-            const [rxList, patients, narcotics, refills] = await Promise.all([
+            const [rxList, patients, narcotics, refills, meds] = await Promise.all([
                 callBridge("get_all_prescriptions"),
                 callBridge("get_all_patients"),
                 callBridge("get_narcotic_records"),
-                callBridge("get_refill_schedules")
+                callBridge("get_refill_schedules"),
+                callBridge("get_all_medicines")
             ]);
 
             State.prescriptions = rxList || [];
+            State.patients = patients || [];
+            State.narcotics = narcotics || [];
+            State.refills = refills || [];
+            State.medicines = meds || [];
 
-            let rxRows = (rxList || []).map(rx => {
+            const currentTab = State.activePharmaTab || "rxs";
+
+            let html = `
+                <div class="view-header">
+                    <div class="view-title-group">
+                        <h1>🩺 Pharmacist Clinical & Dispensing Station</h1>
+                        <p>Clinical decision support (CDSS), allergy cross-checking, e-Prescription intake & Schedule X NDPS register</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-danger" onclick="openAddNarcoticModal()">🔒 Schedule X Sign-off</button>
+                        <button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>
+                    </div>
+                </div>
+
+                <!-- Pharmacist In-Page Tab Navigation -->
+                <div class="tab-bar">
+                    <button class="tab-btn ${currentTab === 'rxs' ? 'active' : ''}" onclick="switchPharmacistTab('rxs')">
+                        🩺 Prescription Verification (${(rxList || []).length})
+                    </button>
+                    <button class="tab-btn ${currentTab === 'cdss' ? 'active' : ''}" onclick="switchPharmacistTab('cdss')">
+                        ⚠️ Drug Interactions (CDSS)
+                    </button>
+                    <button class="tab-btn ${currentTab === 'narcotics' ? 'active' : ''}" onclick="switchPharmacistTab('narcotics')">
+                        📑 Schedule X NDPS Register (${(narcotics || []).length})
+                    </button>
+                    <button class="tab-btn ${currentTab === 'refills' ? 'active' : ''}" onclick="switchPharmacistTab('refills')">
+                        💬 Refill Adherence (${(refills || []).length})
+                    </button>
+                </div>
+
+                <div id="pharmacist-tab-content">
+                    ${renderPharmacistTabBody(currentTab, { rxList, patients, narcotics, refills, meds })}
+                </div>
+            `;
+
+            main.innerHTML = html;
+        }
+
+        function switchPharmacistTab(tab) {
+            State.activePharmaTab = tab;
+            
+            // Sync sidebar highlight
+            document.querySelectorAll("#sidebar-nav .nav-item").forEach(item => item.classList.remove("active"));
+            const navMap = {
+                'rxs': 'pharma-nav-rxs',
+                'cdss': 'pharma-nav-cdss',
+                'narcotics': 'pharma-nav-narcotics',
+                'refills': 'pharma-nav-refills'
+            };
+            const navEl = document.getElementById(navMap[tab]);
+            if (navEl) navEl.classList.add("active");
+
+            renderPharmacistDashboard();
+        }
+
+        function renderPharmacistTabBody(tab, data) {
+            const { rxList, patients, narcotics, refills, meds } = data;
+
+            if (tab === "rxs") {
+                let rxRows = (rxList || []).map(rx => {
+                    const isApproved = rx.status.includes("Verified") || rx.status.includes("Approved");
+                    const isPending = rx.status.includes("Verification") || rx.status.includes("Pending");
+                    const statusBadge = isApproved ? 'badge-success' : (isPending ? 'badge-warning' : 'badge-info');
+
+                    return `
+                        <tr>
+                            <td><strong>${rx.rx_id}</strong></td>
+                            <td>${rx.patient_name} <br><small style="color: var(--text-muted);">${rx.hospital}</small></td>
+                            <td>${rx.doctor_name}</td>
+                            <td>${rx.date}</td>
+                            <td><span class="badge ${statusBadge}">${rx.status}</span></td>
+                            <td>${(rx.items || []).map(i => i.medicine || i).join(', ')}</td>
+                            <td>
+                                ${!isApproved ? `
+                                    <div style="display: flex; gap: 4px;">
+                                        <button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="approvePrescription('${rx.rx_id}')">Verify & Approve</button>
+                                        <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="rejectPrescription('${rx.rx_id}')">Reject</button>
+                                    </div>
+                                ` : `<span style="color: var(--success); font-weight:600;">✓ Approved</span>`}
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
+
+                return `
+                    <!-- CDSS Active Warning Banner -->
+                    <div class="cdss-alert-box">
+                        <span style="font-size: 20px;">⚠️</span>
+                        <div>
+                            <strong>CDSS Allergen & Interaction Shield Active:</strong>
+                            <div>Cross-referencing incoming patient medications against penicillin, NSAIDs, and schedule contraindications in real-time.</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div class="card-title">Digital e-Prescription Queue (${(rxList || []).length} Prescriptions)</div>
+                            <div class="input-group" style="max-width: 320px;">
+                                <span>🔍</span>
+                                <input type="text" id="rx-search" placeholder="Filter by Rx ID, patient, or doctor..." onkeyup="filterPrescriptionQueue(this.value)">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Rx ID</th>
+                                        <th>Patient & Hospital</th>
+                                        <th>Prescribing Doctor</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Medicines</th>
+                                        <th>Clinical Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rx-table-body">${rxRows || '<tr><td colspan="7">No prescriptions in queue.</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "cdss") {
+                const flaggedRxs = (rxList || []).filter(rx => {
+                    const notes = (rx.notes || "").toLowerCase();
+                    return notes.includes("allergic") || notes.includes("conflict") || notes.includes("penicillin") || notes.includes("nsaid");
+                });
+
+                return `
+                    <!-- CDSS Hero Banner -->
+                    <div class="cdss-alert-box" style="margin-bottom: 20px; border-left: 4px solid var(--warning);">
+                        <span style="font-size: 28px;">🛡️</span>
+                        <div>
+                            <strong style="font-size: 14px;">Clinical Decision Support System (CDSS) & Allergy Cross-Matching Shield</strong>
+                            <div style="font-size: 12px; margin-top: 4px; color: var(--text-main);">
+                                Active clinical safety protocol: Multi-drug competition analyzer, patient EHR allergy cross-matching (Penicillin, NSAIDs, Sulfa), and Schedule H / Schedule X compliance guard.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive CDSS Drug-Drug & Allergen Simulator -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="card-title">🔬 Clinical Interaction & Patient Allergy Check Workbench</div>
+                            <span class="badge badge-info">CDSS Engine v2.5</span>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                                Test simultaneous drug administration or cross-match patient allergens against active chemical salts before dispensing:
+                            </p>
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">1. Select Patient EHR Profile</label>
+                                    <select id="cdss-patient-select" class="form-control" onchange="updateCdssPatientInfo()">
+                                        ${(patients || []).map(p => `
+                                            <option value="${p.id}" data-allergies="${(p.allergies || []).join(', ')}" data-conditions="${(p.chronic_conditions || []).join(', ')}">
+                                                ${p.name} (${p.phone}) — Allergies: ${(p.allergies || []).join(', ') || 'None Documented'}
+                                            </option>
+                                        `).join("")}
+                                    </select>
+                                    <div id="cdss-patient-badge-line" style="font-size: 11px; margin-top: 6px; color: var(--text-muted);">
+                                        Documented Allergies: <span id="cdss-patient-allergies" style="color: var(--danger); font-weight: 700;">Penicillin, Sulfa Drugs</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label">2. Prescribed Medicine (Drug A)</label>
+                                    <select id="cdss-med1" class="form-control">
+                                        ${(meds || []).map(m => `
+                                            <option value="${m.id}">${m.name} (${m.generic})</option>
+                                        `).join("")}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">3. Concurrent Drug / Molecule (Drug B)</label>
+                                    <select id="cdss-med2" class="form-control">
+                                        <option value="Warfarin">Warfarin (Anticoagulant / Blood Thinner)</option>
+                                        <option value="Methotrexate">Methotrexate (Immunosuppressant)</option>
+                                        <option value="Ketoconazole">Ketoconazole (Antifungal)</option>
+                                        <option value="NSAIDs">NSAIDs / Aspirin / Ibuprofen</option>
+                                        <option value="Alcohol">Alcohol / Ethanol</option>
+                                        <option value="Lithium">Lithium (Mood Stabilizer)</option>
+                                        ${(meds || []).map(m => `
+                                            <option value="${m.id}">${m.name} (${m.generic})</option>
+                                        `).join("")}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 14px;">
+                                <button class="btn-primary" onclick="runCDSSAnalysis()">⚡ Run Clinical Interaction & Allergy Check</button>
+                            </div>
+
+                            <!-- Live Results Container -->
+                            <div id="cdss-results" style="margin-top: 14px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Prescriptions with Active CDSS Flags -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">⚠️ Prescriptions with Documented CDSS Allergy Alerts (${flaggedRxs.length})</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Rx ID</th>
+                                        <th>Patient Name</th>
+                                        <th>Prescribed Medicines</th>
+                                        <th>Clinical Alert Flag</th>
+                                        <th>Risk Severity</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${flaggedRxs.map(rx => `
+                                        <tr>
+                                            <td><strong>${rx.rx_id}</strong></td>
+                                            <td>${rx.patient_name} <br><small style="color: var(--text-muted);">${rx.hospital}</small></td>
+                                            <td>${(rx.items || []).map(i => i.medicine || i).join(', ')}</td>
+                                            <td><span style="color: var(--danger); font-weight: 600;">⚠️ ${rx.notes}</span></td>
+                                            <td><span class="badge badge-danger">CRITICAL CONTRAINDICATION</span></td>
+                                            <td>
+                                                <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="rejectPrescription('${rx.rx_id}')">Reject Contraindicated</button>
+                                            </td>
+                                        </tr>
+                                    `).join("") || '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">No allergy contraindications detected in current queue.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "narcotics") {
+                return `
+                    <!-- Schedule X Stats Grid -->
+                    <div class="stats-grid" style="margin-bottom: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-card-title">Total Logged Dispensations</div>
+                            <div class="stat-card-value">${(narcotics || []).length}</div>
+                            <div class="stat-card-sub"><span style="color: var(--success);">● Active Register</span> • NDPS Act Compliant</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-title">Dual Sign-Off Rate</div>
+                            <div class="stat-card-value" style="color: var(--success);">100%</div>
+                            <div class="stat-card-sub">Doctor Reg No & Pharmacist PIN verified</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-title">Controlled Schedule</div>
+                            <div class="stat-card-value" style="color: var(--danger);">Schedule X</div>
+                            <div class="stat-card-sub">Narcotics & Psychotropic Substances</div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule X Controlled Substances Register -->
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div class="card-title">🔒 Schedule X Controlled Substances Register (NDPS Compliance)</div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div class="input-group" style="max-width: 280px;">
+                                    <span>🔍</span>
+                                    <input type="text" id="narcotic-search" placeholder="Filter records..." onkeyup="filterNarcotics(this.value)">
+                                </div>
+                                <button class="btn-danger" onclick="openAddNarcoticModal()">+ Record Schedule X Dispensation</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Entry ID</th>
+                                        <th>Patient Name</th>
+                                        <th>Doctor & Reg No</th>
+                                        <th>Medicine</th>
+                                        <th>Batch</th>
+                                        <th>Quantity</th>
+                                        <th>Pharmacist Signature</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="narcotic-table-body">
+                                    ${(narcotics || []).map(nr => `
+                                        <tr>
+                                            <td><strong>${nr.id}</strong></td>
+                                            <td>${nr.patient_name} <br><small style="color: var(--text-muted);">${nr.patient_phone || ''}</small></td>
+                                            <td>${nr.doctor_name} <br><small style="color: var(--text-muted);">${nr.doctor_reg_no || 'REG-PENDING'}</small></td>
+                                            <td><span class="badge badge-danger">🔒 ${nr.medicine_name}</span></td>
+                                            <td><code>${nr.batch_no || 'N/A'}</code></td>
+                                            <td><strong>${nr.quantity}</strong></td>
+                                            <td>${nr.pharmacist_name} <br><small style="color: var(--text-muted);">${nr.pharmacist_reg_no || ''}</small></td>
+                                            <td><small style="color: var(--text-muted);">${nr.timestamp || 'Recorded'}</small></td>
+                                        </tr>
+                                    `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No Schedule X dispensations recorded today.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "refills") {
+                return `
+                    <!-- Chronic Patient Refill Adherence -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Chronic Patient Refill Adherence Protocol (${(refills || []).length} Due)</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Schedule ID</th>
+                                            <th>Patient Name</th>
+                                            <th>Phone</th>
+                                            <th>Maintenance Medicine</th>
+                                            <th>Next Due Date</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(refills || []).map(rf => `
+                                            <tr>
+                                                <td><strong>${rf.id}</strong></td>
+                                                <td>${rf.patient_name}</td>
+                                                <td>${rf.patient_phone}</td>
+                                                <td>${rf.medicine_name}</td>
+                                                <td><code>${rf.next_due_date}</code></td>
+                                                <td><span class="badge ${rf.status.includes('Due') ? 'badge-warning' : 'badge-success'}">${rf.status}</span></td>
+                                                <td>
+                                                    <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="sendRefillWhatsApp('${rf.id}', '${rf.patient_name}')">💬 Send WhatsApp</button>
+                                                </td>
+                                            </tr>
+                                        `).join("") || '<tr><td colspan="7">No active refill schedules.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function filterPrescriptionQueue(query) {
+            const q = query.toLowerCase();
+            const filtered = (State.prescriptions || []).filter(rx => 
+                rx.rx_id.toLowerCase().includes(q) ||
+                rx.patient_name.toLowerCase().includes(q) ||
+                rx.doctor_name.toLowerCase().includes(q) ||
+                rx.hospital.toLowerCase().includes(q)
+            );
+            const tbody = document.getElementById("rx-table-body");
+            if (!tbody) return;
+            tbody.innerHTML = filtered.map(rx => {
                 const isApproved = rx.status.includes("Verified") || rx.status.includes("Approved");
                 const isPending = rx.status.includes("Verification") || rx.status.includes("Pending");
                 const statusBadge = isApproved ? 'badge-success' : (isPending ? 'badge-warning' : 'badge-info');
-
                 return `
                     <tr>
                         <td><strong>${rx.rx_id}</strong></td>
@@ -2356,132 +2714,138 @@
                         </td>
                     </tr>
                 `;
-            }).join("");
+            }).join("") || '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 16px;">No prescriptions match filter.</td></tr>';
+        }
 
-            let html = `
-                <div class="view-header">
-                    <div class="view-title-group">
-                        <h1>🩺 Pharmacist Clinical & Dispensing Station</h1>
-                        <p>Clinical decision support, allergy cross-checking, e-Prescription intake & Schedule X register</p>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-danger" onclick="openAddNarcoticModal()">🔒 Schedule X Sign-off</button>
-                        <button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>
-                    </div>
-                </div>
+        function updateCdssPatientInfo() {
+            const sel = document.getElementById("cdss-patient-select");
+            const allergySpan = document.getElementById("cdss-patient-allergies");
+            if (!sel || !allergySpan) return;
+            const opt = sel.options[sel.selectedIndex];
+            const allergies = opt ? opt.getAttribute("data-allergies") : "None";
+            allergySpan.textContent = allergies || "None Documented";
+        }
 
-                <!-- CDSS Active Warning Banner -->
-                <div class="cdss-alert-box">
-                    <span style="font-size: 20px;">⚠️</span>
+        function runCDSSAnalysis() {
+            const patId = document.getElementById("cdss-patient-select")?.value;
+            const med1Id = document.getElementById("cdss-med1")?.value;
+            const med2Id = document.getElementById("cdss-med2")?.value;
+            const resultsBox = document.getElementById("cdss-results");
+            if (!resultsBox) return;
+
+            const patient = (State.patients || []).find(p => p.id === patId);
+            const med1 = (State.medicines || []).find(m => m.id === med1Id);
+            const med2 = (State.medicines || []).find(m => m.id === med2Id || m.name === med2Id);
+
+            let alerts = [];
+
+            // 1. Patient Allergy Cross-Matching
+            if (patient && med1) {
+                const allergies = patient.allergies || [];
+                const medGeneric = (med1.generic || "").toLowerCase();
+                const medName = (med1.name || "").toLowerCase();
+
+                for (const allergy of allergies) {
+                    const a = allergy.toLowerCase();
+                    if ((a.includes("penicillin") && (medGeneric.includes("amoxicillin") || medGeneric.includes("penicillin") || medName.includes("augmentin"))) ||
+                        (a.includes("nsaid") && (medGeneric.includes("ibuprofen") || medGeneric.includes("diclofenac") || medGeneric.includes("aspirin"))) ||
+                        (a.includes("sulfa") && (medGeneric.includes("sulfa") || medGeneric.includes("sulfamethoxazole")))) {
+                        alerts.push({
+                            type: "ALLERGY CONTRAINDICATION",
+                            level: "CRITICAL",
+                            title: `Severe Allergen Conflict: ${allergy}`,
+                            desc: `Patient ${patient.name} has a recorded allergy to "${allergy}". Prescribed drug "${med1.name}" (${med1.generic}) contains salts with active cross-reactivity. Approval must be blocked.`
+                        });
+                    }
+                }
+            }
+
+            // 2. Drug-Drug Molecule Interaction
+            if (med1) {
+                const med1Interactions = (med1.interactions || []).map(i => i.toLowerCase());
+                const med2Name = (med2 ? med2.name : med2Id).toLowerCase();
+                const med2Generic = (med2 && med2.generic ? med2.generic : "").toLowerCase();
+                const med2IdLower = (med2Id || "").toLowerCase();
+
+                const match = med1Interactions.find(i => med2Name.includes(i) || med2Generic.includes(i) || med2IdLower.includes(i));
+                if (match) {
+                    alerts.push({
+                        type: "DRUG-DRUG INTERACTION",
+                        level: "HIGH",
+                        title: `Known Drug Interaction: ${med1.name} + ${med2 ? med2.name : med2Id}`,
+                        desc: `Clinical pharmacology literature warns against simultaneous use of ${med1.name} with ${match}. Increased risk of metabolic competition, altered clearance, or elevated toxicity.`
+                    });
+                }
+            }
+
+            // 3. Schedule X / Narcotic Check
+            if (med1 && (med1.schedule === "Schedule X" || (med1.name || "").toLowerCase().includes("alprax"))) {
+                alerts.push({
+                    type: "SCHEDULE X NDPS PROTOCOL",
+                    level: "CRITICAL",
+                    title: "Controlled Substance Dispensing Protocol",
+                    desc: `${med1.name} is a controlled Schedule X narcotic. Requires mandatory entry into official NDPS register, verified Doctor Medical Council number, and dual pharmacist sign-off.`
+                });
+            }
+
+            // Render Output
+            if (alerts.length === 0) {
+                resultsBox.innerHTML = `
+                    <div style="background: var(--success-bg, rgba(16, 185, 129, 0.1)); border: 1px solid var(--success); border-radius: 8px; padding: 14px;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: var(--success); font-weight: 700; font-size: 14px;">
+                            <span>✅</span> No Adverse Drug-Drug or Allergen Conflicts Detected
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-main); margin-top: 4px;">
+                            Checked <strong>${med1 ? med1.name : 'Selected Drug'}</strong> against patient <strong>${patient ? patient.name : 'Selected Patient'}</strong> and concurrent medications. Safe for clinical dispensing.
+                        </div>
+                    </div>
+                `;
+            } else {
+                const alertItems = alerts.map(a => `
+                    <div style="background: ${a.level === 'CRITICAL' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)'}; border-left: 4px solid ${a.level === 'CRITICAL' ? 'var(--danger)' : 'var(--warning)'}; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: ${a.level === 'CRITICAL' ? 'var(--danger)' : 'var(--warning)'}; font-size: 13px;">${a.title}</strong>
+                            <span class="badge ${a.level === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">${a.type}</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-main); margin-top: 4px; line-height: 1.5;">${a.desc}</div>
+                    </div>
+                `).join("");
+
+                resultsBox.innerHTML = `
                     <div>
-                        <strong>CDSS Allergen & Interaction Shield Active:</strong>
-                        <div>Cross-referencing incoming patient medications against penicillin, NSAIDs, and schedule contraindications in real-time.</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Digital e-Prescription Queue (${(rxList || []).length} Prescriptions)</div>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Rx ID</th>
-                                    <th>Patient & Hospital</th>
-                                    <th>Prescribing Doctor</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Medicines</th>
-                                    <th>Clinical Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rxRows || '<tr><td colspan="7">No prescriptions in queue.</td></tr>'}</tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Chronic Patient Refill Adherence -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Chronic Patient Refill Adherence Protocol</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Schedule ID</th>
-                                        <th>Patient Name</th>
-                                        <th>Phone</th>
-                                        <th>Maintenance Medicine</th>
-                                        <th>Next Due Date</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${(refills || []).map(rf => `
-                                        <tr>
-                                            <td><strong>${rf.id}</strong></td>
-                                            <td>${rf.patient_name}</td>
-                                            <td>${rf.patient_phone}</td>
-                                            <td>${rf.medicine_name}</td>
-                                            <td><code>${rf.next_due_date}</code></td>
-                                            <td><span class="badge ${rf.status.includes('Due') ? 'badge-warning' : 'badge-success'}">${rf.status}</span></td>
-                                            <td>
-                                                <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="sendRefillWhatsApp('${rf.id}', '${rf.patient_name}')">💬 Send WhatsApp</button>
-                                            </td>
-                                        </tr>
-                                    `).join("")}
-                                </tbody>
-                            </table>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 16px;">⚠️</span>
+                            <strong style="font-size: 13px; color: var(--danger);">CDSS Warnings Triggered (${alerts.length})</strong>
                         </div>
+                        ${alertItems}
                     </div>
-                </div>
+                `;
+            }
+        }
 
-                <!-- Schedule X Controlled Substances Register -->
-                <div class="card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="card-title">🔒 Schedule X Controlled Substances Register (NDPS Compliance)</div>
-                        <button class="btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="openAddNarcoticModal()">+ Record Schedule X Dispensation</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Entry ID</th>
-                                        <th>Patient Name</th>
-                                        <th>Doctor & Reg No</th>
-                                        <th>Medicine</th>
-                                        <th>Batch</th>
-                                        <th>Quantity</th>
-                                        <th>Pharmacist Signature</th>
-                                        <th>Timestamp</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${(narcotics || []).map(nr => `
-                                        <tr>
-                                            <td><strong>${nr.id}</strong></td>
-                                            <td>${nr.patient_name}</td>
-                                            <td>${nr.doctor_name} <br><small style="color: var(--text-muted);">${nr.doctor_reg_no || 'REG-PENDING'}</small></td>
-                                            <td><span class="badge badge-danger">🔒 ${nr.medicine_name}</span></td>
-                                            <td><code>${nr.batch_no || 'N/A'}</code></td>
-                                            <td><strong>${nr.quantity}</strong></td>
-                                            <td>${nr.pharmacist_name}</td>
-                                            <td><small style="color: var(--text-muted);">${nr.timestamp || 'Recorded'}</small></td>
-                                        </tr>
-                                    `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No Schedule X dispensations recorded today.</td></tr>'}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            main.innerHTML = html;
+        function filterNarcotics(query) {
+            const q = query.toLowerCase();
+            const filtered = (State.narcotics || []).filter(nr => 
+                nr.id.toLowerCase().includes(q) ||
+                nr.patient_name.toLowerCase().includes(q) ||
+                nr.medicine_name.toLowerCase().includes(q) ||
+                (nr.doctor_name || '').toLowerCase().includes(q) ||
+                (nr.doctor_reg_no || '').toLowerCase().includes(q)
+            );
+            const tbody = document.getElementById("narcotic-table-body");
+            if (!tbody) return;
+            tbody.innerHTML = filtered.map(nr => `
+                <tr>
+                    <td><strong>${nr.id}</strong></td>
+                    <td>${nr.patient_name} <br><small style="color: var(--text-muted);">${nr.patient_phone || ''}</small></td>
+                    <td>${nr.doctor_name} <br><small style="color: var(--text-muted);">${nr.doctor_reg_no || 'REG-PENDING'}</small></td>
+                    <td><span class="badge badge-danger">🔒 ${nr.medicine_name}</span></td>
+                    <td><code>${nr.batch_no || 'N/A'}</code></td>
+                    <td><strong>${nr.quantity}</strong></td>
+                    <td>${nr.pharmacist_name} <br><small style="color: var(--text-muted);">${nr.pharmacist_reg_no || ''}</small></td>
+                    <td><small style="color: var(--text-muted);">${nr.timestamp || 'Recorded'}</small></td>
+                </tr>
+            `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No matching Schedule X records found.</td></tr>';
         }
 
         async function approvePrescription(rxId) {
@@ -3125,41 +3489,11 @@
             ]);
 
             State.medicines = meds || [];
+            State.tempLogs = tempLogs || [];
+            State.suppliers = suppliers || [];
+            State.purchaseOrders = pos || [];
 
-            let rows = (meds || []).map(m => {
-                let expBadge = 'badge-success';
-                let expText = `${m.days_to_expiry} days`;
-                if (m.days_to_expiry <= 0) {
-                    expBadge = 'badge-danger';
-                    expText = 'EXPIRED';
-                } else if (m.days_to_expiry < 30) {
-                    expBadge = 'badge-danger';
-                    expText = `Critical (${m.days_to_expiry}d)`;
-                } else if (m.days_to_expiry < 90) {
-                    expBadge = 'badge-warning';
-                    expText = `Soon (${m.days_to_expiry}d)`;
-                }
-
-                return `
-                    <tr>
-                        <td><strong>${m.name}</strong><br><small style="color: var(--text-muted);">${m.category} • Rack: ${m.rack}</small></td>
-                        <td><code>${m.batch}</code></td>
-                        <td>${m.expiry}</td>
-                        <td><span class="badge ${expBadge}">${expText}</span></td>
-                        <td><span class="badge ${m.stock < 20 ? 'badge-danger' : 'badge-success'}">${m.stock} ${m.unit || 'units'}</span></td>
-                        <td>₹ ${m.mrp.toFixed(2)}</td>
-                        <td>${m.cold_chain ? '<span class="badge badge-info">❄️ 2-8°C</span>' : 'Ambient'}</td>
-                        <td>
-                            <div style="display: flex; gap: 4px;">
-                                <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="adjustStockModal('${m.id}')">Adjust</button>
-                                <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteMedicineModal('${m.id}', '${m.name.replace(/'/g, "\\'")}')">Delete</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
-
-            let latestTemp = (tempLogs && tempLogs[0]) ? tempLogs[0].temperature : 4.2;
+            const currentTab = State.activeInvTab || "catalog";
 
             let html = `
                 <div class="view-header">
@@ -3173,90 +3507,197 @@
                     </div>
                 </div>
 
-                <!-- Cold Chain IoT Gauge Card -->
-                <div class="card" style="border-left: 4px solid var(--info);">
-                    <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="font-size: 32px;">❄️</div>
-                            <div>
-                                <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">COLD-CHAIN IOT TELEMETRY (SENSOR-FRIDGE-01)</div>
-                                <div style="font-size: 24px; font-weight: 800; color: var(--info);">${latestTemp.toFixed(1)} °C <span style="font-size: 12px; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 6px; border-radius: 4px;">Optimal (2.0–8.0°C)</span></div>
-                            </div>
-                        </div>
-                        <button class="btn-secondary" onclick="simulateTempSpike()">Simulate Sensor Breach Spike</button>
-                    </div>
+                <!-- Inventory In-Page Tab Navigation -->
+                <div class="tab-bar">
+                    <button class="tab-btn ${currentTab === 'catalog' ? 'active' : ''}" onclick="switchInventoryTab('catalog')">
+                        📦 Master Stock Catalog (${(meds || []).length})
+                    </button>
+                    <button class="tab-btn ${currentTab === 'grn' ? 'active' : ''}" onclick="switchInventoryTab('grn')">
+                        📑 Purchase Orders & GRN (${(pos || []).length})
+                    </button>
+                    <button class="tab-btn ${currentTab === 'coldchain' ? 'active' : ''}" onclick="switchInventoryTab('coldchain')">
+                        ❄️ Cold Chain IoT Telemetry
+                    </button>
                 </div>
 
-                <!-- Multi-Batch FEFO Table -->
-                <div class="card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div class="card-title">FEFO Master Inventory Ledger (<span id="inv-count">${(meds || []).length}</span> SKUs)</div>
-                        <div class="input-group" style="max-width: 380px;">
-                            <span>🔍</span>
-                            <input type="text" id="inventory-search" placeholder="Search by brand, generic formula, or batch..." onkeyup="filterInventoryCatalog(this.value)">
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Medicine Name</th>
-                                    <th>Batch No</th>
-                                    <th>Expiry Date</th>
-                                    <th>Expiry Status</th>
-                                    <th>Stock Level</th>
-                                    <th>MRP</th>
-                                    <th>Storage</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inventory-table-body">${rows || '<tr><td colspan="8">No inventory items.</td></tr>'}</tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Goods Receipt Notes (GRN) & Vendor Purchase Orders Ledger -->
-                <div class="card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="card-title">📦 Goods Receipt Notes (GRN) & Inwarded Purchase Orders (${(pos || []).length} Consignments)</div>
-                        <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openInwardGRNModal()">+ Inward New Consignment</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>PO / GRN ID</th>
-                                        <th>Supplier Name</th>
-                                        <th>Medicine SKU</th>
-                                        <th>Ordered Quantity</th>
-                                        <th>Invoice Amount</th>
-                                        <th>Order Date</th>
-                                        <th>Cold-Chain</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${(pos || []).map(po => `
-                                        <tr>
-                                            <td><strong>${po.po_id}</strong></td>
-                                            <td>${po.supplier_name}</td>
-                                            <td>${po.medicine_name || po.medicine_id || 'Batch Consignment'}</td>
-                                            <td><strong>${po.quantity || 100}</strong> units</td>
-                                            <td>₹ ${(po.total_amount || 0).toFixed(2)}</td>
-                                            <td>${po.created_at || 'Today'}</td>
-                                            <td>${po.cold_chain_verified ? '<span class="badge badge-info">❄️ Cold-Chain Verified</span>' : '<span class="badge badge-neutral">Ambient</span>'}</td>
-                                            <td><span class="badge ${po.status.includes('Completed') || po.status.includes('Inwarded') ? 'badge-success' : 'badge-warning'}">${po.status}</span></td>
-                                        </tr>
-                                    `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No purchase orders inwarded yet.</td></tr>'}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div id="inventory-tab-content">
+                    ${renderInventoryTabBody(currentTab, { meds, tempLogs, suppliers, pos })}
                 </div>
             `;
 
             main.innerHTML = html;
+        }
+
+        function switchInventoryTab(tab) {
+            State.activeInvTab = tab;
+
+            // Sync sidebar highlight
+            document.querySelectorAll("#sidebar-nav .nav-item").forEach(item => item.classList.remove("active"));
+            const navMap = {
+                'catalog': 'inv-nav-catalog',
+                'grn': 'inv-nav-grn',
+                'coldchain': 'inv-nav-coldchain'
+            };
+            const navEl = document.getElementById(navMap[tab]);
+            if (navEl) navEl.classList.add("active");
+
+            renderInventoryDashboard();
+        }
+
+        function renderInventoryTabBody(tab, data) {
+            const { meds, tempLogs, suppliers, pos } = data;
+
+            if (tab === "catalog") {
+                let rows = (meds || []).map(m => {
+                    let expBadge = 'badge-success';
+                    let expText = `${m.days_to_expiry} days`;
+                    if (m.days_to_expiry <= 0) {
+                        expBadge = 'badge-danger';
+                        expText = 'EXPIRED';
+                    } else if (m.days_to_expiry < 30) {
+                        expBadge = 'badge-danger';
+                        expText = `Critical (${m.days_to_expiry}d)`;
+                    } else if (m.days_to_expiry < 90) {
+                        expBadge = 'badge-warning';
+                        expText = `Soon (${m.days_to_expiry}d)`;
+                    }
+
+                    return `
+                        <tr>
+                            <td><strong>${m.name}</strong><br><small style="color: var(--text-muted);">${m.category} • Rack: ${m.rack}</small></td>
+                            <td><code>${m.batch}</code></td>
+                            <td>${m.expiry}</td>
+                            <td><span class="badge ${expBadge}">${expText}</span></td>
+                            <td><span class="badge ${m.stock < 20 ? 'badge-danger' : 'badge-success'}">${m.stock} ${m.unit || 'units'}</span></td>
+                            <td>₹ ${m.mrp.toFixed(2)}</td>
+                            <td>${m.cold_chain ? '<span class="badge badge-info">❄️ 2-8°C</span>' : 'Ambient'}</td>
+                            <td>
+                                <div style="display: flex; gap: 4px;">
+                                    <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="adjustStockModal('${m.id}')">Adjust</button>
+                                    <button class="btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteMedicineModal('${m.id}', '${m.name.replace(/'/g, "\\'")}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
+
+                return `
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div class="card-title">FEFO Master Inventory Ledger (<span id="inv-count">${(meds || []).length}</span> SKUs)</div>
+                            <div class="input-group" style="max-width: 380px;">
+                                <span>🔍</span>
+                                <input type="text" id="inventory-search" placeholder="Search by brand, generic formula, or batch..." onkeyup="filterInventoryCatalog(this.value)">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Medicine Name</th>
+                                        <th>Batch No</th>
+                                        <th>Expiry Date</th>
+                                        <th>Expiry Status</th>
+                                        <th>Stock Level</th>
+                                        <th>MRP</th>
+                                        <th>Storage</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-table-body">${rows || '<tr><td colspan="8">No inventory items.</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "grn") {
+                return `
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="card-title">📦 Goods Receipt Notes (GRN) & Inwarded Purchase Orders (${(pos || []).length} Consignments)</div>
+                            <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="openInwardGRNModal()">+ Inward New Consignment</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>PO / GRN ID</th>
+                                            <th>Supplier Name</th>
+                                            <th>Medicine SKU</th>
+                                            <th>Ordered Quantity</th>
+                                            <th>Invoice Amount</th>
+                                            <th>Order Date</th>
+                                            <th>Cold-Chain</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(pos || []).map(po => `
+                                            <tr>
+                                                <td><strong>${po.po_id}</strong></td>
+                                                <td>${po.supplier_name}</td>
+                                                <td>${po.medicine_name || po.medicine_id || 'Batch Consignment'}</td>
+                                                <td><strong>${po.quantity || 100}</strong> units</td>
+                                                <td>₹ ${(po.total_amount || 0).toFixed(2)}</td>
+                                                <td>${po.created_at || 'Today'}</td>
+                                                <td>${po.cold_chain_verified ? '<span class="badge badge-info">❄️ Cold-Chain Verified</span>' : '<span class="badge badge-neutral">Ambient</span>'}</td>
+                                                <td><span class="badge ${po.status.includes('Completed') || po.status.includes('Inwarded') ? 'badge-success' : 'badge-warning'}">${po.status}</span></td>
+                                            </tr>
+                                        `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No purchase orders inwarded yet.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === "coldchain") {
+                let latestTemp = (tempLogs && tempLogs[0]) ? tempLogs[0].temperature : 4.2;
+                return `
+                    <!-- Cold Chain IoT Gauge Card -->
+                    <div class="card" style="border-left: 4px solid var(--info); margin-bottom: 20px;">
+                        <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <div style="font-size: 36px;">❄️</div>
+                                <div>
+                                    <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">COLD-CHAIN IOT TELEMETRY (SENSOR-FRIDGE-01)</div>
+                                    <div style="font-size: 24px; font-weight: 800; color: var(--info);">${latestTemp.toFixed(1)} °C <span style="font-size: 12px; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 6px; border-radius: 4px;">Optimal (2.0–8.0°C)</span></div>
+                                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Target storage for Insulins, Vaccines & Biologicals</div>
+                                </div>
+                            </div>
+                            <button class="btn-secondary" onclick="simulateTempSpike()">Simulate Sensor Breach Spike (>8°C)</button>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Log History -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Recent Telemetry Heartbeat Stream (${(tempLogs || []).length} Readings)</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Sensor ID</th>
+                                        <th>Recorded Temperature</th>
+                                        <th>Compliance Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(tempLogs || []).map(tl => `
+                                        <tr>
+                                            <td><code>${tl.timestamp || 'Just now'}</code></td>
+                                            <td><strong>${tl.sensor_id}</strong></td>
+                                            <td><strong style="color: ${tl.temperature > 8.0 || tl.temperature < 2.0 ? 'var(--danger)' : 'var(--info)'};">${tl.temperature.toFixed(1)} °C</strong></td>
+                                            <td><span class="badge ${tl.temperature > 8.0 || tl.temperature < 2.0 ? 'badge-danger' : 'badge-success'}">${tl.status}</span></td>
+                                        </tr>
+                                    `).join("") || '<tr><td colspan="4">No telemetry logs recorded.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
         async function simulateTempSpike() {
