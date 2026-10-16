@@ -1283,7 +1283,7 @@
 
                         <!-- Role Station Tiles -->
                         <div class="station-list">
-                            <div class="station-tile active" id="tile-Admin" onclick="selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)')">
+                            <div class="station-tile active" id="tile-Admin" onclick="selectStationRole('Admin', 'admin', 'admin123')">
                                 <div class="station-tile-info">
                                     <div class="station-icon">👑</div>
                                     <div class="station-details">
@@ -1294,7 +1294,7 @@
                                 <div class="station-creds-chip">admin / admin123</div>
                             </div>
 
-                            <div class="station-tile" id="tile-Pharmacist" onclick="selectStationRole('Pharmacist', 'pharmacist', 'pharma123', 'Terminal 02 — Clinical Kiosk B (Pharmacist Station)')">
+                            <div class="station-tile" id="tile-Pharmacist" onclick="selectStationRole('Pharmacist', 'pharmacist', 'pharma123')">
                                 <div class="station-tile-info">
                                     <div class="station-icon">🩺</div>
                                     <div class="station-details">
@@ -1305,7 +1305,7 @@
                                 <div class="station-creds-chip">pharmacist / pharma123</div>
                             </div>
 
-                            <div class="station-tile" id="tile-Cashier" onclick="selectStationRole('Cashier', 'cashier', 'cash123', 'Terminal 01 — Counter Station A (Billing & POS)')">
+                            <div class="station-tile" id="tile-Cashier" onclick="selectStationRole('Cashier', 'cashier', 'cash123')">
                                 <div class="station-tile-info">
                                     <div class="station-icon">💳</div>
                                     <div class="station-details">
@@ -1316,7 +1316,7 @@
                                 <div class="station-creds-chip">cashier / cash123</div>
                             </div>
 
-                            <div class="station-tile" id="tile-Inventory" onclick="selectStationRole('Inventory Manager', 'inventory', 'inv123', 'Terminal 03 — Inwarding & Cold Hub (Inventory)')">
+                            <div class="station-tile" id="tile-Inventory" onclick="selectStationRole('Inventory Manager', 'inventory', 'inv123')">
                                 <div class="station-tile-info">
                                     <div class="station-icon">📦</div>
                                     <div class="station-details">
@@ -1327,7 +1327,7 @@
                                 <div class="station-creds-chip">inventory / inv123</div>
                             </div>
 
-                            <div class="station-tile" id="tile-Delivery" onclick="selectStationRole('Delivery Agent', 'delivery', 'deliv123', 'Terminal 05 — Delivery Bay (Logistics & Fleet)')">
+                            <div class="station-tile" id="tile-Delivery" onclick="selectStationRole('Delivery Agent', 'delivery', 'deliv123')">
                                 <div class="station-tile-info">
                                     <div class="station-icon">🛵</div>
                                     <div class="station-details">
@@ -1362,17 +1362,6 @@
                         </div>
 
                         <form onsubmit="handleLoginSubmit(event)" id="login-form">
-                            <!-- Terminal Selection -->
-                            <div style="margin-bottom: 14px;">
-                                <label class="form-label">Terminal Kiosk Location</label>
-                                <select id="login-terminal" class="form-control">
-                                    <option value="Terminal 04 — Store Admin HQ (Command Center)">Terminal 04 — Store Admin HQ (Command Center)</option>
-                                    <option value="Terminal 01 — Counter Station A (Billing & POS)">Terminal 01 — Counter Station A (Billing & POS)</option>
-                                    <option value="Terminal 02 — Clinical Kiosk B (Pharmacist Station)">Terminal 02 — Clinical Kiosk B (Pharmacist Station)</option>
-                                    <option value="Terminal 03 — Inwarding & Cold Hub (Inventory)">Terminal 03 — Inwarding & Cold Hub (Inventory)</option>
-                                    <option value="Terminal 05 — Delivery Bay (Logistics & Fleet)">Terminal 05 — Delivery Bay (Logistics & Fleet)</option>
-                                </select>
-                            </div>
 
                             <!-- Username -->
                             <div style="margin-bottom: 14px;">
@@ -1561,7 +1550,7 @@
         }
 
         // --- LOGIN DASHBOARD & AUTHENTICATION HANDLERS ---
-        function selectStationRole(role, username, password, terminalName) {
+        function selectStationRole(role, username, password) {
             document.querySelectorAll(".station-tile").forEach(t => t.classList.remove("active"));
             const targetTile = document.getElementById(`tile-${role.split(" ")[0]}`);
             if (targetTile) targetTile.classList.add("active");
@@ -1581,9 +1570,6 @@
 
             const pInput = document.getElementById("login-password");
             if (pInput) pInput.value = password;
-
-            const termSelect = document.getElementById("login-terminal");
-            if (termSelect && terminalName) termSelect.value = terminalName;
 
             const alertBanner = document.getElementById("login-alert-banner");
             if (alertBanner) alertBanner.style.display = "none";
@@ -1685,7 +1671,7 @@
             await callBridge("logout");
             State.currentUser = null;
             document.getElementById("login-view").style.display = "flex";
-            selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
+            selectStationRole('Admin', 'admin', 'admin123');
             showToast("Workstation Locked", "Session terminated cleanly. Please sign in to resume.", "info");
         }
 
@@ -1715,9 +1701,15 @@
                 roleBadgeEl.className = `role-security-badge role-badge-${roleShort}`;
             }
             if (terminalEl) {
-                const termInput = document.getElementById("kiosk-terminal-id");
-                const termVal = termInput ? termInput.value.split("—")[0].trim() : "Terminal 01";
-                terminalEl.textContent = termVal;
+                const roleTermMap = {
+                    "Admin": "Console HQ",
+                    "Store Admin": "Console HQ",
+                    "Pharmacist": "Clinical Bay",
+                    "Cashier": "Counter #01",
+                    "Inventory Manager": "Supply Hub",
+                    "Delivery Agent": "Logistics Bay"
+                };
+                terminalEl.textContent = roleTermMap[user.role] || "Workstation";
             }
         }
 
@@ -3945,7 +3937,7 @@
         window.addEventListener("pywebviewready", async () => {
             console.log("pywebview Edge Chromium ready!");
             // Initialize default role on Login Dashboard
-            selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
+            selectStationRole('Admin', 'admin', 'admin123');
 
             // Check if there is an active session already
             const user = await callBridge("get_current_user");
@@ -3965,7 +3957,7 @@
         setTimeout(() => {
             if (!window.pywebview) {
                 console.log("Running in standalone preview mode with Login Dashboard.");
-                selectStationRole('Admin', 'admin', 'admin123', 'Terminal 04 — Store Admin HQ (Command Center)');
+                selectStationRole('Admin', 'admin', 'admin123');
                 document.getElementById("login-view").style.display = "flex";
             }
         }, 200);
