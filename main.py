@@ -1,13 +1,17 @@
 """
 AegisPharm Enterprise — Primary Unified Application Entry Point.
 Launches the modern, hardware-accelerated Edge Chromium desktop experience by default,
+or starts the Web Application server with --web,
 or falls back to legacy CustomTkinter interface if requested via --legacy.
 """
 
 import sys
 
 if __name__ == "__main__":
-    if "--legacy" in sys.argv:
+    if "--web" in sys.argv or "--server" in sys.argv:
+        from web_app import run_web_server
+        run_web_server()
+    elif "--legacy" in sys.argv:
         print("[AegisPharm] Launching in Legacy CustomTkinter mode...")
         from app import PharmacyApplication
         app = PharmacyApplication()

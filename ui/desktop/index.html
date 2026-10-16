@@ -1447,18 +1447,36 @@
             activeInvTab: "catalog"
         };
 
-        // --- BACKEND BRIDGE CALL WRAPPER ---
+        // --- BACKEND BRIDGE CALL WRAPPER (DESKTOP RPC + WEB REST HYBRID) ---
         async function callBridge(method, ...args) {
             try {
                 if (window.pywebview && window.pywebview.api && typeof window.pywebview.api[method] === "function") {
                     return await window.pywebview.api[method](...args);
                 } else {
-                    console.warn(`pywebview.api.${method} not yet ready or running standalone browser.`);
-                    return null;
+                    // Standard Web Browser Mode via FastAPI REST API
+                    const token = localStorage.getItem("aegispharm_session_token") || "";
+                    const headers = { "Content-Type": "application/json" };
+                    if (token) headers["X-Session-Token"] = token;
+
+                    const res = await fetch(`/api/${method}`, {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify({ args })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({ error: "Server request failed" }));
+                        return { success: false, error: err.error || err.detail || `HTTP Error ${res.status}` };
+                    }
+                    const data = await res.json();
+                    if (method === "login" && data && data.success && data.token) {
+                        localStorage.setItem("aegispharm_session_token", data.token);
+                    } else if (method === "logout") {
+                        localStorage.removeItem("aegispharm_session_token");
+                    }
+                    return data;
                 }
             } catch (err) {
                 console.error(`Error invoking ${method}:`, err);
-                showToast("System Error", err.toString(), "error");
                 return null;
             }
         }
@@ -4394,14 +4412,25 @@
             }
         });
 
-        // Fallback for standalone browser testing
-        setTimeout(() => {
+        // Web Application mode initialization (runs in standard web browsers)
+        setTimeout(async () => {
             if (!window.pywebview) {
-                console.log("Running in standalone preview mode with Login Dashboard.");
+                console.log("Running in Web Application mode via REST API.");
                 selectStationRole('Admin', 'admin', 'admin123');
-                document.getElementById("login-view").style.display = "flex";
+                
+                // Check if user has an active authenticated session
+                const user = await callBridge("get_current_user");
+                if (user && user.id) {
+                    State.currentUser = user;
+                    document.getElementById("login-view").style.display = "none";
+                    updateHeaderIdentity(user);
+                    updateSidebarForRole(user.role);
+                    navigateRole(user.role);
+                } else {
+                    document.getElementById("login-view").style.display = "flex";
+                }
             }
-        }, 200);
+        }, 150);
     </script>
 </body>
 </html>
