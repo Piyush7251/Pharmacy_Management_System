@@ -233,13 +233,20 @@ async def get_z_reports_history(limit: int = 50):
 def run_web_server(host: str = "127.0.0.1", port: int = 8000, auto_open: bool = True):
     """Launch the modern AegisPharm web application server with Uvicorn."""
     import uvicorn
+    import sys
+
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
     server_url = f"http://{host}:{port}"
     print("\n" + "=" * 68)
-    print("  🚀 AegisPharm Enterprise — Web Application Server Online")
-    print(f"  🌐 Web Browser Access:   {server_url}")
-    print(f"  📖 API Documentation:    {server_url}/docs")
-    print(f"  🏥 Store Location:       {cfg.store.name} ({cfg.store.branch})")
+    print("  [AegisPharm Enterprise] Web Application Server Online")
+    print(f"  Web Browser Access:   {server_url}")
+    print(f"  API Documentation:    {server_url}/docs")
+    print(f"  Store Location:       {cfg.store.name} ({cfg.store.branch})")
     print("=" * 68 + "\n")
 
     if auto_open:
@@ -252,4 +259,5 @@ def run_web_server(host: str = "127.0.0.1", port: int = 8000, auto_open: bool = 
 
 
 if __name__ == "__main__":
-    run_web_server()
+    auto_open = "--no-browser" not in sys.argv
+    run_web_server(auto_open=auto_open)
