@@ -113,6 +113,14 @@ class TestAegisPharmWebApplication(unittest.TestCase):
         delivs = deliv_resp.json()
         self.assertIsInstance(delivs, list)
 
+        # Test get_daily_z_report RPC
+        z_resp = self.client.post("/api/get_daily_z_report", json={"args": ["all"]})
+        self.assertEqual(z_resp.status_code, 200)
+        z_data = z_resp.json()
+        self.assertIn("gross_sales", z_data)
+        self.assertIn("payment_breakdown", z_data)
+        self.assertIn("cash_total", z_data)
+
     def test_05_direct_rest_endpoints(self):
         """Verify dedicated OpenAPI REST endpoints return valid responses."""
         endpoints = [
@@ -120,7 +128,9 @@ class TestAegisPharmWebApplication(unittest.TestCase):
             "/api/prescriptions",
             "/api/deliveries",
             "/api/analytics",
-            "/api/settings"
+            "/api/settings",
+            "/api/zreport",
+            "/api/zreports/history"
         ]
         for ep in endpoints:
             resp = self.client.get(ep)

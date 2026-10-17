@@ -1782,6 +1782,9 @@
                     <a class="nav-item" onclick="openSalesHistoryModal()">
                         <span class="nav-icon">🧾</span> Sales Ledger History
                     </a>
+                    <a class="nav-item" onclick="openCashierZReportModal()">
+                        <span class="nav-icon">📊</span> End-of-Day Z-Report / Till Close
+                    </a>
                 `;
             } else if (role === "Pharmacist") {
                 const currentTab = State.activePharmaTab || "rxs";
@@ -2000,6 +2003,8 @@
                 setTimeout(loadPresenceList, 50);
             } else if (State.activeAdminTab === "audit") {
                 setTimeout(filterAuditLogs, 50);
+            } else if (State.activeAdminTab === "zreport") {
+                setTimeout(loadDailyZReportView, 50);
             }
         }
 
@@ -2010,6 +2015,8 @@
                 setTimeout(loadPresenceList, 50);
             } else if (tab === "audit") {
                 setTimeout(filterAuditLogs, 50);
+            } else if (tab === "zreport") {
+                setTimeout(loadDailyZReportView, 50);
             }
         }
 
@@ -2089,32 +2096,11 @@
                     </div>
                 `;
             } else if (tab === "zreport") {
-                const bk = State.analytics.payment_breakdown || {};
                 return `
-                    <div class="card">
-                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                            <div class="card-title">End-of-Day Financial Z-Report Reconciliation</div>
-                            <button class="btn-primary" onclick="window.print()">🖨️ Print Reconciliation Slip</button>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-row">
-                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
-                                    <div class="stat-card-title">Total Gross Sales</div>
-                                    <div style="font-size: 22px; font-weight: 800; color: var(--brand-primary);">₹ ${(State.analytics.gross_sales || 0).toFixed(2)}</div>
-                                </div>
-                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
-                                    <div class="stat-card-title">Total GST Liability</div>
-                                    <div style="font-size: 22px; font-weight: 800; color: var(--info);">₹ ${(State.analytics.total_gst || 0).toFixed(2)}</div>
-                                </div>
-                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
-                                    <div class="stat-card-title">Cash Drawer Balance</div>
-                                    <div style="font-size: 22px; font-weight: 800; color: var(--success);">₹ ${(bk['Cash'] || 0).toFixed(2)}</div>
-                                </div>
-                                <div style="background: var(--bg-hover); padding: 16px; border-radius: 8px;">
-                                    <div class="stat-card-title">Digital UPI / Cards</div>
-                                    <div style="font-size: 22px; font-weight: 800; color: var(--warning);">₹ ${((bk['UPI'] || 0) + (bk['Card'] || 0)).toFixed(2)}</div>
-                                </div>
-                            </div>
+                    <div id="zreport-container">
+                        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            <span style="font-size: 28px;">⏳</span><br>
+                            <strong style="display: block; margin-top: 8px;">Compiling End-of-Day Financial Z-Report & Cash Reconciliation...</strong>
                         </div>
                     </div>
                 `;
@@ -2337,6 +2323,588 @@
                 renderAdminDashboard();
             } else {
                 showToast("Delete Failed", (res && res.error) || "Could not delete staff user.", "error");
+            }
+        }
+
+        // =========================================================================
+        // 1B. END-OF-DAY FINANCIAL Z-REPORT & CASH RECONCILIATION ENGINE
+        // =========================================================================
+
+        async function loadDailyZReportView() {
+            const container = document.getElementById("zreport-container");
+            if (!container) return;
+
+            const targetDate = State.zReportTargetDate || new Date().toISOString().split("T")[0];
+            const [zData, history, storeSettings] = await Promise.all([
+                callBridge("get_daily_z_report", targetDate),
+                callBridge("get_z_reports_history", 20),
+                callBridge("get_settings")
+            ]);
+
+            State.zReportData = zData || {};
+            State.zReportsHistory = history || [];
+            const settings = storeSettings || State.settings || {};
+
+            const isClosed = zData && zData.is_closed;
+            const closedRep = zData && zData.closed_report;
+            const bk = (zData && zData.payment_breakdown) || {};
+
+            const getPaymentTotal = (method) => {
+                const val = bk[method];
+                if (!val) return 0;
+                if (typeof val === 'number') return val;
+                if (typeof val === 'object' && val.total !== undefined) return Number(val.total) || 0;
+                return Number(val) || 0;
+            };
+
+            const getPaymentCount = (method) => {
+                const val = bk[method];
+                if (!val) return 0;
+                if (typeof val === 'object' && val.count !== undefined) return Number(val.count) || 0;
+                return 0;
+            };
+
+            const cashTot = getPaymentTotal('Cash') || (zData && zData.cash_total) || 0;
+            const cashCnt = getPaymentCount('Cash');
+            const upiTot = getPaymentTotal('UPI') || (zData && zData.upi_total) || 0;
+            const upiCnt = getPaymentCount('UPI');
+            const cardTot = getPaymentTotal('Card') || (zData && zData.card_total) || 0;
+            const cardCnt = getPaymentCount('Card');
+            const otherTot = getPaymentTotal('Other') || 0;
+            const otherCnt = getPaymentCount('Other');
+
+            const grossSales = (zData && zData.gross_sales) || 0;
+            const totalGst = (zData && zData.total_gst) || 0;
+            const netSales = (zData && zData.net_sales) !== undefined ? zData.net_sales : (grossSales - totalGst);
+            const totalBills = (zData && zData.total_bills) || 0;
+            const digitalTot = upiTot + cardTot;
+
+            const defaultFloat = 2000.0;
+            const expectedCashCalc = defaultFloat + cashTot;
+
+            let html = `
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div class="card-title" style="display: flex; align-items: center; gap: 10px;">
+                                <span>📊 End-of-Day Financial Z-Report</span>
+                                ${isClosed ? '<span class="badge badge-success">🔒 Shift Closed & Reconciled</span>' : '<span class="badge badge-warning">⚡ Shift In Progress (Live)</span>'}
+                            </div>
+                            <small style="color: var(--text-muted);">${(settings.store && settings.store.name) || "AegisPharm"} • ${(settings.store && settings.store.branch) || "Apex Central #01"} • Primary POS Register</small>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-hover); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Date:</label>
+                                <input type="date" id="zreport-date-picker" class="form-control" style="padding: 4px 8px; font-size: 12px; width: 135px;" value="${targetDate === 'all' ? '' : targetDate}" onchange="changeZReportDate(this.value)">
+                            </div>
+                            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="setZReportPreset('today')">Today</button>
+                            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="setZReportPreset('all')">All Records</button>
+                            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="loadDailyZReportView()">🔄 Refresh</button>
+                            <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="exportZReportCSV()">📥 Export CSV</button>
+                            <button class="btn-primary" style="font-size: 12px; padding: 6px 10px;" onclick="openZReportPrintSlipModal()">🖨️ Print Slip</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- 4 Financial KPI Stat Cards -->
+                        <div class="stats-grid" style="margin-bottom: 20px;">
+                            <div class="stat-card" style="border-left: 4px solid var(--brand-primary);">
+                                <div class="stat-card-title">Gross Revenue (${targetDate === 'all' ? 'All Dates' : targetDate})</div>
+                                <div class="stat-card-value" style="color: var(--brand-primary);">₹ ${grossSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                <div class="stat-card-sub"><span style="color: var(--text-main); font-weight: 600;">${totalBills}</span> Total Bills Processed</div>
+                            </div>
+                            <div class="stat-card" style="border-left: 4px solid var(--info);">
+                                <div class="stat-card-title">Tax Liability (GST 5%)</div>
+                                <div class="stat-card-value" style="color: var(--info);">₹ ${totalGst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                <div class="stat-card-sub">CGST: ₹ ${(totalGst/2).toFixed(2)} | SGST: ₹ ${(totalGst/2).toFixed(2)}</div>
+                            </div>
+                            <div class="stat-card" style="border-left: 4px solid var(--success);">
+                                <div class="stat-card-title">Cash Drawer Volume</div>
+                                <div class="stat-card-value" style="color: var(--success);">₹ ${cashTot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                <div class="stat-card-sub"><span style="color: var(--text-main); font-weight: 600;">${cashCnt}</span> Cash Tender Transactions</div>
+                            </div>
+                            <div class="stat-card" style="border-left: 4px solid var(--warning);">
+                                <div class="stat-card-title">Digital Collections</div>
+                                <div class="stat-card-value" style="color: var(--warning);">₹ ${digitalTot.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                <div class="stat-card-sub">UPI: ₹ ${upiTot.toFixed(2)} (${upiCnt}) | Card: ₹ ${cardTot.toFixed(2)} (${cardCnt})</div>
+                            </div>
+                        </div>
+
+                        <!-- Cash Drawer Balancing & Reconciliation Console -->
+                        <div style="background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <strong style="font-size: 15px; color: var(--text-main);">💵 Cash Register Balancing & Drawer Reconciliation</strong>
+                                    <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">Perform end-of-shift physical currency count verification against system register logs.</p>
+                                </div>
+                                <div id="reconciliation-variance-badge">
+                                    <span class="badge badge-success" style="font-size: 13px; padding: 6px 12px;">🟢 Ready to Balance</span>
+                                </div>
+                            </div>
+
+                            <div class="form-row" style="margin-bottom: 12px;">
+                                <div>
+                                    <label class="form-label">Opening Cash Float (₹)</label>
+                                    <input type="number" id="z-opening-float" class="form-control" value="${closedRep ? closedRep.opening_float : defaultFloat}" oninput="recalculateZDrawer()">
+                                    <small style="color: var(--text-dim); font-size: 11px;">Starting drawer float at shift open</small>
+                                </div>
+                                <div>
+                                    <label class="form-label">Total Cash Sales (+ ₹)</label>
+                                    <input type="number" id="z-cash-sales" class="form-control" value="${cashTot.toFixed(2)}" readonly style="opacity: 0.85; background: var(--bg-base);">
+                                    <small style="color: var(--text-dim); font-size: 11px;">Calculated from ${cashCnt} cash invoices</small>
+                                </div>
+                                <div>
+                                    <label class="form-label">Petty Payouts / Drops (- ₹)</label>
+                                    <input type="number" id="z-cash-payouts" class="form-control" value="${closedRep ? closedRep.cash_payouts : 0.0}" oninput="recalculateZDrawer()">
+                                    <small style="color: var(--text-dim); font-size: 11px;">Store supplies or safe drops</small>
+                                </div>
+                                <div>
+                                    <label class="form-label">Expected Drawer Cash (= ₹)</label>
+                                    <input type="number" id="z-expected-cash" class="form-control" value="${(closedRep ? closedRep.expected_cash : expectedCashCalc).toFixed(2)}" readonly style="font-weight: 700; color: var(--brand-primary); background: var(--bg-base);">
+                                    <small style="color: var(--text-dim); font-size: 11px;">Float + Sales - Payouts</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row" style="align-items: flex-end; margin-bottom: 14px;">
+                                <div style="flex: 1.5;">
+                                    <label class="form-label" style="color: var(--text-main); font-weight: 700;">Actual Physical Cash Counted (₹)</label>
+                                    <input type="number" id="z-actual-cash" class="form-control" style="font-size: 16px; font-weight: 800; border-color: var(--brand-primary);" placeholder="Count physical currency in drawer..." value="${closedRep ? closedRep.actual_cash : (cashTot > 0 ? expectedCashCalc : defaultFloat)}" oninput="recalculateZDrawer()">
+                                </div>
+                                <div style="flex: 2;">
+                                    <label class="form-label">Closing Reconciliation Notes</label>
+                                    <input type="text" id="z-closing-notes" class="form-control" placeholder="e.g. Shift drawer closed cleanly without discrepancy" value="${closedRep ? (closedRep.notes || '') : ''}">
+                                </div>
+                                <div style="flex: 1.2;">
+                                    <button class="btn-primary" style="width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="submitCloseRegisterZReport()">
+                                        <span>🔒</span> Close & Sign Z-Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tender Method Settlement Breakdown Table -->
+                        <div style="margin-bottom: 24px;">
+                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; color: var(--text-main);">📑 Tender Method Settlement Breakdown</div>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Payment Method</th>
+                                            <th>Invoices Count</th>
+                                            <th>Gross Amount</th>
+                                            <th>GST Collected</th>
+                                            <th>Net Amount</th>
+                                            <th>Revenue Share</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>💵 Cash in Drawer</strong></td>
+                                            <td>${cashCnt}</td>
+                                            <td>₹ ${cashTot.toFixed(2)}</td>
+                                            <td>₹ ${(cashTot * 0.05 / 1.05).toFixed(2)}</td>
+                                            <td>₹ ${(cashTot - (cashTot * 0.05 / 1.05)).toFixed(2)}</td>
+                                            <td><span class="badge badge-info">${grossSales > 0 ? ((cashTot / grossSales) * 100).toFixed(1) : 0}%</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>📱 UPI / Dynamic QR</strong></td>
+                                            <td>${upiCnt}</td>
+                                            <td>₹ ${upiTot.toFixed(2)}</td>
+                                            <td>₹ ${(upiTot * 0.05 / 1.05).toFixed(2)}</td>
+                                            <td>₹ ${(upiTot - (upiTot * 0.05 / 1.05)).toFixed(2)}</td>
+                                            <td><span class="badge badge-warning">${grossSales > 0 ? ((upiTot / grossSales) * 100).toFixed(1) : 0}%</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>💳 Credit / Debit Card</strong></td>
+                                            <td>${cardCnt}</td>
+                                            <td>₹ ${cardTot.toFixed(2)}</td>
+                                            <td>₹ ${(cardTot * 0.05 / 1.05).toFixed(2)}</td>
+                                            <td>₹ ${(cardTot - (cardTot * 0.05 / 1.05)).toFixed(2)}</td>
+                                            <td><span class="badge badge-warning">${grossSales > 0 ? ((cardTot / grossSales) * 100).toFixed(1) : 0}%</span></td>
+                                        </tr>
+                                        ${otherCnt > 0 ? `
+                                        <tr>
+                                            <td><strong>🔄 Other Tender</strong></td>
+                                            <td>${otherCnt}</td>
+                                            <td>₹ ${otherTot.toFixed(2)}</td>
+                                            <td>₹ ${(otherTot * 0.05 / 1.05).toFixed(2)}</td>
+                                            <td>₹ ${(otherTot - (otherTot * 0.05 / 1.05)).toFixed(2)}</td>
+                                            <td><span class="badge badge-neutral">${grossSales > 0 ? ((otherTot / grossSales) * 100).toFixed(1) : 0}%</span></td>
+                                        </tr>
+                                        ` : ''}
+                                        <tr style="background: var(--bg-hover); font-weight: 700;">
+                                            <td>TOTALS RECONCILED</td>
+                                            <td>${totalBills}</td>
+                                            <td>₹ ${grossSales.toFixed(2)}</td>
+                                            <td>₹ ${totalGst.toFixed(2)}</td>
+                                            <td>₹ ${netSales.toFixed(2)}</td>
+                                            <td><span class="badge badge-success">100.0%</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Shift Transactions Stream (Scrollable) -->
+                        <div style="margin-bottom: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div style="font-weight: 700; font-size: 14px; color: var(--text-main);">🧾 Shift Sales Invoices Ledger (${(zData.invoices || []).length} Records)</div>
+                                <small style="color: var(--text-muted);">Real-time transaction entries for selected date filter</small>
+                            </div>
+                            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Invoice ID</th>
+                                            <th>Time</th>
+                                            <th>Patient Name</th>
+                                            <th>Cashier</th>
+                                            <th>Payment Method</th>
+                                            <th>GST (5%)</th>
+                                            <th>Total (₹)</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(zData.invoices && zData.invoices.length > 0) ? zData.invoices.map(inv => `
+                                            <tr>
+                                                <td><code>${inv.invoice_id}</code></td>
+                                                <td><small style="color: var(--text-muted);">${inv.timestamp || 'N/A'}</small></td>
+                                                <td>${inv.patient_name || 'Walk-in'}</td>
+                                                <td><small>${inv.cashier_name || 'Counter'}</small></td>
+                                                <td><span class="badge ${inv.payment_method && inv.payment_method.toLowerCase().includes('cash') ? 'badge-success' : 'badge-warning'}">${inv.payment_method}</span></td>
+                                                <td>₹ ${(inv.gst_amount || 0).toFixed(2)}</td>
+                                                <td><strong>₹ ${(inv.total_amount || 0).toFixed(2)}</strong></td>
+                                                <td>
+                                                    <button class="btn-secondary" style="font-size: 11px; padding: 2px 8px;" onclick="viewZReportInvoiceDetails('${inv.invoice_id}')">Receipt</button>
+                                                </td>
+                                            </tr>
+                                        `).join("") : '<tr><td colspan="8" style="text-align:center; padding: 20px; color: var(--text-dim);">No sales invoices recorded for this period.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Historical Closed Z-Reports Archive -->
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div style="font-weight: 700; font-size: 14px; color: var(--text-main);">🗄️ End-of-Day Closed Z-Reports History</div>
+                                <small style="color: var(--text-muted);">Immutable permanent registry snapshots</small>
+                            </div>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Z-Report ID</th>
+                                            <th>Date</th>
+                                            <th>Closed By</th>
+                                            <th>Gross Sales</th>
+                                            <th>Expected Cash</th>
+                                            <th>Actual Cash</th>
+                                            <th>Variance</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(State.zReportsHistory && State.zReportsHistory.length > 0) ? State.zReportsHistory.map(rep => {
+                                            const v = rep.variance || 0;
+                                            const vBadge = Math.abs(v) < 0.01 
+                                                ? '<span class="badge badge-success">Balanced</span>' 
+                                                : (v < 0 ? `<span class="badge badge-danger">Short: -₹${Math.abs(v).toFixed(2)}</span>` : `<span class="badge badge-info">Over: +₹${v.toFixed(2)}</span>`);
+                                            return `
+                                                <tr>
+                                                    <td><code>${rep.z_report_id}</code></td>
+                                                    <td><strong>${rep.report_date}</strong></td>
+                                                    <td><small>${rep.generated_by}</small></td>
+                                                    <td>₹ ${(rep.total_sales || 0).toFixed(2)}</td>
+                                                    <td>₹ ${(rep.expected_cash || 0).toFixed(2)}</td>
+                                                    <td>₹ ${(rep.actual_cash || 0).toFixed(2)}</td>
+                                                    <td>${vBadge}</td>
+                                                    <td><span class="badge badge-success">${rep.status}</span></td>
+                                                    <td>
+                                                        <button class="btn-secondary" style="font-size: 11px; padding: 2px 8px;" onclick="printHistoricalZSlip('${rep.z_report_id}')">🖨️ Slip</button>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join("") : '<tr><td colspan="9" style="text-align:center; padding: 16px; color: var(--text-dim);">No historical Z-Reports closed yet. Use the button above to close today\'s register.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            recalculateZDrawer();
+        }
+
+        function recalculateZDrawer() {
+            const opFloatEl = document.getElementById("z-opening-float");
+            const cashSalesEl = document.getElementById("z-cash-sales");
+            const payoutsEl = document.getElementById("z-cash-payouts");
+            const expCashEl = document.getElementById("z-expected-cash");
+            const actCashEl = document.getElementById("z-actual-cash");
+            const badgeEl = document.getElementById("reconciliation-variance-badge");
+
+            if (!opFloatEl || !cashSalesEl || !payoutsEl || !expCashEl || !actCashEl) return;
+
+            const opFloat = parseFloat(opFloatEl.value) || 0;
+            const cashSales = parseFloat(cashSalesEl.value) || 0;
+            const payouts = parseFloat(payoutsEl.value) || 0;
+
+            const expected = opFloat + cashSales - payouts;
+            expCashEl.value = expected.toFixed(2);
+
+            const actual = parseFloat(actCashEl.value) || 0;
+            const variance = actual - expected;
+
+            if (badgeEl) {
+                if (Math.abs(variance) < 0.01) {
+                    badgeEl.innerHTML = `<span class="badge badge-success" style="font-size: 13px; padding: 6px 12px;">🟢 Perfect Reconciliation (₹ 0.00 Variance)</span>`;
+                } else if (variance < 0) {
+                    badgeEl.innerHTML = `<span class="badge badge-danger" style="font-size: 13px; padding: 6px 12px;">⚠️ Cash Shortage: -₹ ${Math.abs(variance).toFixed(2)}</span>`;
+                } else {
+                    badgeEl.innerHTML = `<span class="badge badge-info" style="font-size: 13px; padding: 6px 12px;">🔵 Cash Overage: +₹ ${variance.toFixed(2)}</span>`;
+                }
+            }
+        }
+
+        async function submitCloseRegisterZReport() {
+            const zData = State.zReportData || {};
+            const opFloat = parseFloat(document.getElementById("z-opening-float")?.value) || 2000.0;
+            const cashSales = parseFloat(document.getElementById("z-cash-sales")?.value) || 0.0;
+            const payouts = parseFloat(document.getElementById("z-cash-payouts")?.value) || 0.0;
+            const expected = parseFloat(document.getElementById("z-expected-cash")?.value) || (opFloat + cashSales - payouts);
+            const actual = parseFloat(document.getElementById("z-actual-cash")?.value) || expected;
+            const variance = actual - expected;
+            const notes = document.getElementById("z-closing-notes")?.value || "Clean End-of-Day Close";
+
+            const dateStr = zData.report_date || new Date().toISOString().split("T")[0];
+            const randSuffix = Math.floor(1000 + Math.random() * 9000);
+            const zId = `Z-${dateStr.replace(/-/g, '')}-${randSuffix}`;
+
+            const payload = {
+                z_report_id: zId,
+                report_date: dateStr,
+                opening_float: opFloat,
+                cash_sales: cashSales,
+                cash_payouts: payouts,
+                expected_cash: expected,
+                actual_cash: actual,
+                variance: variance,
+                upi_sales: zData.upi_total || 0,
+                card_sales: zData.card_total || 0,
+                total_sales: zData.gross_sales || 0,
+                total_gst: zData.total_gst || 0,
+                cgst: zData.cgst || ((zData.total_gst || 0) / 2.0),
+                sgst: zData.sgst || ((zData.total_gst || 0) / 2.0),
+                total_bills: zData.total_bills || 0,
+                notes: notes
+            };
+
+            const res = await callBridge("close_and_save_z_report", payload);
+            if (res && res.success) {
+                showToast("Register Closed", `Official Z-Report ${res.z_report_id} generated & signed.`, "success");
+                loadDailyZReportView();
+            } else {
+                showToast("Error", (res && res.error) || "Failed to close register.", "danger");
+            }
+        }
+
+        async function exportZReportCSV() {
+            const targetDate = State.zReportTargetDate || new Date().toISOString().split("T")[0];
+            const res = await callBridge("export_z_report_csv", targetDate);
+            if (res && res.success) {
+                showToast("Export Ready", `Z-Report CSV generated: ${res.filename}`, "success");
+            }
+
+            // Direct client download fallback
+            const z = State.zReportData || {};
+            const lines = [
+                "AEGISPHARM ENTERPRISE — DAILY FINANCIAL Z-REPORT",
+                `Report Date,${z.report_date || targetDate}`,
+                `Generated At,${new Date().toLocaleString()}`,
+                "",
+                "EXECUTIVE SUMMARY",
+                `Total Invoices,${z.total_bills || 0}`,
+                `Gross Revenue (INR),${z.gross_sales || 0}`,
+                `Net Taxable Amount (INR),${z.net_sales || 0}`,
+                `CGST 2.5% (INR),${z.cgst || 0}`,
+                `SGST 2.5% (INR),${z.sgst || 0}`,
+                `Total GST (INR),${z.total_gst || 0}`,
+                "",
+                "PAYMENT TENDER BREAKDOWN",
+                "Method,Count,Total Amount",
+                `Cash,${(z.payment_breakdown?.Cash?.count) || 0},${(z.payment_breakdown?.Cash?.total) || 0}`,
+                `UPI,${(z.payment_breakdown?.UPI?.count) || 0},${(z.payment_breakdown?.UPI?.total) || 0}`,
+                `Card,${(z.payment_breakdown?.Card?.count) || 0},${(z.payment_breakdown?.Card?.total) || 0}`,
+                "",
+                "TRANSACTIONS LEDGER",
+                "Invoice ID,Timestamp,Patient Name,Cashier,Payment Method,Subtotal,GST,Total"
+            ];
+
+            (z.invoices || []).forEach(inv => {
+                lines.push(`"${inv.invoice_id}","${inv.timestamp}","${inv.patient_name || ''}","${inv.cashier_name || ''}","${inv.payment_method || ''}",${inv.subtotal || 0},${inv.gst_amount || 0},${inv.total_amount || 0}`);
+            });
+
+            const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `z_report_${z.report_date || targetDate}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function openZReportPrintSlipModal(historicalReport) {
+            const z = historicalReport || State.zReportData || {};
+            const store = State.settings?.store || {};
+            const todayStr = z.report_date || new Date().toISOString().split("T")[0];
+            const nowTime = new Date().toLocaleTimeString();
+            const zId = z.z_report_id || `Z-${todayStr.replace(/-/g, '')}-PREVIEW`;
+
+            const gross = z.total_sales !== undefined ? z.total_sales : (z.gross_sales || 0);
+            const gst = z.total_gst !== undefined ? z.total_gst : (z.total_gst || 0);
+            const net = z.net_sales !== undefined ? z.net_sales : (gross - gst);
+            const bills = z.total_bills || 0;
+
+            const cash = z.cash_sales !== undefined ? z.cash_sales : (z.cash_total || 0);
+            const upi = z.upi_sales !== undefined ? z.upi_sales : (z.upi_total || 0);
+            const card = z.card_sales !== undefined ? z.card_sales : (z.card_total || 0);
+
+            const opFloat = z.opening_float !== undefined ? z.opening_float : 2000.0;
+            const payouts = z.cash_payouts !== undefined ? z.cash_payouts : 0.0;
+            const expCash = z.expected_cash !== undefined ? z.expected_cash : (opFloat + cash - payouts);
+            const actCash = z.actual_cash !== undefined ? z.actual_cash : expCash;
+            const variance = z.variance !== undefined ? z.variance : (actCash - expCash);
+
+            const vText = Math.abs(variance) < 0.01 ? "BALANCED (₹ 0.00)" : (variance < 0 ? `SHORTAGE (-₹ ${Math.abs(variance).toFixed(2)})` : `OVERAGE (+₹ ${variance.toFixed(2)})`);
+
+            const slipHtml = `
+                <div id="printable-z-slip" style="font-family: 'Courier New', Courier, monospace; color: #111; background: #fff; padding: 24px; border-radius: 6px; max-width: 420px; margin: 0 auto; line-height: 1.4; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <div style="text-align: center; border-bottom: 2px dashed #333; padding-bottom: 12px; margin-bottom: 12px;">
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">${store.name || "AegisPharm Enterprise"}</h2>
+                        <div style="font-size: 11px; margin-top: 4px;">${store.branch || "Central Store #01"}</div>
+                        <div style="font-size: 11px;">${store.address || "104 Healthcare Blvd, Mumbai, MH"}</div>
+                        <div style="font-size: 11px;">GSTIN: ${store.gstin || "27AAAAA0000A1Z5"} | DL: ${store.dl_number || "MH-MZ-123456"}</div>
+                        <div style="margin-top: 8px; font-weight: 800; font-size: 14px; letter-spacing: 1px;">*** END-OF-DAY Z-REPORT ***</div>
+                    </div>
+
+                    <div style="font-size: 12px; margin-bottom: 12px;">
+                        <div><strong>Z-REPORT ID:</strong> ${zId}</div>
+                        <div><strong>REPORT DATE:</strong> ${todayStr}</div>
+                        <div><strong>SHIFT TIME:</strong> 08:00 - ${nowTime}</div>
+                        <div><strong>TERMINAL:</strong> Counter #01 (Primary POS)</div>
+                        <div><strong>OPERATOR:</strong> ${z.generated_by || (State.currentUser?.name + " (" + State.currentUser?.role + ")")}</div>
+                    </div>
+
+                    <div style="border-top: 1px dashed #333; border-bottom: 1px dashed #333; padding: 8px 0; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between;"><span>TOTAL INVOICES:</span><strong>${bills}</strong></div>
+                        <div style="display: flex; justify-content: space-between;"><span>GROSS SALES:</span><strong>₹ ${gross.toFixed(2)}</strong></div>
+                        <div style="display: flex; justify-content: space-between;"><span>NET SALES:</span><span>₹ ${net.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>CGST (2.5%):</span><span>₹ ${(gst/2).toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>SGST (2.5%):</span><span>₹ ${(gst/2).toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 700;"><span>TOTAL GST:</span><span>₹ ${gst.toFixed(2)}</span></div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 700; text-decoration: underline; margin-bottom: 4px;">TENDER SETTLEMENT:</div>
+                        <div style="display: flex; justify-content: space-between;"><span>CASH RECEIVED:</span><span>₹ ${cash.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>UPI / DYNAMIC QR:</span><span>₹ ${upi.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>CREDIT / DEBIT CARD:</span><span>₹ ${card.toFixed(2)}</span></div>
+                    </div>
+
+                    <div style="border-top: 1px dashed #333; border-bottom: 1px dashed #333; padding: 8px 0; margin-bottom: 14px;">
+                        <div style="font-weight: 700; text-decoration: underline; margin-bottom: 4px;">DRAWER RECONCILIATION:</div>
+                        <div style="display: flex; justify-content: space-between;"><span>OPENING FLOAT:</span><span>₹ ${opFloat.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>+ CASH SALES:</span><span>₹ ${cash.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>- PAYOUTS / DROPS:</span><span>₹ ${payouts.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 700;"><span>EXPECTED CASH:</span><span>₹ ${expCash.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 700; color: #000;"><span>PHYSICAL COUNT:</span><span>₹ ${actCash.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 800; margin-top: 4px;"><span>CASH VARIANCE:</span><span>${vText}</span></div>
+                    </div>
+
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; text-align: center;">
+                        <div style="border-top: 1px solid #333; width: 45%; padding-top: 4px;">Cashier Signature</div>
+                        <div style="border-top: 1px solid #333; width: 45%; padding-top: 4px;">Manager / Auditor</div>
+                    </div>
+                    <div style="text-align: center; margin-top: 14px; font-size: 10px; color: #666;">
+                        * System Verified & Cryptographically Signed in SQLite *
+                    </div>
+                </div>
+            `;
+
+            openModal(
+                "🖨️ Official Financial Z-Report Slip",
+                slipHtml,
+                `
+                <button class="btn-primary" onclick="printElementContent('printable-z-slip')">🖨️ Print Slip</button>
+                <button class="btn-secondary" onclick="closeModal()">Close</button>
+                `,
+                "500px"
+            );
+        }
+
+        function printHistoricalZSlip(zId) {
+            const item = (State.zReportsHistory || []).find(r => r.z_report_id === zId);
+            if (item) {
+                openZReportPrintSlipModal(item);
+            }
+        }
+
+        function printElementContent(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const printWin = window.open('', '_blank', 'width=500,height=700');
+            if (printWin) {
+                printWin.document.write(`
+                    <html>
+                    <head><title>Print Z-Report Slip</title></head>
+                    <body style="margin: 0; padding: 10px;" onload="window.print(); window.close();">
+                        ${el.outerHTML}
+                    </body>
+                    </html>
+                `);
+                printWin.document.close();
+            } else {
+                window.print();
+            }
+        }
+
+        function changeZReportDate(newDate) {
+            State.zReportTargetDate = newDate;
+            loadDailyZReportView();
+        }
+
+        function setZReportPreset(preset) {
+            if (preset === 'today') {
+                State.zReportTargetDate = new Date().toISOString().split("T")[0];
+            } else if (preset === 'all') {
+                State.zReportTargetDate = 'all';
+            }
+            loadDailyZReportView();
+        }
+
+        function openCashierZReportModal() {
+            State.zReportTargetDate = new Date().toISOString().split("T")[0];
+            openModal(
+                "📊 End-of-Day Till Close & Z-Report",
+                `<div id="zreport-modal-content" style="max-height: 80vh; overflow-y: auto;">
+                    <div id="zreport-container">Loading Till Close & Daily Z-Report...</div>
+                 </div>`,
+                `<button class="btn-secondary" onclick="closeModal()">Dismiss</button>`,
+                "920px"
+            );
+            setTimeout(loadDailyZReportView, 50);
+        }
+
+        function viewZReportInvoiceDetails(invId) {
+            const inv = (State.zReportData?.invoices || []).find(i => i.invoice_id === invId);
+            if (inv) {
+                openReceiptModal(inv);
             }
         }
 

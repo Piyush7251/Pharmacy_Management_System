@@ -214,6 +214,18 @@ async def get_system_settings():
     return DEFAULT_BRIDGE.get_settings()
 
 
+@app.get("/api/zreport", tags=["Financial Z-Report"])
+async def get_z_report(target_date: Optional[str] = None):
+    """Compile End-of-Day Z-Report financial reconciliation and payment breakdown."""
+    return DEFAULT_BRIDGE.get_daily_z_report(target_date)
+
+
+@app.get("/api/zreports/history", tags=["Financial Z-Report"])
+async def get_z_reports_history(limit: int = 50):
+    """Retrieve history of closed end-of-day Z-Reports."""
+    return DEFAULT_BRIDGE.get_z_reports_history(limit)
+
+
 # =========================================================================
 # APPLICATION SERVER LAUNCHER
 # =========================================================================

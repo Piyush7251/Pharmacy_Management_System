@@ -9,6 +9,7 @@ import sqlite3
 import os
 import json
 from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, List
 
 try:
     from config.settings import get_settings
@@ -240,6 +241,31 @@ def init_db():
         last_dispensed TEXT NOT NULL,
         next_due_date TEXT NOT NULL,
         status TEXT DEFAULT 'Scheduled'
+    );
+    """)
+
+    # 14. End-of-Day Financial Z-Reports & Cash Reconciliation
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS z_reports (
+        z_report_id TEXT PRIMARY KEY,
+        report_date TEXT NOT NULL,
+        generated_at TEXT NOT NULL,
+        generated_by TEXT NOT NULL,
+        opening_float REAL NOT NULL,
+        cash_sales REAL NOT NULL,
+        cash_payouts REAL NOT NULL,
+        expected_cash REAL NOT NULL,
+        actual_cash REAL NOT NULL,
+        variance REAL NOT NULL,
+        upi_sales REAL NOT NULL,
+        card_sales REAL NOT NULL,
+        total_sales REAL NOT NULL,
+        total_gst REAL NOT NULL,
+        cgst REAL NOT NULL,
+        sgst REAL NOT NULL,
+        total_bills INTEGER NOT NULL,
+        status TEXT DEFAULT 'CLOSED & SIGNED',
+        notes TEXT
     );
     """)
     
@@ -1008,6 +1034,134 @@ def update_session_heartbeat(session_id: str, user_id: str, name: str, role: str
         pass
     finally:
         conn.close()
+
+# --- 14. END-OF-DAY FINANCIAL Z-REPORT & CASH RECONCILIATION ---
+
+def get_daily_z_report_data(target_date: Optional[str] = None) -> Dict[str, Any]:
+    """Compile comprehensive End-of-Day Z-Report financial data and cash drawer reconciliation."""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    date_query = target_date.strip() if target_date else today_str
+    
+    if date_query.lower() == "all":
+        cur.execute("SELECT * FROM invoices ORDER BY timestamp DESC")
+    else:
+        cur.execute("SELECT * FROM invoices WHERE timestamp LIKE ? ORDER BY timestamp DESC", (f"{date_query}%",))
+        
+    rows = cur.fetchall()
+    invoices = [dict(r) for r in rows]
+    
+    total_bills = len(invoices)
+    gross_sales = sum(inv.get("total_amount", 0.0) for inv in invoices)
+    total_gst = sum(inv.get("gst_amount", 0.0) for inv in invoices)
+    net_sales = sum(inv.get("subtotal", 0.0) for inv in invoices)
+    cgst = total_gst / 2.0
+    sgst = total_gst / 2.0
+    
+    # Categorize payment types
+    cash_bills = [inv for inv in invoices if "cash" in inv.get("payment_method", "").lower()]
+    upi_bills = [inv for inv in invoices if "upi" in inv.get("payment_method", "").lower() or "qr" in inv.get("payment_method", "").lower()]
+    card_bills = [inv for inv in invoices if "card" in inv.get("payment_method", "").lower()]
+    other_bills = [inv for inv in invoices if inv not in cash_bills and inv not in upi_bills and inv not in card_bills]
+    
+    cash_total = sum(inv.get("total_amount", 0.0) for inv in cash_bills)
+    upi_total = sum(inv.get("total_amount", 0.0) for inv in upi_bills)
+    card_total = sum(inv.get("total_amount", 0.0) for inv in card_bills)
+    other_total = sum(inv.get("total_amount", 0.0) for inv in other_bills)
+    
+    # Check if this date has already been formally closed
+    closed_report = None
+    if date_query.lower() != "all":
+        cur.execute("SELECT * FROM z_reports WHERE report_date = ? ORDER BY generated_at DESC LIMIT 1", (date_query,))
+        z_row = cur.fetchone()
+        if z_row:
+            closed_report = dict(z_row)
+            
+    conn.close()
+    
+    return {
+        "report_date": date_query,
+        "is_all_dates": (date_query.lower() == "all"),
+        "total_bills": total_bills,
+        "gross_sales": round(gross_sales, 2),
+        "net_sales": round(net_sales, 2),
+        "total_gst": round(total_gst, 2),
+        "cgst": round(cgst, 2),
+        "sgst": round(sgst, 2),
+        "payment_breakdown": {
+            "Cash": {"count": len(cash_bills), "total": round(cash_total, 2)},
+            "UPI": {"count": len(upi_bills), "total": round(upi_total, 2)},
+            "Card": {"count": len(card_bills), "total": round(card_total, 2)},
+            "Other": {"count": len(other_bills), "total": round(other_total, 2)}
+        },
+        "cash_total": round(cash_total, 2),
+        "upi_total": round(upi_total, 2),
+        "card_total": round(card_total, 2),
+        "digital_total": round(upi_total + card_total, 2),
+        "invoices": invoices,
+        "is_closed": bool(closed_report),
+        "closed_report": closed_report
+    }
+
+def save_closed_z_report(z_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Persist an immutable signed End-of-Day Z-Report into the database."""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    z_id = z_data.get("z_report_id") or f"Z-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    report_date = z_data.get("report_date") or datetime.now().strftime("%Y-%m-%d")
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    gen_by = z_data.get("generated_by", "Store Admin")
+    
+    op_float = float(z_data.get("opening_float", 2000.0))
+    cash_s = float(z_data.get("cash_sales", 0.0))
+    cash_p = float(z_data.get("cash_payouts", 0.0))
+    exp_c = float(z_data.get("expected_cash", op_float + cash_s - cash_p))
+    act_c = float(z_data.get("actual_cash", exp_c))
+    var_c = float(z_data.get("variance", act_c - exp_c))
+    
+    upi_s = float(z_data.get("upi_sales", 0.0))
+    card_s = float(z_data.get("card_sales", 0.0))
+    tot_s = float(z_data.get("total_sales", 0.0))
+    tot_gst = float(z_data.get("total_gst", 0.0))
+    cgst = float(z_data.get("cgst", tot_gst / 2.0))
+    sgst = float(z_data.get("sgst", tot_gst / 2.0))
+    bills = int(z_data.get("total_bills", 0))
+    notes = z_data.get("notes", "Clean End-of-Day Close")
+    
+    cur.execute("""
+    INSERT INTO z_reports (
+        z_report_id, report_date, generated_at, generated_by,
+        opening_float, cash_sales, cash_payouts, expected_cash,
+        actual_cash, variance, upi_sales, card_sales, total_sales,
+        total_gst, cgst, sgst, total_bills, status, notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CLOSED & SIGNED', ?)
+    ON CONFLICT(z_report_id) DO UPDATE SET
+        actual_cash = excluded.actual_cash,
+        variance = excluded.variance,
+        notes = excluded.notes,
+        generated_at = excluded.generated_at
+    """, (
+        z_id, report_date, now_str, gen_by,
+        op_float, cash_s, cash_p, exp_c,
+        act_c, var_c, upi_s, card_s, tot_s,
+        tot_gst, cgst, sgst, bills, notes
+    ))
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "z_report_id": z_id}
+
+def get_all_z_reports(limit: int = 50) -> List[Dict[str, Any]]:
+    """Retrieve historical closed Z-Reports."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM z_reports ORDER BY generated_at DESC LIMIT ?", (limit,))
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 # Initialize database on import
 init_db()

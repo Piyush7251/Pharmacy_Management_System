@@ -24,7 +24,8 @@ from core.db import (
     get_all_suppliers, get_all_purchase_orders, add_purchase_order, update_purchase_order_status,
     get_temperature_logs, add_temperature_log,
     get_refill_schedules, update_refill_status,
-    get_dashboard_analytics
+    get_dashboard_analytics, get_daily_z_report_data,
+    save_closed_z_report, get_all_z_reports
 )
 from config.settings import get_settings, save_settings
 from core.logger import (
@@ -508,7 +509,8 @@ class TestAegisPharmFeatures(unittest.TestCase):
             "openAddNarcoticModal", "submitAddNarcotic", "sendRefillWhatsApp",
             "openCreateDeliveryModal", "submitCreateDelivery", "advanceDelivery", "openOtpModal", "verifyOtp",
             "openSystemSettingsModal", "saveSystemSettings", "resetSystemSettings",
-            "switchPharmacistTab", "switchInventoryTab", "runCDSSAnalysis", "filterNarcotics", "filterPrescriptionQueue"
+            "switchPharmacistTab", "switchInventoryTab", "runCDSSAnalysis", "filterNarcotics", "filterPrescriptionQueue",
+            "loadDailyZReportView", "recalculateZDrawer", "submitCloseRegisterZReport", "exportZReportCSV", "openZReportPrintSlipModal", "openCashierZReportModal"
         ]
         for opt in required_interactive_options:
             self.assertIn(opt, html_text, f"Interactive option missing in HTML/JS: {opt}")
@@ -536,6 +538,64 @@ class TestAegisPharmFeatures(unittest.TestCase):
         flattened_declared = {item for tup in declared_functions for item in tup if item}
         missing_handlers = [f for f in functions_called if f not in flattened_declared]
         self.assertEqual(len(missing_handlers), 0, f"Found unhandled inline functions in desktop HTML: {missing_handlers}")
+
+    # --- 17. END-OF-DAY FINANCIAL Z-REPORT & CASH RECONCILIATION ---
+    def test_17_daily_z_report_and_cash_reconciliation(self):
+        # 1. Test fetching daily Z-Report data via core.db
+        z_data = get_daily_z_report_data("all")
+        self.assertIn("gross_sales", z_data)
+        self.assertIn("total_gst", z_data)
+        self.assertIn("payment_breakdown", z_data)
+        self.assertIn("cash_total", z_data)
+        self.assertIn("upi_total", z_data)
+        self.assertIn("card_total", z_data)
+        self.assertIn("total_bills", z_data)
+        self.assertIsInstance(z_data["payment_breakdown"], dict)
+        self.assertIn("Cash", z_data["payment_breakdown"])
+
+        # 2. Test saving and closing a register Z-report
+        close_payload = {
+            "z_report_id": f"Z-TEST-{int(time.time())}",
+            "report_date": datetime.now().strftime("%Y-%m-%d"),
+            "opening_float": 2000.0,
+            "cash_sales": 1500.0,
+            "cash_payouts": 100.0,
+            "expected_cash": 3400.0,
+            "actual_cash": 3400.0,
+            "variance": 0.0,
+            "upi_sales": 2500.0,
+            "card_sales": 800.0,
+            "total_sales": 4800.0,
+            "total_gst": 240.0,
+            "cgst": 120.0,
+            "sgst": 120.0,
+            "total_bills": 12,
+            "notes": "Automated unit test shift close"
+        }
+        res = save_closed_z_report(close_payload)
+        self.assertTrue(res["success"])
+        self.assertEqual(res["z_report_id"], close_payload["z_report_id"])
+
+        # 3. Test retrieving historical closed Z-reports
+        history = get_all_z_reports(limit=10)
+        self.assertIsInstance(history, list)
+        self.assertGreater(len(history), 0)
+        found = any(r["z_report_id"] == close_payload["z_report_id"] for r in history)
+        self.assertTrue(found, "Saved Z-Report must be present in get_all_z_reports()")
+
+        # 4. Test bridge RPC wrappers
+        from core.bridge import PharmacyBridge
+        bridge = PharmacyBridge()
+        bridge.login("admin", "admin123")
+        bridge_z = bridge.get_daily_z_report("all")
+        self.assertIn("gross_sales", bridge_z)
+        self.assertIn("payment_breakdown", bridge_z)
+
+        # 5. Test export Z-Report CSV
+        export_res = bridge.export_z_report_csv("all")
+        self.assertTrue(export_res["success"])
+        self.assertTrue(os.path.exists(export_res["filepath"]))
+        self.assertGreater(os.path.getsize(export_res["filepath"]), 50)
 
 if __name__ == "__main__":
     unittest.main()

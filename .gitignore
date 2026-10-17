@@ -22,4 +22,5 @@ Thumbs.db
 # App runtime logs and backups
 logs/*.log
 backups/*.db
+backups/*.csv
 *.db

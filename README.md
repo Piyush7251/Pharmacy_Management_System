@@ -78,6 +78,7 @@ graph TD
   - **Card**: Credit/Debit terminal authorization simulation.
 - **GST Tax Invoice & Thermal Receipt**: Instant 80mm thermal receipt generator modal with print and export capabilities.
 - **Home Delivery Dispatch Routing**: Checkbox to route orders directly to the Delivery Fleet dispatch board upon checkout.
+- **End-of-Day Till Close (Z-Report)**: Quick-action button directly accessible from the POS counter for cashier cash counting and shift reconciliation.
 
 ### 3. 📦 Inventory & Supply Chain Hub
 - **Multi-Batch FEFO Ledger**: Real-time batch inventory tracking with color-coded expiry badges (`Expired`, `Critical < 30d`, `Attention < 90d`, `Good`) and stock adjustments.
@@ -95,7 +96,7 @@ graph TD
 ### 5. 👑 Enterprise Admin Command Center
 - **Staff User Management & RBAC**: Create new staff accounts, assign roles, edit passwords, or toggle account status (`Active` / `Suspended`).
 - **Live Online Presence**: Non-blocking heartbeat monitor tracking currently active terminals, login timestamps, and active user tasks.
-- **Daily Financial Z-Report**: Real-time reconciliation of daily gross revenue, payment method breakdowns (Cash vs UPI vs Card), and CGST/SGST tax liabilities.
+- **Daily Financial Z-Report & Cash Drawer Reconciliation**: Complete register closing workflow with opening cash float, total cash sales, petty payouts, expected drawer cash, physical cash counted, and live variance detection (Shortage/Overage/Balanced). Includes tender settlement table (Cash, UPI QR, Cards), shift sales audit stream, printable official thermal/A4 Z-slip with signature blocks, and CSV export.
 - **Dead Stock & Movement Analytics**: Fast-moving inventory analysis vs stagnant capital risks.
 - **System Audit Trail**: Complete immutable event stream recording every prescription approval, POS transaction, stock adjustment, and user authentication.
 

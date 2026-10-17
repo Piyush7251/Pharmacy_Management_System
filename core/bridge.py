@@ -20,7 +20,8 @@ from core.db import (
     get_all_suppliers, get_all_purchase_orders, add_purchase_order, update_purchase_order_status,
     get_temperature_logs, add_temperature_log,
     get_refill_schedules, update_refill_status,
-    get_dashboard_analytics, get_active_sessions, update_session_heartbeat
+    get_dashboard_analytics, get_active_sessions, update_session_heartbeat,
+    get_daily_z_report_data, save_closed_z_report, get_all_z_reports
 )
 from config.settings import get_settings, save_settings, reset_to_defaults
 from core.logger import (
@@ -395,6 +396,77 @@ class PharmacyBridge:
     def get_dashboard_analytics(self) -> Dict[str, Any]:
         """Fetch overall business KPIs, financials, and inventory counts."""
         return get_dashboard_analytics()
+
+    def get_daily_z_report(self, target_date: Optional[str] = None) -> Dict[str, Any]:
+        """Fetch End-of-Day Z-Report sales data, payment breakdown, and cash reconciliation."""
+        return get_daily_z_report_data(target_date)
+
+    def close_and_save_z_report(self, z_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Formally close cash register and persist signed Z-Report."""
+        user_name = self._current_user.get("name", "Store Staff") if self._current_user else "Store Staff"
+        role = self._current_user.get("role", "Admin") if self._current_user else "Admin"
+        z_data["generated_by"] = f"{user_name} ({role})"
+        res = save_closed_z_report(z_data)
+        if res.get("success"):
+            log_activity(
+                action="Z-Report Closed",
+                details=f"End-of-day register closed. Report ID: {res['z_report_id']}. Gross Sales: ₹{z_data.get('total_sales', 0):.2f}, Cash Variance: ₹{z_data.get('variance', 0):.2f}.",
+                user_name=user_name,
+                role=role,
+                level="INFO"
+            )
+        return res
+
+    def get_z_reports_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Retrieve archive of past closed Z-Reports."""
+        return get_all_z_reports(limit)
+
+    def export_z_report_csv(self, target_date: Optional[str] = None) -> Dict[str, Any]:
+        """Export Z-Report and shift invoice transactions to CSV format."""
+        import csv
+        data = get_daily_z_report_data(target_date)
+        date_str = str(data.get("report_date", "today")).replace(":", "-").replace(" ", "_")
+        backup_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        filename = f"z_report_{date_str}_{int(datetime.now().timestamp())}.csv"
+        filepath = os.path.join(backup_dir, filename)
+        
+        try:
+            with open(filepath, mode="w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["AEGISPHARM ENTERPRISE — DAILY FINANCIAL Z-REPORT"])
+                writer.writerow(["Report Date", data.get("report_date")])
+                writer.writerow(["Generated At", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+                writer.writerow([])
+                writer.writerow(["EXECUTIVE SUMMARY"])
+                writer.writerow(["Total Invoices Processed", data.get("total_bills")])
+                writer.writerow(["Gross Revenue (INR)", data.get("gross_sales")])
+                writer.writerow(["Net Taxable Sales (INR)", data.get("net_sales")])
+                writer.writerow(["CGST 2.5% (INR)", data.get("cgst")])
+                writer.writerow(["SGST 2.5% (INR)", data.get("sgst")])
+                writer.writerow(["Total GST (INR)", data.get("total_gst")])
+                writer.writerow([])
+                writer.writerow(["PAYMENT BREAKDOWN"])
+                writer.writerow(["Payment Method", "Count", "Total Amount (INR)"])
+                for method, info in data.get("payment_breakdown", {}).items():
+                    writer.writerow([method, info.get("count", 0), info.get("total", 0.0)])
+                writer.writerow([])
+                writer.writerow(["TRANSACTIONS AUDIT LEDGER"])
+                writer.writerow(["Invoice ID", "Timestamp", "Patient Name", "Cashier", "Payment Method", "Subtotal", "GST", "Total Amount"])
+                for inv in data.get("invoices", []):
+                    writer.writerow([
+                        inv.get("invoice_id"),
+                        inv.get("timestamp"),
+                        inv.get("patient_name"),
+                        inv.get("cashier_name"),
+                        inv.get("payment_method"),
+                        inv.get("subtotal"),
+                        inv.get("gst_amount"),
+                        inv.get("total_amount")
+                    ])
+            return {"success": True, "filepath": filepath, "filename": filename}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def get_all_staff(self) -> List[Dict[str, Any]]:
         """Retrieve staff list for admin."""
