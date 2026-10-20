@@ -997,18 +997,14 @@ def build_rubric_deck():
 
     output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM_Pharm_Presentation_Piyush_Bhatt.pptx")
     prs.save(output_path)
-    legacy_pptx = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pptx")
-    prs.save(legacy_pptx)
     print(f"[SUCCESS] Rubric-Aligned 18-Slide PowerPoint generated successfully at: {output_path}")
 
     # Export to PDF via PowerPoint COM
     try:
         pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM_Pharm_Presentation_Piyush_Bhatt.pdf")
-        legacy_pdf = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pdf")
         ppt_app = win32com.client.Dispatch("PowerPoint.Application")
         deck = ppt_app.Presentations.Open(os.path.abspath(output_path), WithWindow=False)
         deck.SaveAs(os.path.abspath(pdf_path), 32)
-        deck.SaveAs(os.path.abspath(legacy_pdf), 32)
         deck.Close()
         ppt_app.Quit()
         print(f"[SUCCESS] Rubric-Aligned 18-Slide PDF generated successfully at: {pdf_path}")
