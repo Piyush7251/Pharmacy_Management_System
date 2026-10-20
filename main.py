@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Primary Unified Application Entry Point.
+TQM Pharm Enterprise — Primary Unified Application Entry Point.
 Launches the modern, hardware-accelerated Edge Chromium desktop experience by default,
 or starts the Web Application server with --web,
 or falls back to legacy CustomTkinter interface if requested via --legacy.
@@ -12,17 +12,17 @@ if __name__ == "__main__":
         from web_app import run_web_server
         run_web_server()
     elif "--legacy" in sys.argv:
-        print("[AegisPharm] Launching in Legacy CustomTkinter mode...")
+        print("[TQM Pharm] Launching in Legacy CustomTkinter mode...")
         from app import PharmacyApplication
         app = PharmacyApplication()
         app.mainloop()
     else:
         try:
-            print("[AegisPharm] Launching Next-Gen Hardware-Accelerated Desktop UI...")
+            print("[TQM Pharm] Launching Next-Gen Hardware-Accelerated Desktop UI...")
             from desktop_app import run_desktop_app
             run_desktop_app()
         except Exception as e:
-            print(f"[AegisPharm] Notice: Failed to start WebView2 ({e}). Falling back to CustomTkinter...")
+            print(f"[TQM Pharm] Notice: Failed to start WebView2 ({e}). Falling back to CustomTkinter...")
             from app import PharmacyApplication
             app = PharmacyApplication()
             app.mainloop()

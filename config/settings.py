@@ -48,7 +48,7 @@ class ReceiptConfig:
 @dataclass
 class SystemConfig:
     """System runtime flags, server endpoints, and storage path locations."""
-    db_path: str = os.path.expanduser("~/.aegispharm/pharmacy_system.db")
+    db_path: str = os.path.expanduser("~/.tqmpharm/pharmacy_system.db")
     log_dir: str = LOGS_DIR_DEFAULT
     backup_dir: str = BACKUP_DIR_DEFAULT
     server_url: str = "http://127.0.0.1:8000"

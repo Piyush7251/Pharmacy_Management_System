@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Next-Generation Hardware-Accelerated Desktop Application.
+TQM Pharm Enterprise — Next-Generation Hardware-Accelerated Desktop Application.
 Powered by Microsoft Edge Chromium WebView2 & Python Native RPC Bridge.
 Provides butter-smooth 60fps rendering, zero-lag scrolling, modern responsive design,
 and seamless desktop integration across all 5 clinical and operational roles.
@@ -33,7 +33,7 @@ def run_desktop_app():
     
     # Load configuration
     cfg = get_settings()
-    store_title = f"{cfg.store.name} — AegisPharm Enterprise"
+    store_title = f"{cfg.store.name} — TQM Pharm Enterprise"
     
     # Create Native OS Window with Edge Chromium backend
     window = webview.create_window(
@@ -47,7 +47,7 @@ def run_desktop_app():
     )
     bridge.set_window(window)
     
-    print("[AegisPharm] Launching hardware-accelerated Edge Chromium desktop window...")
+    print("[TQM Pharm] Launching hardware-accelerated Edge Chromium desktop window...")
     # Start native event loop
     webview.start(debug=False)
 

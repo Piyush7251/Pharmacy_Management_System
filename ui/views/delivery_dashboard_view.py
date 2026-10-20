@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Complete Delivery & Fulfilment Operations Dashboard.
+TQM Pharm Enterprise — Complete Delivery & Fulfilment Operations Dashboard.
 Full features:
 - Active Home Delivery Route Board with Search & Status Filters
 - Visual 3-Stage Fulfilment Progress Timeline (Packaging -> Out for Delivery -> Delivered)

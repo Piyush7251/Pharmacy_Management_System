@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Inventory & Supply Chain Hub (Standalone).
+TQM Pharm Enterprise — Inventory & Supply Chain Hub (Standalone).
 Provides complete access to:
   1. Multi-Batch FEFO Stock Ledger (Expiry alerts & low stock tracking)
   2. Inward Goods Receipt Notes (GRN) & Purchase Orders
@@ -25,7 +25,7 @@ class InventoryHubApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("📦 AegisPharm — Inventory & Supply Chain Logistics Hub")
+        self.title("📦 TQM Pharm — Inventory & Supply Chain Logistics Hub")
         self.geometry("1400x900")
         self.minsize(1100, 720)
         self.configure(fg_color=COLORS["bg_base"])

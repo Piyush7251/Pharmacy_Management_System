@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Dynamic Floating Toast Notification System.
+TQM Pharm Enterprise — Dynamic Floating Toast Notification System.
 Provides non-blocking, elegant animated alerts (Success, Warning, Danger, Info)
 overlayed at the top-right corner of the desktop application.
 """

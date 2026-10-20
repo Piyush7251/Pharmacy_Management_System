@@ -1,19 +1,19 @@
-# 🎯 AegisPharm Enterprise — Examiner Live Demonstration Guide
+# 🎯 TQM Pharm Enterprise — Examiner Live Demonstration Guide
 ## University Project Review 1: Setup, SRS & Working Application Walkthrough
 **Academic Institution:** Amrapali University, Haldwani / Nainital  
 **Presenter:** Piyush Bhatt (B.Tech Computer Science & Engineering)  
-**System Evaluated:** AegisPharm Enterprise (Zero-Defect Pharmacy Operating System)  
+**System Evaluated:** TQM Pharm Enterprise (Zero-Defect Pharmacy Operating System)  
 **Evaluation Scope:** Review 1 – Setup & SRS / Working Application / Demo  
 
 ---
 
 ## 📋 Evaluation Rubric Alignment Matrix
 
-| Rubric Criteria (Review 1) | Demonstrated Component in AegisPharm | Verification Location |
+| Rubric Criteria (Review 1) | Demonstrated Component in TQM Pharm | Verification Location |
 | :--- | :--- | :--- |
 | **1. Setup & Baseline Understanding** | Complete project architecture, virtualenv, dependencies installed, dual desktop/web runtime setup. | `main.py`, `web_app.py`, `requirements.txt` |
 | **2. Modular Folder Architecture** | Strict 6-tier separation (`apps/`, `core/`, `ui/`, `server/`, `config/`, `tests/`). | Workspace Directory Tree |
-| **3. Software Requirements Specification** | Formal IEEE Std 830-1998 compliant SRS document with complete functional & non-functional requirements. | `SRS_AegisPharm_Enterprise.pdf / .docx / .md` |
+| **3. Software Requirements Specification** | Formal IEEE Std 830-1998 compliant SRS document with complete functional & non-functional requirements. | `SRS_TQM Pharm_Enterprise.pdf / .docx / .md` |
 | **4. Working Application & System Workflow** | Fully functional desktop GUI (CustomTkinter + Edge WebView2) and cloud web portal (FastAPI). | Live Demonstration |
 | **5. Comprehensive CRUD Operations** | Full Create, Read, Update, Delete operations across staff, medicines, prescriptions, invoices, and suppliers. | Table CRUD Matrix in SRS Section 6.2 |
 | **6. Core Modules Aligned with Quality Goals** | CDSS safety interception, automated FEFO batch dispensing, IoT cold-chain (2-8°C) monitoring, Z-Report balancing. | Slides 6–10 in PPTX & Live App Modals |
@@ -181,4 +181,4 @@ Follow this sequential 6-step walkthrough during your presentation:
 > **Answer:** *"A Z-Report is the statutory end-of-day register closure required for fiscal compliance. Unlike an intermediate X-Report, a Z-Report reconciles physical cash counted against system calculations (`Opening Float + Cash Sales - Payouts`), isolates cash discrepancies by cashier shift, records GST tax liabilities, and locks the register to prevent retrospective transaction tampering."*
 
 ---
-*AegisPharm Enterprise — Demonstration Guide Prepared for Review 1 Evaluation*
+*TQM Pharm Enterprise — Demonstration Guide Prepared for Review 1 Evaluation*

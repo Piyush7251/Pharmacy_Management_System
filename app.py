@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Unified Desktop Application Entry Point.
+TQM Pharm Enterprise — Unified Desktop Application Entry Point.
 Dual-theme support (Default: White / Light Mode, with one-click Dark Mode toggle).
 Provides secure authentication, role-based dashboard routing, real-time presence tracking,
 live digital clock telemetry, quick role switching, and global dynamic toast notifications.
@@ -32,7 +32,7 @@ class PharmacyApplication(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("AegisPharm Enterprise — Modern Clinical & Retail Pharmacy System")
+        self.title("TQM Pharm Enterprise — Modern Clinical & Retail Pharmacy System")
         self.geometry("1420x920")
         self.minsize(1120, 720)
         self.configure(fg_color=COLORS["bg_base"])
@@ -192,7 +192,7 @@ class PharmacyApplication(ctk.CTk):
         
         lbl_brand = ctk.CTkLabel(
             left_info,
-            text="💊 AegisPharm",
+            text="💊 TQM Pharm",
             font=FONTS["h2"],
             text_color=COLORS["clinical"]
         )

@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Automated Web Application & REST API Test Suite.
+TQM Pharm Enterprise — Automated Web Application & REST API Test Suite.
 Validates FastAPI web server, session authentication, universal RPC bridge,
 and standalone web browser parity with the desktop application.
 """
@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from web_app import app
 from core.db import init_db
 
-class TestAegisPharmWebApplication(unittest.TestCase):
+class TestTQMPharmWebApplication(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         init_db()
@@ -27,7 +27,7 @@ class TestAegisPharmWebApplication(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertEqual(data["status"], "online")
-        self.assertEqual(data["system"], "AegisPharm Enterprise")
+        self.assertEqual(data["system"], "TQM Pharm Enterprise")
         self.assertEqual(data["version"], "2.5")
 
     def test_02_web_frontend_served(self):
@@ -35,7 +35,7 @@ class TestAegisPharmWebApplication(unittest.TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("text/html", resp.headers.get("content-type", ""))
-        self.assertIn("AegisPharm Enterprise", resp.text)
+        self.assertIn("TQM Pharm Enterprise", resp.text)
         self.assertIn("callBridge", resp.text)
         self.assertIn("login-view", resp.text)
         self.assertIn("pharma-nav-cdss", resp.text)

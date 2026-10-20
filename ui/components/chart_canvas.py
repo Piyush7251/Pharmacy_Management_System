@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Dynamic Cold-Chain IoT Telemetry Chart.
+TQM Pharm Enterprise — Dynamic Cold-Chain IoT Telemetry Chart.
 Visualizes live 24-hour sensor temperatures against critical clinical thresholds (2-8°C).
 """
 

@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Comprehensive Automated Test Suite.
+TQM Pharm Enterprise — Comprehensive Automated Test Suite.
 Validates all core features, database integrity, business logic, calculations,
 and security workflows across all 5 roles.
 """
@@ -35,7 +35,7 @@ from core.logger import (
 import time
 import tempfile
 
-class TestAegisPharmFeatures(unittest.TestCase):
+class TestTQMPharmFeatures(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         init_db()

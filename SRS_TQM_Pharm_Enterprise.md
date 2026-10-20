@@ -1,5 +1,5 @@
 # Software Requirements Specification (SRS)
-## AegisPharm Enterprise — Clinical & Retail Pharmacy Operating System
+## TQM Pharm Enterprise — Clinical & Retail Pharmacy Operating System
 **Standard:** IEEE Std 830-1998 Compliant Specification  
 **Academic Institution:** Amrapali University, Haldwani / Nainital  
 **Evaluation Scope:** Review 1 – Setup & SRS / Working Application / Demo  
@@ -12,7 +12,7 @@
 ## 1. Introduction
 
 ### 1.1 Purpose
-This Software Requirements Specification (SRS) document details the complete functional and non-functional specifications for **AegisPharm Enterprise**, an enterprise-grade clinical and retail pharmacy operating system. Formulated in accordance with the **IEEE Std 830-1998** standard, this document serves as the formal specification and contractual baseline for project evaluators, faculty review committees, clinical domain specialists, and software engineers for **Review 1: Setup & SRS / Working Application / Demo**.
+This Software Requirements Specification (SRS) document details the complete functional and non-functional specifications for **TQM Pharm Enterprise**, an enterprise-grade clinical and retail pharmacy operating system. Formulated in accordance with the **IEEE Std 830-1998** standard, this document serves as the formal specification and contractual baseline for project evaluators, faculty review committees, clinical domain specialists, and software engineers for **Review 1: Setup & SRS / Working Application / Demo**.
 
 ### 1.2 Document Conventions
 - **Requirement Priorities:** `[MANDATORY]` designates essential zero-defect features required for regulatory, statutory, or clinical patient safety; `[RECOMMENDED]` indicates operational enhancements; `[OPTIONAL]` designates future multi-store cloud sync features.
@@ -26,7 +26,7 @@ This document is engineered for:
 3. **Clinical Pharmacists & POS Operators** validating real-world clinical workflow fidelity.
 
 ### 1.4 Project Scope
-AegisPharm Enterprise bridges the operational divide between frontline retail pharmacy billing (POS), automated First-Expiry, First-Out (FEFO) batch inventory control, real-time Clinical Decision Support Systems (CDSS), statutory Schedule H1/X double sign-off registers, IoT cold-chain (2°C–8°C) monitoring, and end-of-day financial cash drawer reconciliation. The application eliminates the estimated 3.2% manual error rate in retail pharmacy operations by enforcing deterministic software quality controls (Poka-Yoke error-proofing) at every transaction boundary.
+TQM Pharm Enterprise bridges the operational divide between frontline retail pharmacy billing (POS), automated First-Expiry, First-Out (FEFO) batch inventory control, real-time Clinical Decision Support Systems (CDSS), statutory Schedule H1/X double sign-off registers, IoT cold-chain (2°C–8°C) monitoring, and end-of-day financial cash drawer reconciliation. The application eliminates the estimated 3.2% manual error rate in retail pharmacy operations by enforcing deterministic software quality controls (Poka-Yoke error-proofing) at every transaction boundary.
 
 ### 1.5 References
 - **IEEE Std 830-1998:** IEEE Recommended Practice for Software Requirements Specifications.
@@ -39,13 +39,13 @@ AegisPharm Enterprise bridges the operational divide between frontline retail ph
 ## 2. Overall Description
 
 ### 2.1 Product Perspective & Baseline Understanding
-AegisPharm Enterprise is engineered as a unified, dual-interface clinical operating environment offering:
+TQM Pharm Enterprise is engineered as a unified, dual-interface clinical operating environment offering:
 1. **Enterprise Native Desktop Application:** Powered by CustomTkinter 5.2.2 and Microsoft Edge Chromium WebView2, delivering a responsive 60fps native workstation experience with dual-theming (White/Light mode default with instant Dark mode toggle).
 2. **Cloud-Ready Web Application Portal:** Powered by FastAPI 0.115 and Uvicorn, serving lightweight HTML5/CSS3 responsive clinical portals for mobile carts, inwarding bay tablets, and remote store monitoring.
 3. **ACID Relational Storage Engine:** Both desktop and web interfaces share a synchronized, local-first SQLite relational database engine, ensuring full offline continuity while supporting networked multi-terminal deployment across counter workstations.
 
 ### 2.2 Problem Formulation & Quality Objectives
-| Operational Area | Conventional Pharmacy Deficiency | AegisPharm TQM Solution |
+| Operational Area | Conventional Pharmacy Deficiency | TQM Pharm TQM Solution |
 | :--- | :--- | :--- |
 | **Clinical Dispensing** | Manual transcription; undetected drug-drug interactions & allergy contraindications (3.2% error rate). | Real-time CDSS engine automatically intercepts contraindicated prescriptions before cashier billing. |
 | **Inventory Waste** | Lack of batch-level visibility; 5–8% expired stock discarded annually. | Automated FEFO batch sorting; visual expiry tier badges; strict lockout of expired stock. |
@@ -412,7 +412,7 @@ End-of-day register closure, financial cash reconciliation, and shift balancing.
 ## 7. Verification, Validation & Automated Testing
 
 ### 7.1 Automated Pytest Verification
-AegisPharm Enterprise features an integrated automated testing suite with **24 comprehensive unit and integration tests** verifying all business rules, data schemas, and API endpoints:
+TQM Pharm Enterprise features an integrated automated testing suite with **24 comprehensive unit and integration tests** verifying all business rules, data schemas, and API endpoints:
 - **Authentication & RBAC:** Tests role isolation, password hashing, and session timeout.
 - **CDSS Rules:** Asserts 100% detection of Penicillin allergies and Aspirin/Warfarin drug interactions.
 - **FEFO Logic:** Verifies automatic sorting of batches by expiration date and blocks expired medication checkout.
@@ -426,4 +426,4 @@ pytest
 ```
 
 ---
-*End of Software Requirements Specification (SRS) — AegisPharm Enterprise*
+*End of Software Requirements Specification (SRS) — TQM Pharm Enterprise*

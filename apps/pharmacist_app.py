@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Pharmacist Clinical & Dispensing Station (Standalone).
+TQM Pharm Enterprise — Pharmacist Clinical & Dispensing Station (Standalone).
 Provides complete access to:
   1. e-Prescription Queue & Clinical Decision Support System (CDSS)
   2. Schedule X / NDPS Controlled Substance Register & Double-Signing
@@ -25,7 +25,7 @@ class PharmacistStation(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("🩺 AegisPharm — Pharmacist Clinical & Dispensing Station")
+        self.title("🩺 TQM Pharm — Pharmacist Clinical & Dispensing Station")
         self.geometry("1400x900")
         self.minsize(1100, 720)
         self.configure(fg_color=COLORS["bg_base"])

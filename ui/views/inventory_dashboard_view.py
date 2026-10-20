@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Complete Inventory & Supply Chain Hub.
+TQM Pharm Enterprise — Complete Inventory & Supply Chain Hub.
 Full features:
 - FEFO Multi-Batch Medicine Inventory Ledger:
     * Search, Category & Expiry Filtering
@@ -258,7 +258,7 @@ class InventoryDashboardView(ctk.CTkFrame):
             title="Export Inventory Ledger",
             defaultextension=".csv",
             filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
-            initialfile="AegisPharm_Stock_Ledger.csv"
+            initialfile="TQM Pharm_Stock_Ledger.csv"
         )
         if path:
             fields = ["id", "name", "generic", "category", "schedule", "manufacturer", "batch", "expiry", "days_to_expiry", "stock", "unit", "mrp", "cost_price", "rack", "cold_chain"]

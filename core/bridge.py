@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Native Desktop RPC Bridge.
+TQM Pharm Enterprise — Native Desktop RPC Bridge.
 Exposes secure, thread-safe Python methods directly to the Edge Chromium WebView2 frontend.
 Allows instantaneous, zero-latency desktop interaction without HTTP overhead.
 """
@@ -434,7 +434,7 @@ class PharmacyBridge:
         try:
             with open(filepath, mode="w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f)
-                writer.writerow(["AEGISPHARM ENTERPRISE — DAILY FINANCIAL Z-REPORT"])
+                writer.writerow(["TQM PHARM ENTERPRISE — DAILY FINANCIAL Z-REPORT"])
                 writer.writerow(["Report Date", data.get("report_date")])
                 writer.writerow(["Generated At", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
                 writer.writerow([])

@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Complete Cashier POS & Billing Terminal.
+TQM Pharm Enterprise — Complete Cashier POS & Billing Terminal.
 Full features:
 - High-Speed Barcode & Medicine Catalog Search with Category Filter Pills
 - Customer Phone Lookup, EHR Allergy Flags & Loyalty Points Redemption
@@ -642,8 +642,8 @@ class CashierDashboardView(ctk.CTkFrame):
         win.configure(fg_color=COLORS["bg_surface"])
         win.grab_set()
         
-        upi_string = f"upi://pay?pa=aegispharm@icici&pn=AegisPharm&am={total:.2f}&cu=INR"
-        qr_widget = DynamicUPIQR(win, upi_string=upi_string, amount=total, payee_name="AegisPharm Healthcare", size=240)
+        upi_string = f"upi://pay?pa=tqmpharm@icici&pn=TQM Pharm&am={total:.2f}&cu=INR"
+        qr_widget = DynamicUPIQR(win, upi_string=upi_string, amount=total, payee_name="TQM Pharm Healthcare", size=240)
         qr_widget.pack(pady=10)
         
         status_lbl = ctk.CTkLabel(win, text="⏳ Waiting for customer UPI app authorization...", font=FONTS["small_bold"], text_color=COLORS["commerce"])
@@ -751,7 +751,7 @@ class CashierDashboardView(ctk.CTkFrame):
         txt_box.pack(fill="both", expand=True, padx=20, pady=(16, 10))
         
         receipt_text = f"""==================================================
-           AEGISPHARM HEALTHCARE PVT LTD          
+           TQM PHARM HEALTHCARE PVT LTD          
      Apex Central - Branch #01, Navi Mumbai       
          GSTIN: 27AABCA1234F1Z5 | FSSAI: 115200   
 ==================================================
@@ -787,7 +787,7 @@ CGST (6%):                             ₹ {inv_data['gst_amount']/2:>8.2f}
 SGST (6%):                             ₹ {inv_data['gst_amount']/2:>8.2f}
 TOTAL AMOUNT PAYABLE:                  ₹ {inv_data['total_amount']:>8.2f}
 ==================================================
-      Thank You for Shopping with AegisPharm!     
+      Thank You for Shopping with TQM Pharm!     
    Medicines once sold cannot be returned without 
               valid batch seal & receipt.         
 ==================================================

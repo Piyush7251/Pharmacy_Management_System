@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Master Suite Launcher & Application Hub.
+TQM Pharm Enterprise — Master Suite Launcher & Application Hub.
 Allows you to start the Central Gateway Server and launch individual role-based desktop applications
 (Admin, Pharmacist, Cashier, Inventory, Delivery) or run them all concurrently.
 """
@@ -56,7 +56,7 @@ class MasterSuiteLauncher(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("AegisPharm Enterprise — Multi-App Control Portal")
+        self.title("TQM Pharm Enterprise — Multi-App Control Portal")
         self.geometry("1100x780")
         self.minsize(900, 640)
         self.configure(fg_color=COLORS["bg_base"])
@@ -78,7 +78,7 @@ class MasterSuiteLauncher(ctk.CTk):
         hero.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
         hero.grid_columnconfigure(0, weight=1)
         
-        lbl_h1 = ctk.CTkLabel(hero, text="⚡ AegisPharm Enterprise Multi-App Suite", font=FONTS["h1"], text_color=COLORS["text_main"])
+        lbl_h1 = ctk.CTkLabel(hero, text="⚡ TQM Pharm Enterprise Multi-App Suite", font=FONTS["h1"], text_color=COLORS["text_main"])
         lbl_h1.pack(anchor="w", padx=20, pady=(16, 2))
         
         lbl_h2 = ctk.CTkLabel(

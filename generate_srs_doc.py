@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Software Requirements Specification (SRS) Generator
+TQM Pharm Enterprise — Software Requirements Specification (SRS) Generator
 Compliant with IEEE Std 830-1998 Standards and Review 1 Evaluation Rubric.
 Author: Piyush Bhatt (Amrapali University)
 """
@@ -136,7 +136,7 @@ def generate_srs():
     r1.font.bold = True
     r1.font.color.rgb = RGBColor(15, 23, 42)
 
-    r2 = cover_title.add_run("AegisPharm Enterprise — Clinical & Retail Pharmacy Operating System\n")
+    r2 = cover_title.add_run("TQM Pharm Enterprise — Clinical & Retail Pharmacy Operating System\n")
     r2.font.name = 'Calibri'
     r2.font.size = Pt(16)
     r2.font.bold = True
@@ -156,7 +156,7 @@ def generate_srs():
         ("Academic Institution", "Amrapali University, Haldwani / Nainital"),
         ("Course / Evaluation", "B.Tech Computer Science & Engineering — Review 1 (Setup & SRS)"),
         ("Project Candidate", "Piyush Bhatt (B.Tech CSE)"),
-        ("Project Title", "AegisPharm Enterprise (Zero-Defect Pharmacy POS & Clinical Management)"),
+        ("Project Title", "TQM Pharm Enterprise (Zero-Defect Pharmacy POS & Clinical Management)"),
         ("Document Version", "Version 1.0.0 (Release Candidate - Review 1 Submission)"),
         ("Date of Submission", "October 20, 2026")
     ]
@@ -174,7 +174,7 @@ def generate_srs():
     add_styled_heading(doc, "1. Introduction", level=1)
     
     add_styled_heading(doc, "1.1 Purpose", level=2)
-    add_body_p(doc, "This Software Requirements Specification (SRS) document details the complete functional and non-functional specifications for AegisPharm Enterprise, an enterprise-grade clinical and retail pharmacy operating system. This document is formulated in accordance with the IEEE Std 830-1998 standard to serve as the definitive contract between system developers, quality assurance teams, academic evaluators at Amrapali University, and clinical pharmacy domain stakeholders for Review 1: Setup & SRS / Working Application / Demo.")
+    add_body_p(doc, "This Software Requirements Specification (SRS) document details the complete functional and non-functional specifications for TQM Pharm Enterprise, an enterprise-grade clinical and retail pharmacy operating system. This document is formulated in accordance with the IEEE Std 830-1998 standard to serve as the definitive contract between system developers, quality assurance teams, academic evaluators at Amrapali University, and clinical pharmacy domain stakeholders for Review 1: Setup & SRS / Working Application / Demo.")
 
     add_styled_heading(doc, "1.2 Document Conventions", level=2)
     add_body_p(doc, "This specification adheres to the following typographical and operational conventions:")
@@ -186,7 +186,7 @@ def generate_srs():
     add_body_p(doc, "This document is engineered for academic evaluators, university project committees, pharmaceutical software developers, system auditors, and pharmacy managers. Readers evaluating system baseline and architecture should focus on Sections 2 and 6. Evaluators assessing functionality, clinical safety, and demo workflows should review Sections 3 and 7.")
 
     add_styled_heading(doc, "1.4 Project Scope", level=2)
-    add_body_p(doc, "AegisPharm Enterprise bridges the critical operational chasm between frontline pharmacy retail point-of-sale (POS) operations, automated First-Expiry, First-Out (FEFO) inventory control, Clinical Decision Support Systems (CDSS), Schedule H1/X narcotic statutory registers, IoT cold-chain temperature telemetry, and end-of-day financial cash reconciliation. The application eliminates the 3.2% manual error rate in retail pharmacy operations by enforcing deterministic software quality controls (Poka-Yoke) at every transaction boundary.")
+    add_body_p(doc, "TQM Pharm Enterprise bridges the critical operational chasm between frontline pharmacy retail point-of-sale (POS) operations, automated First-Expiry, First-Out (FEFO) inventory control, Clinical Decision Support Systems (CDSS), Schedule H1/X narcotic statutory registers, IoT cold-chain temperature telemetry, and end-of-day financial cash reconciliation. The application eliminates the 3.2% manual error rate in retail pharmacy operations by enforcing deterministic software quality controls (Poka-Yoke) at every transaction boundary.")
 
     add_styled_heading(doc, "1.5 References & Applicable Standards", level=2)
     add_bullet_p(doc, "IEEE Std 830-1998: ", "Recommended Practice for Software Requirements Specifications.")
@@ -198,7 +198,7 @@ def generate_srs():
     add_styled_heading(doc, "2. Overall Description", level=1)
 
     add_styled_heading(doc, "2.1 Product Perspective & Baseline Understanding", level=2)
-    add_body_p(doc, "AegisPharm Enterprise is engineered as a unified, dual-interface clinical operating environment offering both an enterprise native desktop application (powered by CustomTkinter and Edge Chromium WebView2) and a cloud-ready web portal (powered by FastAPI, Uvicorn, and HTML5/CSS3). Both interfaces operate against a single, ACID-compliant local-first SQLite relational database engine, ensuring flawless zero-downtime offline continuity while simultaneously supporting networked multi-terminal deployment across counter workstations, inwarding bays, and delivery dispatch docks.")
+    add_body_p(doc, "TQM Pharm Enterprise is engineered as a unified, dual-interface clinical operating environment offering both an enterprise native desktop application (powered by CustomTkinter and Edge Chromium WebView2) and a cloud-ready web portal (powered by FastAPI, Uvicorn, and HTML5/CSS3). Both interfaces operate against a single, ACID-compliant local-first SQLite relational database engine, ensuring flawless zero-downtime offline continuity while simultaneously supporting networked multi-terminal deployment across counter workstations, inwarding bays, and delivery dispatch docks.")
 
     add_styled_heading(doc, "2.2 Problem Formulation & Quality Objectives", level=2)
     add_body_p(doc, "Traditional retail pharmacy management software packages in India suffer from severe operational shortcomings:")
@@ -207,7 +207,7 @@ def generate_srs():
     add_bullet_p(doc, "Cold-Chain Thermal Degradation: ", "Vaccines and insulins (2°C–8°C) are stored without continuous telemetry or automated excursion alarm logging.")
     add_bullet_p(doc, "Regulatory Non-Compliance: ", "Schedule H1 and X narcotics are recorded in paper registers with frequent missing doctor registration numbers or unverified dispensing.")
     add_bullet_p(doc, "Cash Till Discrepancies: ", "Unmonitored cash drawers and lack of shift-end reconciliation result in unaccounted financial leakages.")
-    add_body_p(doc, "Quality Objectives: Under Total Quality Management (TQM) principles, AegisPharm establishes measurable quality goals: achieve 100% CDSS contraindication interception before dispensing, zero expired batch dispatches via strict automated FEFO ranking, 100% digital Schedule X audit traceability, and sub-second financial Z-report balancing.")
+    add_body_p(doc, "Quality Objectives: Under Total Quality Management (TQM) principles, TQM Pharm establishes measurable quality goals: achieve 100% CDSS contraindication interception before dispensing, zero expired batch dispatches via strict automated FEFO ranking, 100% digital Schedule X audit traceability, and sub-second financial Z-report balancing.")
 
     add_styled_heading(doc, "2.3 User Classes and Role-Based Access Control (RBAC)", level=2)
     add_body_p(doc, "The system defines 5 distinct operational user personas, each shielded by strict Role-Based Access Control:")
@@ -271,7 +271,7 @@ def generate_srs():
     add_styled_heading(doc, "4. External Interface Requirements", level=1)
 
     add_styled_heading(doc, "4.1 User Interfaces", level=2)
-    add_body_p(doc, "AegisPharm provides an ergonomic clinical interface adhering to WCAG 2.1 AA accessibility guidelines. The interface defaults to an ultra-clean Light/White aesthetic with high-contrast slate borders, crisp typography, and standard clinical color-coding (Green = In Stock/Safe, Amber = Warning/Near-Expiry, Red = Critical/Contraindication, Blue = Information). An instant 1-click Dark Mode toggle is available on both login and dashboard navigation headers.")
+    add_body_p(doc, "TQM Pharm provides an ergonomic clinical interface adhering to WCAG 2.1 AA accessibility guidelines. The interface defaults to an ultra-clean Light/White aesthetic with high-contrast slate borders, crisp typography, and standard clinical color-coding (Green = In Stock/Safe, Amber = Warning/Near-Expiry, Red = Critical/Contraindication, Blue = Information). An instant 1-click Dark Mode toggle is available on both login and dashboard navigation headers.")
 
     add_styled_heading(doc, "4.2 Hardware Interfaces", level=2)
     add_bullet_p(doc, "Barcode Scanner: ", "Standard USB HID POS barcode readers transmitting keystrokes terminated with carriage return (ASCII 13) for instant SKU lookup.")
@@ -304,7 +304,7 @@ def generate_srs():
 
     # ------------------ SECTION 6: DATABASE & SYSTEM DESIGN ------------------
     add_styled_heading(doc, "6. Database & System Design Specification", level=1)
-    add_body_p(doc, "AegisPharm Enterprise utilizes a normalized 14-table relational database architecture managed under SQLite3. All tables enforce primary keys, check constraints, default values, and relational foreign key integrity.")
+    add_body_p(doc, "TQM Pharm Enterprise utilizes a normalized 14-table relational database architecture managed under SQLite3. All tables enforce primary keys, check constraints, default values, and relational foreign key integrity.")
 
     add_styled_heading(doc, "6.1 Data Dictionary (14 Relational Tables)", level=2)
 
@@ -507,19 +507,19 @@ def generate_srs():
 
     # ------------------ SECTION 7: VERIFICATION & TESTING ------------------
     add_styled_heading(doc, "7. Verification, Validation & Automated Testing", level=1)
-    add_body_p(doc, "In compliance with Review 1 Working Application criteria, AegisPharm Enterprise includes a comprehensive automated test suite executed via pytest. The test suite guarantees functional correctness and data integrity across all core application layers:")
+    add_body_p(doc, "In compliance with Review 1 Working Application criteria, TQM Pharm Enterprise includes a comprehensive automated test suite executed via pytest. The test suite guarantees functional correctness and data integrity across all core application layers:")
     add_bullet_p(doc, "Unit & Integration Test Coverage: ", "24 test cases covering staff authentication, CDSS interaction detection, FEFO batch sorting, inventory deduction atomic transactions, Z-Report variance calculation, and FastAPI REST endpoints.")
     add_bullet_p(doc, "Passing Status: ", "24 passed, 0 failed, 0 errors in 7.84 seconds execution time.")
     add_bullet_p(doc, "Zero-Defect Verification: ", "Automated assertions prevent negative stock levels, block expired medication dispensing, and ensure foreign key consistency across all 14 tables.")
 
     # Save Word Document
-    docx_path = os.path.abspath("SRS_AegisPharm_Enterprise.docx")
+    docx_path = os.path.abspath("SRS_TQM_Pharm_Enterprise.docx")
     doc.save(docx_path)
     print(f"[SUCCESS] SRS Document generated at: {docx_path}")
 
     # Convert to PDF via Word COM
     try:
-        pdf_path = os.path.abspath("SRS_AegisPharm_Enterprise.pdf")
+        pdf_path = os.path.abspath("SRS_TQM_Pharm_Enterprise.pdf")
         word = win32com.client.Dispatch("Word.Application")
         doc_com = word.Documents.Open(docx_path)
         doc_com.SaveAs(pdf_path, FileFormat=17) # 17 = wdExportFormatPDF

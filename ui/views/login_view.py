@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Modern Dual-Theme Login Screen (Default: Clean White Mode).
+TQM Pharm Enterprise — Modern Dual-Theme Login Screen (Default: Clean White Mode).
 Supports instant theme switching between Light and Dark mode, show/hide password toggle,
 and 1-click demo role logins.
 """
@@ -57,7 +57,7 @@ class LoginView(ctk.CTkFrame):
         
         lbl_logo = ctk.CTkLabel(
             brand_box,
-            text="💊 AegisPharm",
+            text="💊 TQM Pharm",
             font=FONTS["h1"],
             text_color=COLORS["clinical"]
         )

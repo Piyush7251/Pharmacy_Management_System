@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Executive 18-Slide TQM Master Presentation Generator.
+TQM Pharm Enterprise — Executive 18-Slide TQM Master Presentation Generator.
 Author: Piyush Bhatt, Amrapali University.
 Generates an executive, concise 18-slide presentation synthesizing all Review 1 & 2 topics:
 Vision, Mission, Quality Objectives, Process Map, SIPOC, Stakeholders, Goal Q01,
@@ -167,7 +167,7 @@ def build_compact_deck():
     p0.space_after = Pt(12)
 
     p1 = tf.add_paragraph()
-    p1.text = "AegisPharm Enterprise"
+    p1.text = "TQM Pharm Enterprise"
     p1.font.size = Pt(40)
     p1.font.bold = True
     p1.font.color.rgb = TEXT_WHITE
@@ -682,7 +682,7 @@ def build_compact_deck():
         p3.font.color.rgb = TEXT_MUTED
 
     benchmarks = [
-        ("Quality Dimension", "Traditional Retail Pharmacy (Manual)", "AegisPharm Enterprise (TQM Driven)"),
+        ("Quality Dimension", "Traditional Retail Pharmacy (Manual)", "TQM Pharm Enterprise (TQM Driven)"),
         ("Prescription Safety", "Manual check; vulnerable to handwriting errors", "Automated CDSS cross-checks with patient allergy EHR"),
         ("Inventory Picking", "Random or FIFO; older batches expire on shelves", "Algorithmic FEFO (First-Expiry, First-Out) guarantee"),
         ("Cold-Chain Monitoring", "Infrequent manual thermometer checks; silent loss", "Continuous 30s IoT telemetry with automatic alarm alerts"),
@@ -693,7 +693,7 @@ def build_compact_deck():
     tf_b = tb_b.text_frame
     tf_b.word_wrap = True
     p = tf_b.paragraphs[0]
-    p.text = "📊 TRADITIONAL PHARMACY VS. AEGISPHARM TQM BENCHMARK"
+    p.text = "📊 TRADITIONAL PHARMACY VS. TQM PHARM TQM BENCHMARK"
     p.font.size = Pt(12)
     p.font.bold = True
     p.font.color.rgb = NAVY_DARK
@@ -705,7 +705,7 @@ def build_compact_deck():
         p.font.bold = (r_idx == 0)
         p.font.color.rgb = TEAL_ACCENT if r_idx == 0 else TEXT_MAIN
         p.space_after = Pt(2)
-    add_notes(s12, "Empirical quality metrics prove that AegisPharm eliminates common manual dispensary vulnerabilities.")
+    add_notes(s12, "Empirical quality metrics prove that TQM Pharm eliminates common manual dispensary vulnerabilities.")
 
     # =========================================================================
     # SLIDE 13: Quality Analysis Tools: Pareto (80/20) & Fishbone
@@ -1063,13 +1063,13 @@ def build_compact_deck():
     pg3.font.color.rgb = RGBColor(148, 163, 184)
     add_notes(s18, "Closing statement: Review 1 is 100% delivered. Deliver the golden sentence and open for questions.")
 
-    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pptx")
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM_Pharm_Presentation_Piyush_Bhatt.pptx")
     prs.save(output_path)
     print(f"[SUCCESS] Compact 18-Slide PowerPoint generated successfully at: {output_path}")
 
     # Export to PDF via PowerPoint COM
     try:
-        pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pdf")
+        pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM_Pharm_Presentation_Piyush_Bhatt.pdf")
         ppt_app = win32com.client.Dispatch("PowerPoint.Application")
         deck = ppt_app.Presentations.Open(os.path.abspath(output_path), WithWindow=False)
         deck.SaveAs(os.path.abspath(pdf_path), 32)

@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Dynamic UPI QR Code Canvas Component.
+TQM Pharm Enterprise — Dynamic UPI QR Code Canvas Component.
 Renders a high-contrast, authentic QR matrix with animated scanning guides,
 countdown timer, and realistic UPI payment format.
 """
@@ -10,7 +10,7 @@ import hashlib
 from ui.theme import COLORS, FONTS
 
 class DynamicUPIQR(ctk.CTkFrame):
-    def __init__(self, master, upi_string="upi://pay?pa=aegispharm@icici", amount=0.0, payee_name="AegisPharm Healthcare", size=220):
+    def __init__(self, master, upi_string="upi://pay?pa=tqmpharm@icici", amount=0.0, payee_name="TQM Pharm Healthcare", size=220):
         super().__init__(master, fg_color="transparent")
         self.upi_string = upi_string
         self.amount = amount
@@ -74,7 +74,7 @@ class DynamicUPIQR(ctk.CTkFrame):
         
         ctk.CTkLabel(
             info_box,
-            text=f"VPA: aegispharm@icici • {self.payee_name}",
+            text=f"VPA: tqmpharm@icici • {self.payee_name}",
             font=("Segoe UI", 10),
             text_color="#64748B"
         ).pack(pady=(0, 4))

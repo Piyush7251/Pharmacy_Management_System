@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Review 1 & 2 Complete Master Deck Generator.
+TQM Pharm Enterprise — Review 1 & 2 Complete Master Deck Generator.
 Author: Piyush Bhatt, Amrapali University.
 Generates an executive-level 79-slide widescreen (16:9) PowerPoint presentation (.pptx)
 strictly structured around the exact headings and topics from the university demonstration syllabus:
@@ -180,7 +180,7 @@ def build_presentation():
     p1.space_after = Pt(12)
 
     p2 = tf.add_paragraph()
-    p2.text = "Pharmacy Management System (AegisPharm Enterprise)\nQuality Goal: Q01 Improve Reliability & Zero-Defects"
+    p2.text = "Pharmacy Management System (TQM Pharm Enterprise)\nQuality Goal: Q01 Improve Reliability & Zero-Defects"
     p2.font.size = Pt(16)
     p2.font.color.rgb = RGBColor(148, 163, 184)
 
@@ -386,7 +386,7 @@ def build_presentation():
         ("Supplier", "Received quantity recorded against Purchase Order (GRN). Payment terms tracking.", AMBER_WARN),
         ("Auditor / Inspector", "Who changed stock or sold what. Immutable 21 CFR Part 11 audit trails & narcotic CSV export.", CORAL_DANGER)
     ])
-    add_notes(s6, "Every stakeholder has explicit functional and quality requirements addressed by AegisPharm.")
+    add_notes(s6, "Every stakeholder has explicit functional and quality requirements addressed by TQM Pharm.")
 
     # =========================================================================
     # SLIDE 7: Measurable requirements (viva)
@@ -442,7 +442,7 @@ def build_presentation():
         ("Error Recovery", "Reliability. ACID transaction integrity; no broken or corrupted bill.", AMBER_WARN),
         ("Auto Backup", "Reliability & Resilience. Data is never lost; disaster recovery enabled.", PURPLE_ACCENT)
     ])
-    add_notes(s10, "Every software feature in AegisPharm maps directly to a formal TQM quality principle.")
+    add_notes(s10, "Every software feature in TQM Pharm maps directly to a formal TQM quality principle.")
 
     # =========================================================================
     # SLIDE 11: Crucial mapping (say this)
@@ -820,7 +820,7 @@ def build_presentation():
     set_bg(s31)
     add_header(s31, "config / settings.py — Values that may change")
     cfg_data = [
-        ("APP_NAME", "AegisPharm Enterprise"),
+        ("APP_NAME", "TQM Pharm Enterprise"),
         ("DB_PATH", "data/pharmacy_system.db"),
         ("EXPIRY_WARNING_DAYS", "30 (Critical Red) / 90 (Attention Amber)"),
         ("REORDER_LEVEL", "20 units (Automated low stock trigger)"),
@@ -977,7 +977,7 @@ def build_presentation():
         ("STF-05", "Suresh Kumar", "delivery", "Delivery", "Active")
     ]
     add_table_slide(s37, "users table — example", ["user_id", "name", "username", "role", "status"], users_data, [1.8, 3.2, 2.2, 2.2, 1.933])
-    add_notes(s37, "Concrete data showing all 5 active operational roles in AegisPharm.")
+    add_notes(s37, "Concrete data showing all 5 active operational roles in TQM Pharm.")
 
     # =========================================================================
     # SLIDE 38: users table — other columns
@@ -1938,13 +1938,13 @@ def build_presentation():
     p_end.font.color.rgb = RGBColor(148, 163, 184)
     add_notes(s79, "Memorize this slide for your closing statement: The UI never writes SQL. Validation stops bad data. Audit records who did what. Expired stock cannot be sold. Logs become Pareto, FMEA, PDCA.")
 
-    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pptx")
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM Pharm_TQM_Presentation_Piyush_Bhatt.pptx")
     prs.save(output_path)
     print(f"[SUCCESS] Complete 79-Slide PowerPoint generated successfully at: {output_path}")
 
     # Export to PDF via PowerPoint COM
     try:
-        pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pdf")
+        pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM Pharm_TQM_Presentation_Piyush_Bhatt.pdf")
         ppt_app = win32com.client.Dispatch("PowerPoint.Application")
         deck = ppt_app.Presentations.Open(os.path.abspath(output_path), WithWindow=False)
         deck.SaveAs(os.path.abspath(pdf_path), 32)

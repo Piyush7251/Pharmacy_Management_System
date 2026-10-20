@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Complete Admin Command Center & Store Analytics Dashboard.
+TQM Pharm Enterprise — Complete Admin Command Center & Store Analytics Dashboard.
 Full features:
 - Staff User & RBAC Management (Add/Edit ID, Password, Role, Branch, Status with Search)
 - Live Online Terminals & Presence Heartbeat Telemetry Monitor
@@ -261,7 +261,7 @@ class AdminDashboardView(ctk.CTkFrame):
             ("Full Name:", "ent_name", "Dr. Anjali Deshmukh"),
             ("Username:", "ent_username", "anjali.pharma"),
             ("Password:", "ent_password", "pharma123"),
-            ("Email:", "ent_email", "anjali@aegispharm.com"),
+            ("Email:", "ent_email", "anjali@tqmpharm.com"),
             ("Phone:", "ent_phone", "+91 98201 00000"),
             ("Branch:", "ent_branch", "Apex Central - Branch #01")
         ]
@@ -514,7 +514,7 @@ class AdminDashboardView(ctk.CTkFrame):
             title="Export Sales Report",
             defaultextension=".csv",
             filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
-            initialfile="AegisPharm_Daily_Sales.csv"
+            initialfile="TQM Pharm_Daily_Sales.csv"
         )
         if path:
             fields = ["invoice_id", "timestamp", "patient_name", "cashier_name", "payment_method", "subtotal", "gst_amount", "total_amount"]
@@ -627,7 +627,7 @@ class AdminDashboardView(ctk.CTkFrame):
             title="Export Activity Logs",
             defaultextension=".csv",
             filetypes=[("CSV File", "*.csv"), ("All Files", "*.*")],
-            initialfile="AegisPharm_Activity_Logs.csv"
+            initialfile="TQM Pharm_Activity_Logs.csv"
         )
         if path:
             success, msg = export_activity_logs_to_csv(path)

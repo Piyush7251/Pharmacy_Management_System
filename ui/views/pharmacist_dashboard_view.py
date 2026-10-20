@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Complete Pharmacist Clinical & Dispensing Dashboard.
+TQM Pharm Enterprise — Complete Pharmacist Clinical & Dispensing Dashboard.
 Full features:
 - eRx Prescription Intake & Searchable Queue
 - CDSS Clinical Decision Support System:

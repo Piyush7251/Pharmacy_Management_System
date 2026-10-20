@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Cashier POS & Billing Terminal (Standalone).
+TQM Pharm Enterprise — Cashier POS & Billing Terminal (Standalone).
 Provides complete access to:
   1. Express Barcode & Catalog POS Counter
   2. 1-Click Approved Prescription Queue Import
@@ -27,7 +27,7 @@ class CashierPOSApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("💳 AegisPharm — Cashier POS & Express Billing Terminal #01")
+        self.title("💳 TQM Pharm — Cashier POS & Express Billing Terminal #01")
         self.geometry("1400x900")
         self.minsize(1100, 720)
         self.configure(fg_color=COLORS["bg_base"])

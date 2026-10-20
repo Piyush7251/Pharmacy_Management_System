@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Admin Command Center & Store Operations (Standalone).
+TQM Pharm Enterprise — Admin Command Center & Store Operations (Standalone).
 Provides complete access to:
   1. Staff User Management & Role-Based Access Control (RBAC)
   2. Real-Time Staff Online Presence & Heartbeat Telemetry
@@ -26,7 +26,7 @@ class AdminCommandCenter(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("👑 AegisPharm — Enterprise Admin Command Center")
+        self.title("👑 TQM Pharm — Enterprise Admin Command Center")
         self.geometry("1400x900")
         self.minsize(1150, 720)
         self.configure(fg_color=COLORS["bg_base"])

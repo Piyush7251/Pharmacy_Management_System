@@ -1,4 +1,4 @@
-# 💊 AegisPharm Enterprise — Pharmacy Management System
+# 💊 TQM Pharm Enterprise — Pharmacy Management System
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![UI-CustomTkinter](https://img.shields.io/badge/GUI-CustomTkinter-brightgreen.svg)](https://github.com/TomSchimansky/CustomTkinter)
@@ -14,7 +14,7 @@ Features a **clean White/Light theme by default** with a **1-click instant Dark 
 
 ## 🎨 Clean Dual Theming (Default: White / Light Mode)
 
-AegisPharm features an intuitive, modern clinical UI:
+TQM Pharm features an intuitive, modern clinical UI:
 - **Default Appearance**: **White / Light Mode** with clean slate borders, crisp typography, and high-readability clinical status badges.
 - **Dynamic Theme Switcher**: Instant toggle button (`🌙 Dark Mode` / `☀️ Light Mode`) in both the login screen and the global top navigation bar across all dashboards.
 - **Zero-Lag Architecture**: Database operations and presence telemetry run on asynchronous background threads, ensuring the UI never stutters or freezes.
@@ -165,7 +165,7 @@ python tests/test_all_features.py
 
 ## ⚙️ Configuration & System Settings
 
-AegisPharm includes a centralized configuration subsystem with file-based persistence:
+TQM Pharm includes a centralized configuration subsystem with file-based persistence:
 - **`config.json`**: Active JSON configuration file controlling store profile, licensing, inventory alert thresholds, receipt templates, and paths.
 - **`config.example.json`**: Template configuration file for onboarding new store locations or branches.
 - **`config/settings.py`**: Thread-safe `SettingsManager` with strongly typed data classes (`StoreConfig`, `InventoryConfig`, `ReceiptConfig`, `SystemConfig`).

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import json
 from core.db import get_connection, init_db
 
-app = FastAPI(title="AegisPharm Central Gateway API", version="2.0.0")
+app = FastAPI(title="TQM Pharm Central Gateway API", version="2.0.0")
 
 # Initialize database
 init_db()
@@ -47,7 +47,7 @@ class AuditEntry(BaseModel):
 
 @app.get("/")
 def root():
-    return {"system": "AegisPharm Enterprise Gateway", "status": "Running", "time": datetime.now().isoformat()}
+    return {"system": "TQM Pharm Enterprise Gateway", "status": "Running", "time": datetime.now().isoformat()}
 
 # --- PRESENCE & ONLINE MONITORING ENDPOINTS ---
 

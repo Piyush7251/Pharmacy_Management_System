@@ -23,7 +23,7 @@
         "loyalty_rate": 1.0
     },
     "system": {
-        "db_path": "C:\\Users\\piyush/.aegispharm/pharmacy_system.db",
+        "db_path": "C:\\Users\\piyush/.tqmpharm/pharmacy_system.db",
         "log_dir": "C:\\Users\\piyush\\Documents\\Pharmacy_Management_System\\logs",
         "backup_dir": "C:\\Users\\piyush\\Documents\\Pharmacy_Management_System\\backups",
         "server_url": "http://127.0.0.1:8000",

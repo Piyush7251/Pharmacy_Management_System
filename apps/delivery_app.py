@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Delivery Fleet & Logistics Tracker (Standalone).
+TQM Pharm Enterprise — Delivery Fleet & Logistics Tracker (Standalone).
 Provides complete access to:
   1. Active Dispatch Board (Packaging, Out for Delivery, Delivered)
   2. Electronic Proof of Delivery (e-POD) with 4-Digit Customer OTP Verification
@@ -25,7 +25,7 @@ class DeliveryFleetApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("🚚 AegisPharm — Delivery Fleet & e-POD Logistics Terminal")
+        self.title("🚚 TQM Pharm — Delivery Fleet & e-POD Logistics Terminal")
         self.geometry("1400x900")
         self.minsize(1100, 720)
         self.configure(fg_color=COLORS["bg_base"])

@@ -17,7 +17,7 @@ try:
     DB_PATH = os.path.abspath(os.path.expanduser(_cfg_db))
     DATA_DIR = os.path.dirname(DB_PATH)
 except Exception:
-    DATA_DIR = os.path.expanduser("~/.aegispharm")
+    DATA_DIR = os.path.expanduser("~/.tqmpharm")
     DB_PATH = os.path.join(DATA_DIR, "pharmacy_system.db")
 
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -280,11 +280,11 @@ def seed_initial_data(cursor):
     cursor.execute("SELECT COUNT(*) as count FROM staff")
     if cursor.fetchone()["count"] == 0:
         sample_staff = [
-            ("STF-01", "Dr. Rajesh Kulkarni", "Admin", "admin", "admin123", "admin@aegispharm.com", "+91 98201 00001", "Apex Central - Branch #01", "Active"),
-            ("STF-02", "Pooja Sharma, R.Ph", "Pharmacist", "pharmacist", "pharma123", "pooja.pharma@aegispharm.com", "+91 98201 00002", "Apex Central - Branch #01", "Active"),
-            ("STF-03", "Amit Deshmukh", "Cashier", "cashier", "cash123", "amit.pos@aegispharm.com", "+91 98201 00003", "Apex Central - Branch #01", "Active"),
-            ("STF-04", "Vikram Rathore", "Inventory Manager", "inventory", "inv123", "vikram.inv@aegispharm.com", "+91 98201 00004", "Apex Central - Branch #01", "Active"),
-            ("STF-05", "Ramesh Kumar", "Delivery Agent", "delivery", "deliv123", "ramesh.logistics@aegispharm.com", "+91 98201 00005", "Apex Central - Branch #01", "Active"),
+            ("STF-01", "Dr. Rajesh Kulkarni", "Admin", "admin", "admin123", "admin@tqmpharm.com", "+91 98201 00001", "Apex Central - Branch #01", "Active"),
+            ("STF-02", "Pooja Sharma, R.Ph", "Pharmacist", "pharmacist", "pharma123", "pooja.pharma@tqmpharm.com", "+91 98201 00002", "Apex Central - Branch #01", "Active"),
+            ("STF-03", "Amit Deshmukh", "Cashier", "cashier", "cash123", "amit.pos@tqmpharm.com", "+91 98201 00003", "Apex Central - Branch #01", "Active"),
+            ("STF-04", "Vikram Rathore", "Inventory Manager", "inventory", "inv123", "vikram.inv@tqmpharm.com", "+91 98201 00004", "Apex Central - Branch #01", "Active"),
+            ("STF-05", "Ramesh Kumar", "Delivery Agent", "delivery", "deliv123", "ramesh.logistics@tqmpharm.com", "+91 98201 00005", "Apex Central - Branch #01", "Active"),
         ]
         cursor.executemany("INSERT INTO staff VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", sample_staff)
 

@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Review 1: Setup, SRS & Working Application Presentation Generator.
+TQM Pharm Enterprise — Review 1: Setup, SRS & Working Application Presentation Generator.
 Author: Piyush Bhatt, Student at Amrapali University.
 Generates an executive-level 18-slide widescreen (16:9) PowerPoint presentation (.pptx)
 strictly structured around the Review 1 Evaluation Rubric with dedicated sections for:
@@ -116,7 +116,7 @@ def create_review1_deck():
     p0.space_after = Pt(12)
 
     p1 = tf1.add_paragraph()
-    p1.text = "AegisPharm Enterprise"
+    p1.text = "TQM Pharm Enterprise"
     p1.font.size = Pt(38)
     p1.font.bold = True
     p1.font.color.rgb = TEXT_WHITE
@@ -183,7 +183,7 @@ def create_review1_deck():
 
     add_notes(slide1, 
         "Good morning respected professors and project evaluators. I am Piyush Bhatt, student of Amrapali University. "
-        "Today I present Review 1 for my project, AegisPharm Enterprise. "
+        "Today I present Review 1 for my project, TQM Pharm Enterprise. "
         "This presentation covers our complete Project Setup, formal IEEE 830 Software Requirements Specification (SRS), "
         "System Architecture, Database Design, and demonstrates our fully operational, working application with live CRUD operations and TQM quality gates."
     )
@@ -198,7 +198,7 @@ def create_review1_deck():
     rubric_items = [
         ("1. Setup & Baseline", "Complete multi-tier project setup, dependency environment, and baseline clinical problem formulation.", "Slide 3, 5 | `main.py`, `web_app.py`", TEAL_ACCENT),
         ("2. Modular Folder Architecture", "Decoupled 6-tier directory layout separating core domain logic, UI bridges, API, and tests.", "Slide 5 | `core/`, `ui/`, `apps/`, `tests/`", BLUE_INFO),
-        ("3. Software Requirements (SRS)", "Formal IEEE Std 830-1998 compliant SRS document covering functional & non-functional requirements.", "Slides 7, 8, 9 | `SRS_AegisPharm_Enterprise.pdf`", PURPLE_ACCENT),
+        ("3. Software Requirements (SRS)", "Formal IEEE Std 830-1998 compliant SRS document covering functional & non-functional requirements.", "Slides 7, 8, 9 | `SRS_TQM Pharm_Enterprise.pdf`", PURPLE_ACCENT),
         ("4. Scope & User Roles (RBAC)", "5 distinct operational roles with workstation personas, terminal bindings, and route shields.", "Slide 6 | `staff`, `active_sessions`", NAVY_DARK),
         ("5. Relational Database Design", "14 normalized tables in SQLite with foreign keys, checks, default values, and ACID transactions.", "Slide 10 | `core/db.py` (14 Tables)", TEAL_ACCENT),
         ("6. Implemented CRUD Operations", "Comprehensive Create, Read, Update, Delete matrix verified across all 5 operational roles.", "Slide 11 | SRS Section 6.2 & Live Code", BLUE_INFO),
@@ -335,7 +335,7 @@ def create_review1_deck():
         "We begin with the Problem Statement and Baseline Understanding. "
         "In healthcare, software errors aren't just bugs—they threaten patient survival. "
         "Our baseline analysis identified 3 fundamental industry failures: clinical medication errors, thermal cold-chain spoilage, "
-        "and narcotic compliance/cash drawer shrinkage. AegisPharm solves these at the architectural root."
+        "and narcotic compliance/cash drawer shrinkage. TQM Pharm solves these at the architectural root."
     )
 
     # =========================================================================
@@ -534,7 +534,7 @@ def create_review1_deck():
 
     add_notes(slide6,
         "Scope and User Roles are essential criteria in Review 1. "
-        "AegisPharm establishes strict Role-Based Access Control (RBAC). "
+        "TQM Pharm establishes strict Role-Based Access Control (RBAC). "
         "Unlike generic retail software where any staff member can delete logs or sell narcotics, "
         "our 5 specialized personas enforce security and quality separation of concerns."
     )
@@ -594,9 +594,9 @@ def create_review1_deck():
     p.space_after = Pt(8)
 
     deliv_points = [
-        ("Formal Word Document (DOCX)", "Generated via `generate_srs_doc.py` using `python-docx` with professional typography, custom slate headers, and styled tables: `SRS_AegisPharm_Enterprise.docx`."),
-        ("Print-Ready PDF Specification", "Compiled via Microsoft Word COM automation (`wdExportFormatPDF = 17`) ensuring zero layout degradation for university examiners: `SRS_AegisPharm_Enterprise.pdf`."),
-        ("GitHub Markdown Version", "Full specification available directly within repository root for instant web viewing: `SRS_AegisPharm_Enterprise.md`."),
+        ("Formal Word Document (DOCX)", "Generated via `generate_srs_doc.py` using `python-docx` with professional typography, custom slate headers, and styled tables: `SRS_TQM Pharm_Enterprise.docx`."),
+        ("Print-Ready PDF Specification", "Compiled via Microsoft Word COM automation (`wdExportFormatPDF = 17`) ensuring zero layout degradation for university examiners: `SRS_TQM Pharm_Enterprise.pdf`."),
+        ("GitHub Markdown Version", "Full specification available directly within repository root for instant web viewing: `SRS_TQM Pharm_Enterprise.md`."),
         ("Traceability to Evaluation Rubric", "Every rubric criterion from Image 1, 2, and 3 is mapped directly to corresponding functional sections and automated verification assertions.")
     ]
     for d_title, d_desc in deliv_points:
@@ -765,7 +765,7 @@ def create_review1_deck():
             p.space_after = Pt(2)
 
     add_notes(slide9,
-        "Non-Functional Requirements are the engineering backbone of AegisPharm. "
+        "Non-Functional Requirements are the engineering backbone of TQM Pharm. "
         "We guarantee sub-50ms UI latency, complete Poka-Yoke mistake proofing, "
         "21 CFR Part 11 compliant audit immutability, and 100% adherence to Indian Drugs & Cosmetics Act and GST rules."
     )
@@ -850,7 +850,7 @@ def create_review1_deck():
 
     add_notes(slide10,
         "Here is the complete Database Design and System Integration. "
-        "AegisPharm utilizes SQLite 3 configured with WAL mode and foreign key constraints across 14 normalized tables. "
+        "TQM Pharm utilizes SQLite 3 configured with WAL mode and foreign key constraints across 14 normalized tables. "
         "Notice the specialized tables: narcotic_register for Schedule X compliance, temperature_logs for IoT cold-chain, and z_reports for cash reconciliation."
     )
 
@@ -899,7 +899,7 @@ def create_review1_deck():
 
     add_notes(slide11,
         "CRUD operations are explicitly evaluated in Review 1. "
-        "As shown in this comprehensive matrix, AegisPharm implements full Create, Read, Update, and Delete operations "
+        "As shown in this comprehensive matrix, TQM Pharm implements full Create, Read, Update, and Delete operations "
         "across all 7 major functional domains—Staff, Medicines, Prescriptions, Narcotics, Billing, Deliveries, and Z-Reports. "
         "Every operation is fully wired to SQLite and verified by automated tests."
     )
@@ -1333,14 +1333,14 @@ def create_review1_deck():
     tf_t.word_wrap = True
 
     p = tf_t.paragraphs[0]
-    p.text = "📊 TRADITIONAL PHARMACY VS. AEGISPHARM TQM BENCHMARK"
+    p.text = "📊 TRADITIONAL PHARMACY VS. TQM PHARM TQM BENCHMARK"
     p.font.size = Pt(13)
     p.font.bold = True
     p.font.color.rgb = NAVY_DARK
     p.space_after = Pt(6)
 
     comparisons = [
-        ("Quality Dimension", "Traditional Retail Pharmacy (Manual)", "AegisPharm Enterprise (TQM Driven)"),
+        ("Quality Dimension", "Traditional Retail Pharmacy (Manual)", "TQM Pharm Enterprise (TQM Driven)"),
         ("Prescription Safety", "Manual pharmacist check; vulnerable to handwriting errors", "Automated CDSS cross-checks with patient allergy EHR"),
         ("Inventory Picking", "Random or FIFO; older batches expire on shelves", "Algorithmic FEFO (First-Expiry, First-Out) guarantee"),
         ("Cold-Chain Monitoring", "Infrequent manual thermometer checks; silent spoilage", "Continuous 30s IoT telemetry with automatic alarm alerts"),
@@ -1362,7 +1362,7 @@ def create_review1_deck():
     add_notes(slide17,
         "Here are our empirical verification metrics: "
         "Our test suite passes 24 out of 24 automated unit and integration tests with a 100% success rate. "
-        "The comparison table below demonstrates how AegisPharm transforms traditional manual vulnerabilities into standardized, automated TQM safeguards."
+        "The comparison table below demonstrates how TQM Pharm transforms traditional manual vulnerabilities into standardized, automated TQM safeguards."
     )
 
     # =========================================================================
@@ -1443,7 +1443,7 @@ def create_review1_deck():
         "I thank my teachers at Amrapali University and invite your questions and live demonstration requests."
     )
 
-    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AegisPharm_TQM_Presentation_Piyush_Bhatt.pptx")
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TQM Pharm_TQM_Presentation_Piyush_Bhatt.pptx")
     prs.save(output_path)
     print(f"[SUCCESS] PowerPoint generated successfully at: {output_path}")
     return output_path

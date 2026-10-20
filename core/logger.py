@@ -30,7 +30,7 @@ _file_formatter = logging.Formatter(
 )
 _file_handler.setFormatter(_file_formatter)
 
-_logger = logging.getLogger("AegisPharm")
+_logger = logging.getLogger("TQM Pharm")
 _logger.setLevel(logging.INFO)
 if not _logger.handlers:
     _logger.addHandler(_file_handler)

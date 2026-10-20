@@ -1,5 +1,5 @@
 """
-AegisPharm Enterprise — Modern Web Application Server.
+TQM Pharm Enterprise — Modern Web Application Server.
 Powered by FastAPI & High-Performance Uvicorn Asynchronous Engine.
 Provides complete multi-role web access (Store Admin, Clinical Pharmacist, Cashier POS,
 Inventory & FEFO Manager, Delivery Rider) identical to the desktop application experience.
@@ -34,7 +34,7 @@ init_db()
 cfg = get_settings()
 
 app = FastAPI(
-    title=f"{cfg.store.name} — AegisPharm Enterprise Web",
+    title=f"{cfg.store.name} — TQM Pharm Enterprise Web",
     description="Next-Generation Enterprise Pharmacy Management Web System & CDSS API.",
     version="2.5",
     docs_url="/docs",
@@ -74,7 +74,7 @@ def resolve_bridge_and_user(session_token: Optional[str]):
 
 @app.get("/", response_class=FileResponse, tags=["Web Application"])
 async def serve_web_app():
-    """Serve the complete, reactive AegisPharm web application interface."""
+    """Serve the complete, reactive TQM Pharm web application interface."""
     web_file = os.path.join(BASE_DIR, "ui", "web", "index.html")
     if not os.path.exists(web_file):
         web_file = os.path.join(BASE_DIR, "ui", "desktop", "index.html")
@@ -88,7 +88,7 @@ async def health_check():
     """Uptime health check and system diagnostic status."""
     return {
         "status": "online",
-        "system": "AegisPharm Enterprise",
+        "system": "TQM Pharm Enterprise",
         "edition": "Web & Cloud Platform",
         "version": "2.5",
         "store": cfg.store.name,
@@ -155,7 +155,7 @@ async def dispatch_rpc_method(
     if not hasattr(bridge, method):
         raise HTTPException(
             status_code=404,
-            detail=f"Requested bridge method '{method}' does not exist on AegisPharm backend."
+            detail=f"Requested bridge method '{method}' does not exist on TQM Pharm backend."
         )
 
     target_func = getattr(bridge, method)
@@ -231,7 +231,7 @@ async def get_z_reports_history(limit: int = 50):
 # =========================================================================
 
 def run_web_server(host: str = "127.0.0.1", port: int = 8000, auto_open: bool = True):
-    """Launch the modern AegisPharm web application server with Uvicorn."""
+    """Launch the modern TQM Pharm web application server with Uvicorn."""
     import uvicorn
     import sys
 
@@ -243,7 +243,7 @@ def run_web_server(host: str = "127.0.0.1", port: int = 8000, auto_open: bool = 
 
     server_url = f"http://{host}:{port}"
     print("\n" + "=" * 68)
-    print("  [AegisPharm Enterprise] Web Application Server Online")
+    print("  [TQM Pharm Enterprise] Web Application Server Online")
     print(f"  Web Browser Access:   {server_url}")
     print(f"  API Documentation:    {server_url}/docs")
     print(f"  Store Location:       {cfg.store.name} ({cfg.store.branch})")
