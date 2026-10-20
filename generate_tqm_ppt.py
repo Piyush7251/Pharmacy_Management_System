@@ -1,20 +1,22 @@
 """
 AegisPharm Enterprise — Review 1: Setup, SRS & Working Application Presentation Generator.
 Author: Piyush Bhatt, Student at Amrapali University.
-Generates an executive-level 14-slide widescreen (16:9) PowerPoint presentation (.pptx)
-strictly structured around the Review 1 Evaluation Rubric:
-  - Problem Statement & Baseline Understanding
-  - Quality Objectives (TQM Alignment)
-  - Software Requirements Specification (SRS)
-  - Scope & User Roles (5 RBAC Personas)
-  - Modular Folder Architecture (6-tier Structure)
-  - Database Design & System Architecture (14 Relational Tables)
-  - Comprehensive CRUD Operations Matrix
-  - Modules & Core Features Aligned with Quality Goals
-  - Initial UI & Main System Workflow
-  - Poka-Yoke & Fail-Safe Engineering
-  - Working Application Live Demonstration Guide
-  - Verification & 24 Automated Test Results
+Generates an executive-level 18-slide widescreen (16:9) PowerPoint presentation (.pptx)
+strictly structured around the Review 1 Evaluation Rubric with dedicated sections for:
+  - Problem Statement & Baseline Clinical Understanding
+  - Quality Objectives & TQM Principles
+  - Modular Folder Architecture (6-tier structure)
+  - Scope & User Roles (5 RBAC personas)
+  - Software Requirements Specification (SRS) — IEEE 830 Standard, Functional & Non-Functional
+  - Database Design & Relational Data Dictionary (14 Tables)
+  - Comprehensive Role-Based CRUD Operations Matrix
+  - Core Modules Aligned with Quality Goals
+  - Initial UI Design & System Workflow (Dual Theming)
+  - Working Application Live Demonstration Guide (Setup, Credentials, Step-by-Step Script)
+  - Live Walkthrough: Clinical CDSS & POS Billing
+  - Live Walkthrough: Supply Chain, Cold-Chain IoT Alarm, OTP Delivery & Z-Report
+  - Verification & Automated Pytest Results (24/24 Passed)
+  - Examiner Viva Q&A Defense Guide & Conclusion
 """
 
 import os
@@ -45,6 +47,7 @@ def create_review1_deck():
     CORAL_DANGER = RGBColor(225, 29, 72)   # #E11D48
     AMBER_WARN = RGBColor(217, 119, 6)     # #D97706
     BLUE_INFO = RGBColor(2, 132, 199)      # #0284C7
+    PURPLE_ACCENT = RGBColor(124, 58, 237) # #7C3AED
 
     def add_header(slide, title_text, category_text="REVIEW 1 — SETUP, SRS & WORKING APPLICATION DEMO"):
         # Category pill
@@ -64,7 +67,7 @@ def create_review1_deck():
         tf_title.word_wrap = True
         p_title = tf_title.paragraphs[0]
         p_title.text = title_text
-        p_title.font.size = Pt(23)
+        p_title.font.size = Pt(22)
         p_title.font.bold = True
         p_title.font.color.rgb = NAVY_DARK
         p_title.font.name = "Segoe UI"
@@ -95,13 +98,11 @@ def create_review1_deck():
     slide1 = prs.slides.add_slide(blank_layout)
     set_slide_background(slide1, NAVY_DARK)
 
-    # Decorative Top Teal Strip
     top_strip = slide1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.15))
     top_strip.fill.solid()
     top_strip.fill.fore_color.rgb = TEAL_ACCENT
     top_strip.line.fill.background()
 
-    # Title Box
     t_box = slide1.shapes.add_textbox(Inches(1.0), Inches(1.3), Inches(11.3), Inches(3.5))
     tf1 = t_box.text_frame
     tf1.word_wrap = True
@@ -183,16 +184,75 @@ def create_review1_deck():
     add_notes(slide1, 
         "Good morning respected professors and project evaluators. I am Piyush Bhatt, student of Amrapali University. "
         "Today I present Review 1 for my project, AegisPharm Enterprise. "
-        "This presentation covers our complete Project Setup, Software Requirements Specification (SRS), System Architecture, Database Design, "
-        "and demonstrates our fully operational, working application with live CRUD operations and TQM quality gates."
+        "This presentation covers our complete Project Setup, formal IEEE 830 Software Requirements Specification (SRS), "
+        "System Architecture, Database Design, and demonstrates our fully operational, working application with live CRUD operations and TQM quality gates."
     )
 
     # =========================================================================
-    # SLIDE 2: PROBLEM STATEMENT & BASELINE UNDERSTANDING
+    # SLIDE 2: REVIEW 1 EVALUATION RUBRIC ALIGNMENT MATRIX
     # =========================================================================
     slide2 = prs.slides.add_slide(blank_layout)
     set_slide_background(slide2, BG_LIGHT)
-    add_header(slide2, "Problem Statement & Baseline Clinical Understanding", "RUBRIC: PROBLEM STATEMENT & BASELINE")
+    add_header(slide2, "Review 1 Rubric Alignment & Verification Matrix", "EVALUATION CRITERIA MAPPING")
+
+    rubric_items = [
+        ("1. Setup & Baseline", "Complete multi-tier project setup, dependency environment, and baseline clinical problem formulation.", "Slide 3, 5 | `main.py`, `web_app.py`", TEAL_ACCENT),
+        ("2. Modular Folder Architecture", "Decoupled 6-tier directory layout separating core domain logic, UI bridges, API, and tests.", "Slide 5 | `core/`, `ui/`, `apps/`, `tests/`", BLUE_INFO),
+        ("3. Software Requirements (SRS)", "Formal IEEE Std 830-1998 compliant SRS document covering functional & non-functional requirements.", "Slides 7, 8, 9 | `SRS_AegisPharm_Enterprise.pdf`", PURPLE_ACCENT),
+        ("4. Scope & User Roles (RBAC)", "5 distinct operational roles with workstation personas, terminal bindings, and route shields.", "Slide 6 | `staff`, `active_sessions`", NAVY_DARK),
+        ("5. Relational Database Design", "14 normalized tables in SQLite with foreign keys, checks, default values, and ACID transactions.", "Slide 10 | `core/db.py` (14 Tables)", TEAL_ACCENT),
+        ("6. Implemented CRUD Operations", "Comprehensive Create, Read, Update, Delete matrix verified across all 5 operational roles.", "Slide 11 | SRS Section 6.2 & Live Code", BLUE_INFO),
+        ("7. Working Application / Live Demo", "Operational native desktop UI (Edge Chromium) and web portal (FastAPI) demonstrated live.", "Slides 14, 15, 16 | `DEMO_GUIDE.md`", AMBER_WARN),
+        ("8. Verification & Test Suite", "24/24 passing automated tests verifying CDSS safety, FEFO logic, and Z-report math.", "Slide 17 | `pytest` (24/24 Passed in 7.8s)", CORAL_DANGER)
+    ]
+
+    card_w = Inches(5.75)
+    card_h = Inches(1.15)
+    for idx, (title, desc, loc, col) in enumerate(rubric_items):
+        r = idx // 2
+        c = idx % 2
+        x = Inches(0.8) + Inches(c * 5.95)
+        y = Inches(1.8) + Inches(r * 1.3)
+
+        add_card(slide2, x, y, card_w, card_h)
+        bar = slide2.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, Inches(0.12), card_h)
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = col
+        bar.line.fill.background()
+
+        tb = slide2.shapes.add_textbox(x + Inches(0.25), y + Inches(0.08), card_w - Inches(0.35), card_h - Inches(0.16))
+        tf = tb.text_frame
+        tf.word_wrap = True
+
+        p1 = tf.paragraphs[0]
+        p1.text = title
+        p1.font.size = Pt(11.5)
+        p1.font.bold = True
+        p1.font.color.rgb = NAVY_DARK
+
+        p2 = tf.add_paragraph()
+        p2.text = desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MAIN
+
+        p3 = tf.add_paragraph()
+        p3.text = f"📍 Verified: {loc}"
+        p3.font.size = Pt(9)
+        p3.font.bold = True
+        p3.font.color.rgb = col
+
+    add_notes(slide2,
+        "This slide explicitly maps all criteria from the university evaluation rubric directly to our project components. "
+        "Every single requirement—from setup and baseline understanding to formal SRS, modular architecture, "
+        "database design, CRUD matrix, working demo, and test suite—is 100% completed and provable."
+    )
+
+    # =========================================================================
+    # SLIDE 3: PROBLEM STATEMENT & BASELINE CLINICAL UNDERSTANDING
+    # =========================================================================
+    slide3 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide3, BG_LIGHT)
+    add_header(slide3, "Problem Statement & Baseline Clinical Understanding", "RUBRIC: PROBLEM STATEMENT & BASELINE")
 
     col_w = Inches(3.64)
     gap = Inches(0.4)
@@ -200,8 +260,8 @@ def create_review1_deck():
     h_pos = Inches(5.1)
 
     # Card 1: Clinical Medication Dispensing Failures
-    add_card(slide2, Inches(0.8), top_pos, col_w, h_pos)
-    tb1 = slide2.shapes.add_textbox(Inches(1.0), top_pos + Inches(0.2), col_w - Inches(0.4), h_pos - Inches(0.4))
+    add_card(slide3, Inches(0.8), top_pos, col_w, h_pos)
+    tb1 = slide3.shapes.add_textbox(Inches(1.0), top_pos + Inches(0.2), col_w - Inches(0.4), h_pos - Inches(0.4))
     tf1 = tb1.text_frame
     tf1.word_wrap = True
     p = tf1.paragraphs[0]
@@ -224,8 +284,8 @@ def create_review1_deck():
         p.space_after = Pt(6)
 
     # Card 2: Thermal Cold-Chain & Expiry Loss
-    add_card(slide2, Inches(0.8) + col_w + gap, top_pos, col_w, h_pos)
-    tb2 = slide2.shapes.add_textbox(Inches(1.0) + col_w + gap, top_pos + Inches(0.2), col_w - Inches(0.4), h_pos - Inches(0.4))
+    add_card(slide3, Inches(0.8) + col_w + gap, top_pos, col_w, h_pos)
+    tb2 = slide3.shapes.add_textbox(Inches(1.0) + col_w + gap, top_pos + Inches(0.2), col_w - Inches(0.4), h_pos - Inches(0.4))
     tf2 = tb2.text_frame
     tf2.word_wrap = True
     p = tf2.paragraphs[0]
@@ -248,8 +308,8 @@ def create_review1_deck():
         p.space_after = Pt(6)
 
     # Card 3: Regulatory Narcotics & Till Leakage
-    add_card(slide2, Inches(0.8) + (col_w + gap)*2, top_pos, col_w, h_pos)
-    tb3 = slide2.shapes.add_textbox(Inches(1.0) + (col_w + gap)*2, top_pos + Inches(0.2), col_w - Inches(0.4), h_pos - Inches(0.4))
+    add_card(slide3, Inches(0.8) + (col_w + gap)*2, top_pos, col_w, h_pos)
+    tb3 = slide3.shapes.add_textbox(Inches(1.0) + (col_w + gap)*2, top_pos + Inches(0.2), col_w - Inches(0.4), h_pos - Inches(0.4))
     tf3 = tb3.text_frame
     tf3.word_wrap = True
     p = tf3.paragraphs[0]
@@ -271,7 +331,7 @@ def create_review1_deck():
         p.font.color.rgb = TEXT_MAIN
         p.space_after = Pt(6)
 
-    add_notes(slide2,
+    add_notes(slide3,
         "We begin with the Problem Statement and Baseline Understanding. "
         "In healthcare, software errors aren't just bugs—they threaten patient survival. "
         "Our baseline analysis identified 3 fundamental industry failures: clinical medication errors, thermal cold-chain spoilage, "
@@ -279,11 +339,11 @@ def create_review1_deck():
     )
 
     # =========================================================================
-    # SLIDE 3: QUALITY OBJECTIVES & TQM ALIGNMENT
+    # SLIDE 4: QUALITY OBJECTIVES & TQM ALIGNMENT
     # =========================================================================
-    slide3 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide3, BG_LIGHT)
-    add_header(slide3, "Quality Objectives Aligned with TQM Principles", "RUBRIC: QUALITY OBJECTIVE")
+    slide4 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide4, BG_LIGHT)
+    add_header(slide4, "Quality Objectives Aligned with TQM Principles", "RUBRIC: QUALITY OBJECTIVE")
 
     objectives = [
         ("Objective 1: Zero Medication Dispensing Defects (Patient Focus)", 
@@ -307,14 +367,14 @@ def create_review1_deck():
     y_start = Inches(1.8)
     for i, (title, desc, color) in enumerate(objectives):
         y_pos = y_start + Inches(i * 1.05)
-        add_card(slide3, Inches(0.8), y_pos, Inches(11.733), card_h)
+        add_card(slide4, Inches(0.8), y_pos, Inches(11.733), card_h)
 
-        bar = slide3.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), y_pos, Inches(0.15), card_h)
+        bar = slide4.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), y_pos, Inches(0.15), card_h)
         bar.fill.solid()
         bar.fill.fore_color.rgb = color
         bar.line.fill.background()
 
-        tb = slide3.shapes.add_textbox(Inches(1.1), y_pos + Inches(0.08), Inches(11.2), card_h - Inches(0.16))
+        tb = slide4.shapes.add_textbox(Inches(1.1), y_pos + Inches(0.08), Inches(11.2), card_h - Inches(0.16))
         tf = tb.text_frame
         tf.word_wrap = True
 
@@ -329,154 +389,22 @@ def create_review1_deck():
         p2.font.size = Pt(11)
         p2.font.color.rgb = TEXT_MAIN
 
-    add_notes(slide3,
+    add_notes(slide4,
         "Here are our 5 foundational Quality Objectives, directly fulfilling the Review 1 rubric. "
         "Notice how each objective maps to a core TQM tenet: Zero dispensing defects represents Customer/Patient Focus; "
         "Cold-Chain and FEFO represent Process Quality; and the Daily Z-Report represents Fact-Based Management."
     )
 
     # =========================================================================
-    # SLIDE 4: SOFTWARE REQUIREMENTS SPECIFICATION (SRS) OVERVIEW
-    # =========================================================================
-    slide4 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide4, BG_LIGHT)
-    add_header(slide4, "Software Requirements Specification (SRS) — IEEE 830", "RUBRIC: SRS (REQUIREMENTS ENGINEERING)")
-
-    # Left Card: Functional Requirements (FR)
-    add_card(slide4, Inches(0.8), Inches(1.8), Inches(5.75), Inches(5.1))
-    tb_fr = slide4.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.35), Inches(4.7))
-    tf_fr = tb_fr.text_frame
-    tf_fr.word_wrap = True
-
-    p = tf_fr.paragraphs[0]
-    p.text = "📋 FUNCTIONAL REQUIREMENTS (FR)"
-    p.font.size = Pt(14)
-    p.font.bold = True
-    p.font.color.rgb = TEAL_ACCENT
-    p.space_after = Pt(10)
-
-    fr_items = [
-        "FR-01 (Authentication & RBAC): System shall enforce role-locked workstation sessions across 5 distinct staff personas.",
-        "FR-02 (eRx Intake & CDSS): System shall validate incoming digital prescriptions and trigger blocking alerts on allergen contraindications.",
-        "FR-03 (Schedule X Narcotics): System shall require Doctor DMC Reg No. and 4-digit Pharmacist PIN verification for controlled substances.",
-        "FR-04 (POS & Multi-Tender): System shall support 1-click verified eRx import, barcode search, dynamic UPI QR generation, and cash change calculation.",
-        "FR-05 (FEFO Batch Picker): System shall sort inventory batches by earliest calendar expiry and prevent dispensing expired SKUs.",
-        "FR-06 (Cold-Chain IoT): System shall log digital temperature every 30s and trigger visual/audio alarms when temperatures exceed 8.0°C.",
-        "FR-07 (Delivery e-POD): System shall require a 4-digit customer SMS OTP before an order can be marked as 'Delivered'.",
-        "FR-08 (Z-Report Close): System shall reconcile shift cash, UPI, card, and CGST/SGST tax liabilities into signed, immutable records."
-    ]
-    for item in fr_items:
-        p = tf_fr.add_paragraph()
-        p.text = "• " + item
-        p.font.size = Pt(10)
-        p.font.color.rgb = TEXT_MAIN
-        p.space_after = Pt(4)
-
-    # Right Card: Non-Functional Requirements (NFR)
-    add_card(slide4, Inches(6.75), Inches(1.8), Inches(5.75), Inches(5.1))
-    tb_nfr = slide4.shapes.add_textbox(Inches(6.95), Inches(2.0), Inches(5.35), Inches(4.7))
-    tf_nfr = tb_nfr.text_frame
-    tf_nfr.word_wrap = True
-
-    p = tf_nfr.paragraphs[0]
-    p.text = "⚡ NON-FUNCTIONAL REQUIREMENTS (NFR)"
-    p.font.size = Pt(14)
-    p.font.bold = True
-    p.font.color.rgb = BLUE_INFO
-    p.space_after = Pt(10)
-
-    nfr_items = [
-        "NFR-01 (Performance & Latency): System shall execute database queries in <50ms and render desktop UI at 60 FPS via Edge Chromium WebView2.",
-        "NFR-02 (Reliability & ACID Compliance): SQLite database shall ensure 100% ACID compliance with automatic timestamped snapshot backups.",
-        "NFR-03 (Security & Tamper-Proofing): System shall record all user actions in an immutable append-only audit trail and prevent unauthorized role switching.",
-        "NFR-04 (Maintainability & Modularity): System shall strictly follow a 6-tier modular folder architecture with decoupled bridge RPC layers.",
-        "NFR-05 (Regulatory Compliance): System shall comply with Indian Drugs & Cosmetics Act (Schedule H1/X) and GST electronic invoicing standards.",
-        "NFR-06 (Portability): System shall run natively as a high-performance Windows desktop application and as a modern web application."
-    ]
-    for item in nfr_items:
-        p = tf_nfr.add_paragraph()
-        p.text = "• " + item
-        p.font.size = Pt(10.5)
-        p.font.color.rgb = TEXT_MAIN
-        p.space_after = Pt(8)
-
-    add_notes(slide4,
-        "This slide presents the core of our Software Requirements Specification (SRS), formatted per IEEE 830 standards. "
-        "On the left, we outline our 8 essential Functional Requirements—covering RBAC, CDSS, narcotics, FEFO, IoT, and Z-report. "
-        "On the right, our Non-Functional Requirements guarantee sub-50ms latency, 60 FPS desktop rendering, and 100% ACID database reliability."
-    )
-
-    # =========================================================================
-    # SLIDE 5: SCOPE & USER ROLES (ROLE-BASED ACCESS CONTROL)
+    # SLIDE 5: MODULAR FOLDER ARCHITECTURE & 6-TIER BASELINE
     # =========================================================================
     slide5 = prs.slides.add_slide(blank_layout)
     set_slide_background(slide5, BG_LIGHT)
-    add_header(slide5, "Project Scope & Granular User Roles (RBAC)", "RUBRIC: SCOPE & USER ROLES")
-
-    roles = [
-        ("👑 Store Admin", "Console HQ", "• Manage staff accounts & passwords\n• Monitor live online terminal presence\n• Review daily Z-Report reconciliations\n• Execute SQLite snapshot backups\n• Inspect system audit stream"),
-        ("🩺 Clinical Pharmacist", "Clinical Bay", "• Review incoming e-Prescriptions queue\n• CDSS allergy shield cross-checks\n• Drug-drug interaction risk analysis\n• Schedule X narcotic PIN sign-off\n• Manage chronic patient refill cycles"),
-        ("💳 Cashier (POS)", "Billing Counter", "• 1-Click verified eRx import to cart\n• Auto FEFO nearest-expiry batch pick\n• Split payments (Cash, UPI QR, Card)\n• Calculate cash change return\n• Print 80mm GST tax receipt"),
-        ("📦 Inventory Manager", "Supply Hub", "• Multi-batch FEFO stock ledger\n• Record Goods Receipt Notes (GRN)\n• 24/7 Cold-chain IoT fridge monitor\n• Manage supplier directory & POs\n• Track low-stock alerts (≤20 units)"),
-        ("🛵 Delivery Agent", "Logistics Bay", "• Active dispatch Kanban route board\n• Verify cold-bag insulated packaging\n• 4-Digit customer OTP verification\n• Record electronic Proof-of-Delivery\n• Handover timestamp audit log")
-    ]
-
-    card_w = Inches(2.22)
-    for i, (r_name, r_term, r_resp) in enumerate(roles):
-        x = Inches(0.8) + Inches(i * 2.37)
-        c = add_card(slide5, x, Inches(1.8), card_w, Inches(5.1))
-
-        # Header Box
-        hb = slide5.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, Inches(1.8), card_w, Inches(0.7))
-        hb.fill.solid()
-        hb.fill.fore_color.rgb = NAVY_DARK if i % 2 == 0 else TEAL_ACCENT
-        hb.line.fill.background()
-
-        tb_h = slide5.shapes.add_textbox(x, Inches(1.85), card_w, Inches(0.6))
-        tf_h = tb_h.text_frame
-        tf_h.word_wrap = True
-        p = tf_h.paragraphs[0]
-        p.text = r_name
-        p.alignment = PP_ALIGN.CENTER
-        p.font.size = Pt(11)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_WHITE
-
-        tb_b = slide5.shapes.add_textbox(x + Inches(0.1), Inches(2.55), card_w - Inches(0.2), Inches(4.2))
-        tf_b = tb_b.text_frame
-        tf_b.word_wrap = True
-
-        p_term = tf_b.paragraphs[0]
-        p_term.text = f"Terminal: {r_term}"
-        p_term.font.size = Pt(10)
-        p_term.font.bold = True
-        p_term.font.color.rgb = TEXT_MUTED
-        p_term.space_after = Pt(8)
-
-        for line in r_resp.split('\n'):
-            p = tf_b.add_paragraph()
-            p.text = line
-            p.font.size = Pt(10)
-            p.font.color.rgb = TEXT_MAIN
-            p.space_after = Pt(4)
-
-    add_notes(slide5,
-        "Scope and User Roles are essential criteria in Review 1. "
-        "AegisPharm establishes strict Role-Based Access Control (RBAC). "
-        "Unlike generic retail software where any staff member can delete logs or sell narcotics, "
-        "our 5 specialized personas enforce security and quality separation of concerns."
-    )
-
-    # =========================================================================
-    # SLIDE 6: MODULAR FOLDER ARCHITECTURE & TECHNICAL BASELINE
-    # =========================================================================
-    slide6 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide6, BG_LIGHT)
-    add_header(slide6, "Modular Folder Architecture & Technical Baseline", "RUBRIC: MODULAR ARCHITECTURE")
+    add_header(slide5, "Modular Folder Architecture & 6-Tier Baseline", "RUBRIC: MODULAR ARCHITECTURE")
 
     # Left Card: Directory Tree
-    add_card(slide6, Inches(0.8), Inches(1.8), Inches(5.75), Inches(5.1))
-    tb_tree = slide6.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.35), Inches(4.7))
+    add_card(slide5, Inches(0.8), Inches(1.8), Inches(5.75), Inches(5.1))
+    tb_tree = slide5.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.35), Inches(4.7))
     tf_tree = tb_tree.text_frame
     tf_tree.word_wrap = True
 
@@ -512,8 +440,8 @@ def create_review1_deck():
         p.font.color.rgb = TEXT_MAIN
 
     # Right Card: Architecture Tiers & Decoupling
-    add_card(slide6, Inches(6.75), Inches(1.8), Inches(5.75), Inches(5.1))
-    tb_tiers = slide6.shapes.add_textbox(Inches(6.95), Inches(2.0), Inches(5.35), Inches(4.7))
+    add_card(slide5, Inches(6.75), Inches(1.8), Inches(5.75), Inches(5.1))
+    tb_tiers = slide5.shapes.add_textbox(Inches(6.95), Inches(2.0), Inches(5.35), Inches(4.7))
     tf_tiers = tb_tiers.text_frame
     tf_tiers.word_wrap = True
 
@@ -545,28 +473,318 @@ def create_review1_deck():
         p2.font.color.rgb = TEXT_MUTED
         p2.space_after = Pt(4)
 
-    add_notes(slide6,
+    add_notes(slide5,
         "Here we demonstrate our Modular Folder Architecture, answering the specific Review 1 criterion. "
         "The project is organized into clean, decoupled tiers: core logic, configuration, dual desktop/web UIs, tests, and backups. "
         "A single unified bridge serves both the desktop Edge Chromium WebView2 window and the FastAPI web server."
     )
 
     # =========================================================================
-    # SLIDE 7: DATABASE DESIGN & SYSTEM INTEGRATION
+    # SLIDE 6: SCOPE & GRANULAR USER ROLES (RBAC)
+    # =========================================================================
+    slide6 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide6, BG_LIGHT)
+    add_header(slide6, "Project Scope & Granular User Roles (RBAC)", "RUBRIC: SCOPE & USER ROLES")
+
+    roles = [
+        ("👑 Store Admin", "Console HQ", "• Manage staff accounts & passwords\n• Monitor live online terminal presence\n• Review daily Z-Report reconciliations\n• Execute SQLite snapshot backups\n• Inspect system audit stream"),
+        ("🩺 Clinical Pharmacist", "Clinical Bay", "• Review incoming e-Prescriptions queue\n• CDSS allergy shield cross-checks\n• Drug-drug interaction risk analysis\n• Schedule X narcotic PIN sign-off\n• Manage chronic patient refill cycles"),
+        ("💳 Cashier (POS)", "Billing Counter", "• 1-Click verified eRx import to cart\n• Auto FEFO nearest-expiry batch pick\n• Split payments (Cash, UPI QR, Card)\n• Calculate cash change return\n• Print 80mm GST tax receipt"),
+        ("📦 Inventory Manager", "Supply Hub", "• Multi-batch FEFO stock ledger\n• Record Goods Receipt Notes (GRN)\n• 24/7 Cold-chain IoT fridge monitor\n• Manage supplier directory & POs\n• Track low-stock alerts (≤20 units)"),
+        ("🛵 Delivery Agent", "Logistics Bay", "• Active dispatch Kanban route board\n• Verify cold-bag insulated packaging\n• 4-Digit customer OTP verification\n• Record electronic Proof-of-Delivery\n• Handover timestamp audit log")
+    ]
+
+    card_w = Inches(2.22)
+    for i, (r_name, r_term, r_resp) in enumerate(roles):
+        x = Inches(0.8) + Inches(i * 2.37)
+        c = add_card(slide6, x, Inches(1.8), card_w, Inches(5.1))
+
+        hb = slide6.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, Inches(1.8), card_w, Inches(0.7))
+        hb.fill.solid()
+        hb.fill.fore_color.rgb = NAVY_DARK if i % 2 == 0 else TEAL_ACCENT
+        hb.line.fill.background()
+
+        tb_h = slide6.shapes.add_textbox(x, Inches(1.85), card_w, Inches(0.6))
+        tf_h = tb_h.text_frame
+        tf_h.word_wrap = True
+        p = tf_h.paragraphs[0]
+        p.text = r_name
+        p.alignment = PP_ALIGN.CENTER
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = TEXT_WHITE
+
+        tb_b = slide6.shapes.add_textbox(x + Inches(0.1), Inches(2.55), card_w - Inches(0.2), Inches(4.2))
+        tf_b = tb_b.text_frame
+        tf_b.word_wrap = True
+
+        p_term = tf_b.paragraphs[0]
+        p_term.text = f"Terminal: {r_term}"
+        p_term.font.size = Pt(10)
+        p_term.font.bold = True
+        p_term.font.color.rgb = TEXT_MUTED
+        p_term.space_after = Pt(8)
+
+        for line in r_resp.split('\n'):
+            p = tf_b.add_paragraph()
+            p.text = line
+            p.font.size = Pt(10)
+            p.font.color.rgb = TEXT_MAIN
+            p.space_after = Pt(4)
+
+    add_notes(slide6,
+        "Scope and User Roles are essential criteria in Review 1. "
+        "AegisPharm establishes strict Role-Based Access Control (RBAC). "
+        "Unlike generic retail software where any staff member can delete logs or sell narcotics, "
+        "our 5 specialized personas enforce security and quality separation of concerns."
+    )
+
+    # =========================================================================
+    # SLIDE 7: SRS (PART 1) — IEEE 830 STANDARD & SPECIFICATION ARCHITECTURE
     # =========================================================================
     slide7 = prs.slides.add_slide(blank_layout)
     set_slide_background(slide7, BG_LIGHT)
-    add_header(slide7, "Database Design & System Integration (SQLite 3)", "RUBRIC: DATABASE / SYSTEM DESIGN")
+    add_header(slide7, "Software Requirements Specification (SRS) — IEEE 830", "RUBRIC: SOFTWARE REQUIREMENTS SPECIFICATION (SRS)")
 
-    # Table breakdown (2 Columns of 7 tables)
+    # Left Box: IEEE 830 Document Hierarchy
+    add_card(slide7, Inches(0.8), Inches(1.8), Inches(5.75), Inches(5.1))
+    tb_srs_hier = slide7.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.35), Inches(4.7))
+    tf_srs_hier = tb_srs_hier.text_frame
+    tf_srs_hier.word_wrap = True
+
+    p = tf_srs_hier.paragraphs[0]
+    p.text = "📜 IEEE STD 830-1998 SPECIFICATION STRUCTURE"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = NAVY_DARK
+    p.space_after = Pt(8)
+
+    srs_sections = [
+        ("Section 1: Introduction", "Defines system purpose, document conventions, stakeholder reading guidelines, and regulatory references (CDSCO, GAMP 5, 21 CFR Part 11)."),
+        ("Section 2: Overall Description", "Details system perspective, baseline problem formulation, 5 user classes with RBAC matrix, and operating environment constraints."),
+        ("Section 3: System Features & FRs", "Formal specification of 10 core Functional Requirements with exact input criteria, validation triggers, and expected outputs."),
+        ("Section 4: External Interfaces", "Specification of Hardware (USB HID scanners, 80mm ESC/POS printers, IoT probes) and Software (SQLite, FastAPI, WebView2) interfaces."),
+        ("Section 5: Non-Functional Requirements", "Quantifiable metrics for latency (<50ms), safety (Poka-Yoke CDSS blocking), security (SHA-256 RBAC), and 99.9% uptime."),
+        ("Section 6: Database & CRUD Design", "Normalized 14-table schema data dictionary, foreign key constraints, and comprehensive role-to-table CRUD permission matrix.")
+    ]
+    for s_title, s_desc in srs_sections:
+        p = tf_srs_hier.add_paragraph()
+        p.text = s_title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = TEAL_ACCENT
+
+        p2 = tf_srs_hier.add_paragraph()
+        p2.text = s_desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MAIN
+        p2.space_after = Pt(4)
+
+    # Right Box: Document Deliverables & Quality Gates
+    add_card(slide7, Inches(6.75), Inches(1.8), Inches(5.75), Inches(5.1))
+    tb_srs_deliv = slide7.shapes.add_textbox(Inches(6.95), Inches(2.0), Inches(5.35), Inches(4.7))
+    tf_srs_deliv = tb_srs_deliv.text_frame
+    tf_srs_deliv.word_wrap = True
+
+    p = tf_srs_deliv.paragraphs[0]
+    p.text = "📁 SRS DOCUMENTATION DELIVERABLES"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = BLUE_INFO
+    p.space_after = Pt(8)
+
+    deliv_points = [
+        ("Formal Word Document (DOCX)", "Generated via `generate_srs_doc.py` using `python-docx` with professional typography, custom slate headers, and styled tables: `SRS_AegisPharm_Enterprise.docx`."),
+        ("Print-Ready PDF Specification", "Compiled via Microsoft Word COM automation (`wdExportFormatPDF = 17`) ensuring zero layout degradation for university examiners: `SRS_AegisPharm_Enterprise.pdf`."),
+        ("GitHub Markdown Version", "Full specification available directly within repository root for instant web viewing: `SRS_AegisPharm_Enterprise.md`."),
+        ("Traceability to Evaluation Rubric", "Every rubric criterion from Image 1, 2, and 3 is mapped directly to corresponding functional sections and automated verification assertions.")
+    ]
+    for d_title, d_desc in deliv_points:
+        p = tf_srs_deliv.add_paragraph()
+        p.text = d_title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = NAVY_DARK
+
+        p2 = tf_srs_deliv.add_paragraph()
+        p2.text = d_desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MUTED
+        p2.space_after = Pt(6)
+
+    add_notes(slide7,
+        "Here we introduce our formal Software Requirements Specification (SRS), fulfilling the explicit Review 1 rubric item. "
+        "The specification strictly follows the IEEE Std 830-1998 structure across 6 core sections. "
+        "We have generated this document in both DOCX and print-ready PDF formats, providing an authoritative contract for all software requirements."
+    )
+
+    # =========================================================================
+    # SLIDE 8: SRS (PART 2) — FUNCTIONAL REQUIREMENTS (FR-01 TO FR-10)
+    # =========================================================================
+    slide8 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide8, BG_LIGHT)
+    add_header(slide8, "SRS Functional Requirements (FR-01 to FR-10)", "RUBRIC: FUNCTIONAL SPECIFICATIONS")
+
+    # 2 Columns of 5 FRs each
+    fr_col1 = [
+        ("FR-01: Authentication & Telemetry", "Enforce SHA-256 hashed credentials, terminal session UUIDs, and 5s heartbeat telemetry. Offline flag after 15s inactivity."),
+        ("FR-02: CDSS Clinical Safety Gate", "Automated cross-check of eRx drugs against EHR patient allergies (Penicillin) and drug-drug matrices. Dispense lockout on conflict."),
+        ("FR-03: Schedule X Narcotic Sign-Off", "Mandatory dual authentication: Doctor DMC Registration Number + Pharmacist 4-digit Authorization PIN permanently logged."),
+        ("FR-04: FEFO Batch Sorting Engine", "Automatic prioritization of nearest-expiry viable lots (`days_to_expiry ASC`). Strict lockout of expired drugs (days <= 0)."),
+        ("FR-05: POS Multi-Tender Billing", "1-Click import of approved eRx, barcode scan, Cash change calculator, Dynamic UPI QR generation, and 80mm GST receipt printing.")
+    ]
+
+    fr_col2 = [
+        ("FR-06: Goods Receipt Notes (GRN)", "Inward supplier shipments against POs capturing lot number, expiry, cost price, MRP, GST %, and physical shelf rack coordinate."),
+        ("FR-07: IoT Cold-Chain Telemetry", "Monitor refrigerator sensors (Chamber A & B, 2°C–8°C) every 30s. Trigger audio/visual alert on temperature excursion spike."),
+        ("FR-08: Delivery Logistics & OTP e-POD", "Kanban dispatch workflow (`Packaging`, `Out`, `Delivered`), insulated cold-bag checklist, and 4-digit recipient OTP handshake."),
+        ("FR-09: End-of-Day Z-Report Close", "Shift cash reconciliation: `Expected = Float + Sales - Payouts`. Variance detection, register locking, and official signed Z-slip."),
+        ("FR-10: 21 CFR Part 11 Audit Trail", "Append-only, immutable SQLite event log capturing timestamp, user ID, role, action code, and severity level (INFO/WARN/CRIT).")
+    ]
+
+    col_w = Inches(5.75)
+    # Column 1
+    add_card(slide8, Inches(0.8), Inches(1.8), col_w, Inches(5.1))
+    tb_fr1 = slide8.shapes.add_textbox(Inches(1.0), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
+    tf_fr1 = tb_fr1.text_frame
+    tf_fr1.word_wrap = True
+    p = tf_fr1.paragraphs[0]
+    p.text = "📋 CORE CLINICAL & POS REQUIREMENTS (FR-01 TO FR-05)"
+    p.font.size = Pt(12)
+    p.font.bold = True
+    p.font.color.rgb = TEAL_ACCENT
+    p.space_after = Pt(6)
+
+    for fr_title, fr_desc in fr_col1:
+        p = tf_fr1.add_paragraph()
+        p.text = fr_title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = NAVY_DARK
+
+        p2 = tf_fr1.add_paragraph()
+        p2.text = fr_desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MAIN
+        p2.space_after = Pt(4)
+
+    # Column 2
+    add_card(slide8, Inches(6.75), Inches(1.8), col_w, Inches(5.1))
+    tb_fr2 = slide8.shapes.add_textbox(Inches(6.95), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
+    tf_fr2 = tb_fr2.text_frame
+    tf_fr2.word_wrap = True
+    p = tf_fr2.paragraphs[0]
+    p.text = "📋 SUPPLY CHAIN & FISCAL REQUIREMENTS (FR-06 TO FR-10)"
+    p.font.size = Pt(12)
+    p.font.bold = True
+    p.font.color.rgb = BLUE_INFO
+    p.space_after = Pt(6)
+
+    for fr_title, fr_desc in fr_col2:
+        p = tf_fr2.add_paragraph()
+        p.text = fr_title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = NAVY_DARK
+
+        p2 = tf_fr2.add_paragraph()
+        p2.text = fr_desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MAIN
+        p2.space_after = Pt(4)
+
+    add_notes(slide8,
+        "Here are the 10 detailed Functional Requirements defined in our IEEE 830 SRS document. "
+        "They span the entire lifecycle of a pharmaceutical transaction: authentication, CDSS clinical safety, "
+        "narcotics dual sign-off, FEFO picking, POS split billing, GRN inwarding, IoT cold-chain alarms, OTP delivery proof, "
+        "and daily Z-Report cash balancing."
+    )
+
+    # =========================================================================
+    # SLIDE 9: SRS (PART 3) — NON-FUNCTIONAL REQUIREMENTS & SAFETY
+    # =========================================================================
+    slide9 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide9, BG_LIGHT)
+    add_header(slide9, "SRS Non-Functional & Safety Requirements", "RUBRIC: NON-FUNCTIONAL & QUALITY METRICS")
+
+    nfr_cards = [
+        ("⚡ 1. PERFORMANCE & LATENCY", 
+         "Sub-Second Response Standards",
+         "• UI Transaction Latency: All dashboard actions & button clicks respond in <50ms.\n• Database Commit Latency: SQLite WAL transactions complete in <10ms.\n• 60 FPS Desktop Rendering: Hardware-accelerated Edge Chromium WebView2 prevents UI stutter.\n• Non-Blocking Threading: Zero frame freezes via asynchronous background worker threads.",
+         TEAL_ACCENT),
+        ("🛡️ 2. POKA-YOKE SAFETY GATES", 
+         "Mistake-Proofing Healthcare",
+         "• 100% CDSS Interception: Automatic lock on cart checkout when drug-allergy contraindication is flagged.\n• Zero Expiry Dispensing: Expired batches mathematically prohibited from cart addition.\n• Schedule X Dual-Auth: Narcotics cannot be billed without Doctor DMC Reg + Pharmacist PIN.\n• Handover Integrity: Delivery status advancement blocked without 4-digit recipient OTP.",
+         CORAL_DANGER),
+        ("🔒 3. SECURITY & AUDIT TRAIL", 
+         "21 CFR Part 11 Compliance",
+         "• Immutable Audit Records: Append-only SQLite event stream; UPDATE and DELETE disbarred.\n• Role-Based Route Shields: Strict RBAC gating on all sensitive operations and UI modals.\n• Credential Protection: SHA-256 hashed password verification across all login terminals.\n• Session Heartbeat Watchdog: Stale or hijacked terminal sessions auto-terminated after 15s.",
+         NAVY_DARK),
+        ("⚖️ 4. STATUTORY COMPLIANCE", 
+         "Indian Pharmaceutical Standards",
+         "• Drugs & Cosmetics Act 1940: Mandatory compliance with Schedule H, H1, and Schedule X rules.\n• Rule 65 Dispensing Records: Automated digital maintenance of prescription registers.\n• GST Invoicing Compliance: Automated 5%, 12%, 18% CGST/SGST tax split on thermal receipts.\n• GAMP 5 Category 4: Configured software validation standards with complete test traceability.",
+         BLUE_INFO)
+    ]
+
+    for idx, (title, sub, body, col) in enumerate(nfr_cards):
+        r = idx // 2
+        c = idx % 2
+        x = Inches(0.8) + Inches(c * 5.95)
+        y = Inches(1.8) + Inches(r * 2.6)
+        w = Inches(5.75)
+        h = Inches(2.4)
+
+        add_card(slide9, x, y, w, h)
+        bar = slide9.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, Inches(0.12), h)
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = col
+        bar.line.fill.background()
+
+        tb = slide9.shapes.add_textbox(x + Inches(0.25), y + Inches(0.12), w - Inches(0.4), h - Inches(0.24))
+        tf = tb.text_frame
+        tf.word_wrap = True
+
+        p1 = tf.paragraphs[0]
+        p1.text = title
+        p1.font.size = Pt(12)
+        p1.font.bold = True
+        p1.font.color.rgb = NAVY_DARK
+
+        p2 = tf.add_paragraph()
+        p2.text = sub.upper()
+        p2.font.size = Pt(9.5)
+        p2.font.bold = True
+        p2.font.color.rgb = col
+        p2.space_after = Pt(4)
+
+        for line in body.split('\n'):
+            p = tf.add_paragraph()
+            p.text = line
+            p.font.size = Pt(9.5)
+            p.font.color.rgb = TEXT_MAIN
+            p.space_after = Pt(2)
+
+    add_notes(slide9,
+        "Non-Functional Requirements are the engineering backbone of AegisPharm. "
+        "We guarantee sub-50ms UI latency, complete Poka-Yoke mistake proofing, "
+        "21 CFR Part 11 compliant audit immutability, and 100% adherence to Indian Drugs & Cosmetics Act and GST rules."
+    )
+
+    # =========================================================================
+    # SLIDE 10: SRS (PART 4) — DATABASE DESIGN & RELATIONAL DATA DICTIONARY
+    # =========================================================================
+    slide10 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide10, BG_LIGHT)
+    add_header(slide10, "Database Design & Relational Data Dictionary", "RUBRIC: DATABASE / SYSTEM DESIGN")
+
     db_tables_1 = [
-        ("1. staff", "PRIMARY KEY: id", "Credentials, assigned role, username, branch, and active status."),
-        ("2. medicines", "PRIMARY KEY: id", "SKU, generic name, category, Schedule (H1/X/OTC), rack, stock."),
-        ("3. prescriptions", "PRIMARY KEY: rx_id", "Patient name, doctor, items JSON, CDSS status, clinical sign-off."),
-        ("4. invoices", "PRIMARY KEY: invoice_id", "Customer, cashier, payment method, subtotal, GST, total amount."),
-        ("5. delivery_orders", "PRIMARY KEY: order_id", "Address, customer phone, rider, status, cold-bag check, OTP code."),
-        ("6. patients", "PRIMARY KEY: id", "Name, contact phone, chronic conditions, loyalty points, allergy records."),
-        ("7. suppliers", "PRIMARY KEY: id", "Distributor name, GSTIN, DL number, contact person, payment terms.")
+        ("1. staff", "PRIMARY KEY: id", "Staff credentials, assigned RBAC role, username, branch, active status."),
+        ("2. medicines", "PRIMARY KEY: id", "Pharmaceutical catalog, generic name, batch, expiry, days left, stock, MRP."),
+        ("3. prescriptions", "PRIMARY KEY: rx_id", "Patient name, doctor, items JSON, CDSS status, clinical sign-off notes."),
+        ("4. invoices", "PRIMARY KEY: invoice_id", "Official tax invoices, cashier, payment method, subtotal, GST, total amount."),
+        ("5. delivery_orders", "PRIMARY KEY: order_id", "Logistics dispatch, address, customer phone, rider, status, 4-digit OTP."),
+        ("6. patients", "PRIMARY KEY: id", "Patient EHR, phone, chronic conditions, loyalty points, recorded allergies."),
+        ("7. suppliers", "PRIMARY KEY: id", "Distributor master, contact, phone, billing email, GSTIN, payment terms.")
     ]
 
     db_tables_2 = [
@@ -581,8 +799,8 @@ def create_review1_deck():
 
     col_w = Inches(5.75)
     # Column 1
-    add_card(slide7, Inches(0.8), Inches(1.8), col_w, Inches(5.1))
-    tb_db1 = slide7.shapes.add_textbox(Inches(1.0), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
+    add_card(slide10, Inches(0.8), Inches(1.8), col_w, Inches(5.1))
+    tb_db1 = slide10.shapes.add_textbox(Inches(1.0), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
     tf_db1 = tb_db1.text_frame
     tf_db1.word_wrap = True
     p = tf_db1.paragraphs[0]
@@ -606,8 +824,8 @@ def create_review1_deck():
         p2.space_after = Pt(3)
 
     # Column 2
-    add_card(slide7, Inches(6.75), Inches(1.8), col_w, Inches(5.1))
-    tb_db2 = slide7.shapes.add_textbox(Inches(6.95), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
+    add_card(slide10, Inches(6.75), Inches(1.8), col_w, Inches(5.1))
+    tb_db2 = slide10.shapes.add_textbox(Inches(6.95), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
     tf_db2 = tb_db2.text_frame
     tf_db2.word_wrap = True
     p = tf_db2.paragraphs[0]
@@ -630,18 +848,18 @@ def create_review1_deck():
         p2.font.color.rgb = TEXT_MUTED
         p2.space_after = Pt(3)
 
-    add_notes(slide7,
+    add_notes(slide10,
         "Here is the complete Database Design and System Integration. "
         "AegisPharm utilizes SQLite 3 configured with WAL mode and foreign key constraints across 14 normalized tables. "
         "Notice the specialized tables: narcotic_register for Schedule X compliance, temperature_logs for IoT cold-chain, and z_reports for cash reconciliation."
     )
 
     # =========================================================================
-    # SLIDE 8: COMPREHENSIVE CRUD OPERATIONS MATRIX
+    # SLIDE 11: SRS (PART 5) — ROLE-BASED CRUD OPERATIONS MATRIX
     # =========================================================================
-    slide8 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide8, BG_LIGHT)
-    add_header(slide8, "Comprehensive CRUD Operations Implementation", "RUBRIC: CRUD OPERATIONS & FUNCTIONALITY")
+    slide11 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide11, BG_LIGHT)
+    add_header(slide11, "Role-Based CRUD Operations Matrix", "RUBRIC: CRUD OPERATIONS & RBAC")
 
     crud_data = [
         ("Module / Entity", "CREATE", "READ", "UPDATE", "DELETE"),
@@ -654,8 +872,8 @@ def create_review1_deck():
         ("Daily Z-Report Close", "Generate official Z-Report ID (Z-YYYYMMDD-XXXX)", "Read gross sales, cash total, digital collections", "Update counted cash & calculate live variance", "Permanent archive: Immutable signed registry")
     ]
 
-    add_card(slide8, Inches(0.8), Inches(1.8), Inches(11.733), Inches(5.1))
-    tb_c = slide8.shapes.add_textbox(Inches(1.0), Inches(1.95), Inches(11.3), Inches(4.8))
+    add_card(slide11, Inches(0.8), Inches(1.8), Inches(11.733), Inches(5.1))
+    tb_c = slide11.shapes.add_textbox(Inches(1.0), Inches(1.95), Inches(11.3), Inches(4.8))
     tf_c = tb_c.text_frame
     tf_c.word_wrap = True
 
@@ -679,7 +897,7 @@ def create_review1_deck():
             p.font.color.rgb = TEXT_MAIN
         p.space_after = Pt(2)
 
-    add_notes(slide8,
+    add_notes(slide11,
         "CRUD operations are explicitly evaluated in Review 1. "
         "As shown in this comprehensive matrix, AegisPharm implements full Create, Read, Update, and Delete operations "
         "across all 7 major functional domains—Staff, Medicines, Prescriptions, Narcotics, Billing, Deliveries, and Z-Reports. "
@@ -687,13 +905,12 @@ def create_review1_deck():
     )
 
     # =========================================================================
-    # SLIDE 9: MODULES & CORE FEATURES ALIGNED WITH QUALITY GOALS
+    # SLIDE 12: CORE MODULES ALIGNED WITH QUALITY GOALS
     # =========================================================================
-    slide9 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide9, BG_LIGHT)
-    add_header(slide9, "Modules Aligned with TQM Quality Goals", "RUBRIC: MODULES & QUALITY ALIGNMENT")
+    slide12 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide12, BG_LIGHT)
+    add_header(slide12, "Core Modules Aligned with TQM Quality Goals", "RUBRIC: MODULES & QUALITY ALIGNMENT")
 
-    # 4 Module Cards (2x2 Grid)
     modules = [
         ("🩺 Clinical Decision Support (CDSS)", 
          "Aligned TQM Goal: Zero Medication Dispensing Defects",
@@ -721,13 +938,13 @@ def create_review1_deck():
         w = Inches(5.75)
         h = Inches(2.4)
 
-        add_card(slide9, x, y, w, h)
-        bar = slide9.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, Inches(0.12), h)
+        add_card(slide12, x, y, w, h)
+        bar = slide12.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, Inches(0.12), h)
         bar.fill.solid()
         bar.fill.fore_color.rgb = col
         bar.line.fill.background()
 
-        tb = slide9.shapes.add_textbox(x + Inches(0.25), y + Inches(0.12), w - Inches(0.4), h - Inches(0.24))
+        tb = slide12.shapes.add_textbox(x + Inches(0.25), y + Inches(0.12), w - Inches(0.4), h - Inches(0.24))
         tf = tb.text_frame
         tf.word_wrap = True
 
@@ -751,20 +968,19 @@ def create_review1_deck():
             p.font.color.rgb = TEXT_MAIN
             p.space_after = Pt(2)
 
-    add_notes(slide9,
+    add_notes(slide12,
         "Here we map our Core Modules directly to our TQM Quality Goals, satisfying the Image 3 requirement. "
         "Notice that our features are not arbitrary: CDSS directly targets zero medication defects; "
         "FEFO and IoT target zero biological spoilage; and our delivery module targets 100% last-mile fidelity."
     )
 
     # =========================================================================
-    # SLIDE 10: INITIAL UI & MAIN SYSTEM WORKFLOW
+    # SLIDE 13: INITIAL UI & END-TO-END SYSTEM WORKFLOW
     # =========================================================================
-    slide10 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide10, BG_LIGHT)
-    add_header(slide10, "Initial UI & End-to-End System Workflow", "RUBRIC: INITIAL UI & MAIN WORKFLOW")
+    slide13 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide13, BG_LIGHT)
+    add_header(slide13, "Initial UI & End-to-End System Workflow", "RUBRIC: INITIAL UI & MAIN WORKFLOW")
 
-    # Flow Steps (5 Sequential Stages)
     stages = [
         ("Stage 1: Prescription Intake", "Doctor e-Prescription uploaded\nPatient EHR allergies scanned\nEnters pending review queue", BLUE_INFO),
         ("Stage 2: Clinical CDSS Gate", "Pharmacist runs CDSS scan\nAllergy & interaction checks\nSchedule X PIN authenticated\nStatus updated to 'Approved'", TEAL_ACCENT),
@@ -776,14 +992,14 @@ def create_review1_deck():
     col_w = Inches(2.22)
     for i, (title, desc, col) in enumerate(stages):
         x = Inches(0.8) + Inches(i * 2.37)
-        c = add_card(slide10, x, Inches(1.8), col_w, Inches(3.2))
+        c = add_card(slide13, x, Inches(1.8), col_w, Inches(3.2))
 
-        hb = slide10.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, Inches(1.8), col_w, Inches(0.6))
+        hb = slide13.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, Inches(1.8), col_w, Inches(0.6))
         hb.fill.solid()
         hb.fill.fore_color.rgb = col
         hb.line.fill.background()
 
-        tb_h = slide10.shapes.add_textbox(x, Inches(1.85), col_w, Inches(0.5))
+        tb_h = slide13.shapes.add_textbox(x, Inches(1.85), col_w, Inches(0.5))
         tf_h = tb_h.text_frame
         tf_h.word_wrap = True
         p = tf_h.paragraphs[0]
@@ -793,7 +1009,7 @@ def create_review1_deck():
         p.font.bold = True
         p.font.color.rgb = TEXT_WHITE
 
-        tb_b = slide10.shapes.add_textbox(x + Inches(0.1), Inches(2.5), col_w - Inches(0.2), Inches(2.4))
+        tb_b = slide13.shapes.add_textbox(x + Inches(0.1), Inches(2.5), col_w - Inches(0.2), Inches(2.4))
         tf_b = tb_b.text_frame
         tf_b.word_wrap = True
 
@@ -811,9 +1027,8 @@ def create_review1_deck():
             p.font.color.rgb = TEXT_MAIN
             p.space_after = Pt(3)
 
-    # Bottom UI Architecture Highlight Card
-    add_card(slide10, Inches(0.8), Inches(5.2), Inches(11.733), Inches(1.7))
-    tb_ui = slide10.shapes.add_textbox(Inches(1.0), Inches(5.3), Inches(11.3), Inches(1.5))
+    add_card(slide13, Inches(0.8), Inches(5.2), Inches(11.733), Inches(1.7))
+    tb_ui = slide13.shapes.add_textbox(Inches(1.0), Inches(5.3), Inches(11.3), Inches(1.5))
     tf_ui = tb_ui.text_frame
     tf_ui.word_wrap = True
 
@@ -827,7 +1042,7 @@ def create_review1_deck():
     ui_points = (
         "• Desktop UI: Rendered via Microsoft Edge Chromium WebView2 engine with hardware acceleration (60 FPS) and zero native bridge latency.\n"
         "• Web UI: Hosted asynchronously via FastAPI (Uvicorn), providing 100% feature parity on Chrome, Safari, Edge, tablets, and mobile.\n"
-        "• Design System: Custom dark-mode Glassmorphism with CSS variables, responsive side navigation, interactive modals, and live clock tickers."
+        "• Design System: Clean White/Light mode default with 1-click Dark Mode toggle, responsive side navigation, and interactive modals."
     )
     for line in ui_points.split('\n'):
         p = tf_ui.add_paragraph()
@@ -836,7 +1051,7 @@ def create_review1_deck():
         p.font.color.rgb = TEXT_MAIN
         p.space_after = Pt(2)
 
-    add_notes(slide10,
+    add_notes(slide13,
         "Here we show the Initial UI and Main System Workflow. "
         "A prescription progresses smoothly from Stage 1 intake through Stage 2 clinical verification, Stage 3 POS billing, "
         "Stage 4 delivery dispatch with OTP, and finally Stage 5 daily Z-Report drawer reconciliation. "
@@ -844,139 +1059,240 @@ def create_review1_deck():
     )
 
     # =========================================================================
-    # SLIDE 11: POKA-YOKE (FAIL-SAFE QUALITY GATES)
+    # SLIDE 14: WORKING APPLICATION DEMO GUIDE (PART 1) — SETUP & PERSONAS
     # =========================================================================
-    slide11 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide11, BG_LIGHT)
-    add_header(slide11, "Poka-Yoke: Mistake-Proofing Healthcare Operations", "FAIL-SAFE QUALITY GATES")
+    slide14 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide14, BG_LIGHT)
+    add_header(slide14, "Working Application Demo Guide: Setup & Personas", "RUBRIC: WORKING APPLICATION / DEMO GUIDE")
 
-    poka_gates = [
-        ("1. CDSS Patient Allergy Shield", 
-         "Poka-Yoke Mechanism: Automated Blocking Gate",
-         "The cashier or pharmacist cannot bypass or dispense drugs containing penicillin, NSAIDs, or sulfas if the patient EHR contains registered hypersensitivity. Prevents fatal anaphylaxis before billing.",
+    # Left Box: Startup Commands & Verification
+    add_card(slide14, Inches(0.8), Inches(1.8), Inches(5.75), Inches(5.1))
+    tb_cmd = slide14.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.35), Inches(4.7))
+    tf_cmd = tb_cmd.text_frame
+    tf_cmd.word_wrap = True
+
+    p = tf_cmd.paragraphs[0]
+    p.text = "🚀 APPLICATION LAUNCH COMMANDS"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = NAVY_DARK
+    p.space_after = Pt(8)
+
+    cmd_steps = [
+        ("Step 1: Automated Test Suite (Examiner Proof)", "Command: `pytest`\nVerifies 24/24 unit & integration tests in ~7.8s with zero failures."),
+        ("Step 2: Native Desktop Workstation Application", "Command: `python main.py`\nBoots hardware-accelerated Edge Chromium WebView2 window with default Light Mode and instant Dark toggle."),
+        ("Step 3: Cloud-Ready Web Portal Application", "Command: `python web_app.py`\nLaunches asynchronous FastAPI server at `http://127.0.0.1:8000` with Swagger documentation at `/docs`."),
+        ("Step 4: Physical Terminal Binding", "Select terminal station: `Front Counter A`, `Clinical Kiosk B`, `Inwarding Bay`, `Delivery Dock`.")
+    ]
+    for c_title, c_desc in cmd_steps:
+        p = tf_cmd.add_paragraph()
+        p.text = c_title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = TEAL_ACCENT
+
+        for line in c_desc.split('\n'):
+            p2 = tf_cmd.add_paragraph()
+            p2.text = line
+            p2.font.size = Pt(9.5)
+            p2.font.color.rgb = TEXT_MAIN
+        p2.space_after = Pt(4)
+
+    # Right Box: Workstation Personas & Default Credentials Table
+    add_card(slide14, Inches(6.75), Inches(1.8), Inches(5.75), Inches(5.1))
+    tb_cred = slide14.shapes.add_textbox(Inches(6.95), Inches(2.0), Inches(5.35), Inches(4.7))
+    tf_cred = tb_cred.text_frame
+    tf_cred.word_wrap = True
+
+    p = tf_cred.paragraphs[0]
+    p.text = "🔑 WORKSTATION PERSONAS & CREDENTIALS"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = BLUE_INFO
+    p.space_after = Pt(8)
+
+    cred_rows = [
+        ("👑 Store Admin", "`admin` / `admin123`", "Admin Command Center", "RBAC, live heartbeats, Daily Z-Report balancing, audit trail."),
+        ("🩺 Pharmacist", "`pharmacist` / `pharma123`", "Clinical Dispensing", "eRx intake, CDSS allergy shield, Schedule X narcotic sign-off."),
+        ("💳 POS Cashier", "`cashier` / `cash123`", "Express Billing", "1-click eRx import, barcode scan, FEFO batch selection, UPI QR."),
+        ("📦 Inventory", "`inventory` / `inv123`", "Inwarding Bay", "Multi-batch FEFO ledger, Add Medicine, Cold-chain IoT (2-8°C)."),
+        ("🛵 Delivery Agent", "`delivery` / `deliv123`", "Logistics Dock", "Kanban dispatch, cold-bag checklist, 4-digit OTP e-POD.")
+    ]
+    for role_name, creds, term, scope in cred_rows:
+        p = tf_cred.add_paragraph()
+        p.text = f"{role_name} — {creds}"
+        p.font.size = Pt(10.5)
+        p.font.bold = True
+        p.font.color.rgb = NAVY_DARK
+
+        p2 = tf_cred.add_paragraph()
+        p2.text = f"Terminal: {term} | Scope: {scope}"
+        p2.font.size = Pt(9.0)
+        p2.font.color.rgb = TEXT_MUTED
+        p2.space_after = Pt(4)
+
+    add_notes(slide14,
+        "This slide initiates our Working Application Demo Guide. "
+        "It provides the exact execution commands to launch the automated test suite, "
+        "the native desktop app, and the FastAPI web server. "
+        "The right-hand panel outlines all 5 workstation roles and pre-seeded credentials for the live demonstration."
+    )
+
+    # =========================================================================
+    # SLIDE 15: WORKING APPLICATION DEMO GUIDE (PART 2) — CLINICAL & POS BILLING
+    # =========================================================================
+    slide15 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide15, BG_LIGHT)
+    add_header(slide15, "Live Demo Walkthrough: Clinical CDSS & POS Billing", "RUBRIC: LIVE APPLICATION WALKTHROUGH")
+
+    col_w = Inches(5.75)
+    # Left Card: Pharmacist Station & CDSS Walkthrough
+    add_card(slide15, Inches(0.8), Inches(1.8), col_w, Inches(5.1))
+    tb_pharma = slide15.shapes.add_textbox(Inches(1.0), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
+    tf_pharma = tb_pharma.text_frame
+    tf_pharma.word_wrap = True
+
+    p = tf_pharma.paragraphs[0]
+    p.text = "🩺 PHASE 1: CLINICAL PHARMACIST WALKTHROUGH"
+    p.font.size = Pt(12)
+    p.font.bold = True
+    p.font.color.rgb = TEAL_ACCENT
+    p.space_after = Pt(8)
+
+    pharma_script = [
+        ("Step 1.1: Workstation Boot & Persona Select", "Click '🩺 Clinical Pharmacist' tile on the login portal. System automatically loads station credentials (`pharmacist` / `pharma123`)."),
+        ("Step 1.2: e-Prescription Queue Review", "Open Clinical Queue. Inspect incoming prescription `RX-2026-001` containing Amoxicillin for a patient with recorded Penicillin allergy."),
+        ("Step 1.3: Trigger CDSS Allergy Interception (Poka-Yoke)", "Click 'Run CDSS Safety Scan'. System immediately flashes a red contraindication banner: 'CRITICAL ALLERGY CONFLICT: Penicillin hypersensitivity'. Disables direct checkout."),
+        ("Step 1.4: Schedule X Narcotic Double Sign-Off", "Open narcotic prescription `RX-2026-004` (Zolpidem). Click 'Sign-Off'. Enter Doctor DMC No: `DMC-2024-8891` and Pharmacist PIN: `9944`. System verifies and logs to statutory `narcotic_register`.")
+    ]
+    for s_title, s_desc in pharma_script:
+        p = tf_pharma.add_paragraph()
+        p.text = s_title
+        p.font.size = Pt(10.5)
+        p.font.bold = True
+        p.font.color.rgb = NAVY_DARK
+
+        p2 = tf_pharma.add_paragraph()
+        p2.text = s_desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MAIN
+        p2.space_after = Pt(4)
+
+    # Right Card: POS Cashier Walkthrough
+    add_card(slide15, Inches(6.75), Inches(1.8), col_w, Inches(5.1))
+    tb_pos = slide15.shapes.add_textbox(Inches(6.95), Inches(2.0), col_w - Inches(0.4), Inches(4.7))
+    tf_pos = tb_pos.text_frame
+    tf_pos.word_wrap = True
+
+    p = tf_pos.paragraphs[0]
+    p.text = "💳 PHASE 2: POS CASHIER TERMINAL WALKTHROUGH"
+    p.font.size = Pt(12)
+    p.font.bold = True
+    p.font.color.rgb = BLUE_INFO
+    p.space_after = Pt(8)
+
+    pos_script = [
+        ("Step 2.1: Login to Front Counter A", "Authenticate as Cashier (`cashier` / `cash123`). Workstation UI loads POS billing counter with barcode scanner focus."),
+        ("Step 2.2: 1-Click Approved eRx Import", "Click 'Import Approved eRx'. Approved prescription is pulled directly into the POS cart without manual re-typing, eliminating transcription error."),
+        ("Step 2.3: Automated FEFO Batch Selection", "Observe cart lines: system automatically selected the nearest-expiry batch (`days_to_expiry` lowest) to prevent dead-stock accumulation."),
+        ("Step 2.4: Multi-Tender Payment & Thermal Receipt", "Click 'Checkout'. Select Cash: enter ₹1000 for ₹740 bill -> automated change calculation: ₹260. Switch to Dynamic UPI QR -> simulate payment. Click 'Print Thermal Receipt' -> generates 80mm GST invoice.")
+    ]
+    for s_title, s_desc in pos_script:
+        p = tf_pos.add_paragraph()
+        p.text = s_title
+        p.font.size = Pt(10.5)
+        p.font.bold = True
+        p.font.color.rgb = NAVY_DARK
+
+        p2 = tf_pos.add_paragraph()
+        p2.text = s_desc
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = TEXT_MAIN
+        p2.space_after = Pt(4)
+
+    add_notes(slide15,
+        "Phase 1 and 2 of the live walkthrough show clinical and billing integration. "
+        "First, we log in as Pharmacist to demonstrate how the CDSS engine catches penicillin allergies and enforces narcotic PIN sign-off. "
+        "Next, we switch to Cashier, import the approved Rx with 1 click, verify the automated FEFO batch selection, and complete the split-payment checkout."
+    )
+
+    # =========================================================================
+    # SLIDE 16: WORKING APPLICATION DEMO GUIDE (PART 3) — SUPPLY CHAIN & Z-REPORT
+    # =========================================================================
+    slide16 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide16, BG_LIGHT)
+    add_header(slide16, "Live Demo: Inventory IoT, Delivery OTP & Z-Report", "RUBRIC: LIVE APPLICATION WALKTHROUGH")
+
+    demo_cards_3 = [
+        ("📦 PHASE 3: SUPPLY CHAIN & IOT ALARM",
+         "Inventory Inwarding & Cold-Chain",
+         "• Login as Inventory Manager (`inventory` / `inv123`).\n• FEFO Ledger: Inspect batch list with color-coded expiry badges (<30d Red, <90d Yellow, >90d Green).\n• Add Medicine & GRN: Inward new consignment, updating stock atomically.\n• IoT Cold-Chain Monitor: Observe 2°C–8°C gauge. Click 'Simulate Temp Spike' (9.4°C) -> instant alarm badge & audit entry.",
          TEAL_ACCENT),
-        ("2. Molecule Interaction Guard", 
-         "Poka-Yoke Mechanism: Cross-Reference Alert",
-         "When combining multiple drugs in a prescription (e.g. Warfarin + Augmentin, Glycomet + Alcohol), the Clinical Decision Support System triggers a severe warning modal preventing toxic dosing.",
-         CORAL_DANGER),
-        ("3. Schedule X Narcotics Dual PIN", 
-         "Poka-Yoke Mechanism: Mandatory Dual Authentication",
-         "Narcotic sedatives (e.g. Alprax, Diazepam) cannot be added to the POS cart without doctor registration number validation and a 4-digit pharmacist authorization PIN, eliminating illegal diversion.",
+        ("🛵 PHASE 4: DELIVERY FLEET & OTP",
+         "Logistics Fulfilment (e-POD)",
+         "• Login as Delivery Agent (`delivery` / `deliv123`).\n• Kanban Dispatch Board: View orders under `Packaging`, `Out for Delivery`, `Delivered`.\n• Cold-Bag Checklist: Confirm ice-gel insulation for insulin orders.\n• 4-Digit OTP Handover: Customer provides OTP `1234`. Enter OTP -> system verifies and advances order to `DELIVERED`.",
+         AMBER_WARN),
+        ("👑 PHASE 5: ADMIN PRESENCE & RBAC",
+         "Staff Governance & Live Telemetry",
+         "• Login as Store Admin (`admin` / `admin123`).\n• Staff User CRUD: Add new staff account, edit roles, toggle status (`Active` / `Suspended`).\n• Active Workstations: View live telemetry stream of connected terminals, IPs, and 5s heartbeats.\n• 21 CFR Part 11 Audit Trail: Inspect tamper-evident operational event stream in real time.",
          BLUE_INFO),
-        ("4. 4-Digit OTP Delivery Handshake", 
-         "Poka-Yoke Mechanism: Cryptographic Handshake",
-         "A delivery agent cannot mark an order as 'Delivered' simply by clicking a button. The customer must provide a 4-digit SMS OTP, guaranteeing medicines are handed to the rightful patient.",
-         AMBER_WARN)
+        ("💰 PHASE 6: DAILY Z-REPORT CASH CLOSE",
+         "Fiscal Register Balancing",
+         "• Open 'Daily Z-Report' register close module.\n• System computes: `Expected Cash = Opening Float + Cash Sales - Payouts`.\n• Enter counted physical cash: system evaluates live variance (`BALANCED ₹0.00` or `SHORTAGE`).\n• Sign & Close Register: Locks register, logs to `z_reports`, and generates official printable Z-slip.",
+         NAVY_DARK)
     ]
 
-    for idx, (title, mech, desc, col) in enumerate(poka_gates):
+    for idx, (title, sub, body, col) in enumerate(demo_cards_3):
         r = idx // 2
-        c_i = idx % 2
-        x = Inches(0.8) + Inches(c_i * 5.95)
+        c = idx % 2
+        x = Inches(0.8) + Inches(c * 5.95)
         y = Inches(1.8) + Inches(r * 2.6)
         w = Inches(5.75)
         h = Inches(2.4)
 
-        add_card(slide11, x, y, w, h)
-        bar = slide11.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, Inches(0.12), h)
+        add_card(slide16, x, y, w, h)
+        bar = slide16.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, Inches(0.12), h)
         bar.fill.solid()
         bar.fill.fore_color.rgb = col
         bar.line.fill.background()
 
-        tb = slide11.shapes.add_textbox(x + Inches(0.25), y + Inches(0.12), w - Inches(0.4), h - Inches(0.24))
+        tb = slide16.shapes.add_textbox(x + Inches(0.25), y + Inches(0.12), w - Inches(0.4), h - Inches(0.24))
         tf = tb.text_frame
         tf.word_wrap = True
 
         p1 = tf.paragraphs[0]
         p1.text = title
-        p1.font.size = Pt(13)
+        p1.font.size = Pt(12)
         p1.font.bold = True
         p1.font.color.rgb = NAVY_DARK
 
         p2 = tf.add_paragraph()
-        p2.text = mech.upper()
+        p2.text = sub.upper()
         p2.font.size = Pt(9.5)
         p2.font.bold = True
         p2.font.color.rgb = col
         p2.space_after = Pt(4)
 
-        p3 = tf.add_paragraph()
-        p3.text = desc
-        p3.font.size = Pt(10.5)
-        p3.font.color.rgb = TEXT_MAIN
-
-    add_notes(slide11,
-        "Poka-Yoke mistake-proofing is one of the most effective TQM tools we built. "
-        "Our software makes human errors logically impossible: an allergic patient cannot be given penicillin, "
-        "a cashier cannot accidentally select newer stock before older stock, and a rider cannot fake delivery without the customer OTP."
-    )
-
-    # =========================================================================
-    # SLIDE 12: WORKING APPLICATION LIVE DEMONSTRATION GUIDE
-    # =========================================================================
-    slide12 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide12, BG_LIGHT)
-    add_header(slide12, "Working Application Live Demonstration Guide", "RUBRIC: WORKING APPLICATION / DEMO")
-
-    # Step-by-Step Live Demo Execution Guide (3 Columns)
-    demo_steps = [
-        ("Step 1: Application Launch", 
-         "Desktop Launch:\n`python main.py`\n(Hardware-accelerated Edge Chromium WebView2 window)\n\nWeb Server Launch:\n`python web_app.py`\n(Access at http://127.0.0.1:8000)\n\nSwagger API Documentation:\nAccess at http://127.0.0.1:8000/docs",
-         NAVY_DARK),
-        ("Step 2: Role Walkthrough", 
-         "1. Login as Admin (`admin`/`admin123`):\n   Inspect RBAC, terminals, audit log.\n2. Switch to Pharmacist:\n   Review eRx, trigger CDSS allergy shield.\n3. Switch to Cashier:\n   1-Click Rx import, FEFO batch selection, UPI QR modal, print 80mm GST receipt.",
-         TEAL_ACCENT),
-        ("Step 3: Quality Gates & Close", 
-         "4. Switch to Inventory Manager:\n   Demonstrate 2–8°C thermal spike alarm, record Goods Receipt Note (GRN).\n5. Switch to Delivery Rider:\n   Advance Kanban, verify 4-digit OTP.\n6. Return to Admin / Cashier:\n   Perform Daily Z-Report cash reconciliation, balance till, print official Z-slip.",
-         BLUE_INFO)
-    ]
-
-    col_w = Inches(3.64)
-    gap = Inches(0.4)
-    for i, (title, content, col) in enumerate(demo_steps):
-        x = Inches(0.8) + Inches(i * 4.04)
-        c = add_card(slide12, x, Inches(1.8), col_w, Inches(5.1))
-
-        hb = slide12.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, Inches(1.8), col_w, Inches(0.7))
-        hb.fill.solid()
-        hb.fill.fore_color.rgb = col
-        hb.line.fill.background()
-
-        tb_h = slide12.shapes.add_textbox(x, Inches(1.85), col_w, Inches(0.6))
-        tf_h = tb_h.text_frame
-        tf_h.word_wrap = True
-        p = tf_h.paragraphs[0]
-        p.text = title
-        p.alignment = PP_ALIGN.CENTER
-        p.font.size = Pt(12)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_WHITE
-
-        tb_b = slide12.shapes.add_textbox(x + Inches(0.15), Inches(2.6), col_w - Inches(0.3), Inches(4.2))
-        tf_b = tb_b.text_frame
-        tf_b.word_wrap = True
-        for line in content.split('\n'):
-            p = tf_b.add_paragraph() if tf_b.paragraphs[0].text else tf_b.paragraphs[0]
+        for line in body.split('\n'):
+            p = tf.add_paragraph()
             p.text = line
-            p.font.size = Pt(10.5)
+            p.font.size = Pt(9.5)
             p.font.color.rgb = TEXT_MAIN
-            p.space_after = Pt(4)
+            p.space_after = Pt(2)
 
-    add_notes(slide12,
-        "This slide serves as our live demonstration script for Review 1. "
-        "I will now launch the application live: running `python main.py` opens the desktop window, "
-        "and `python web_app.py` serves the browser interface. "
-        "We will walk through the 5 roles, show the CDSS allergy barrier in action, demonstrate the cold-chain alarm, and close the shift using the Daily Z-Report."
+    add_notes(slide16,
+        "Phases 3 through 6 complete the live application demonstration. "
+        "We show the cold-chain IoT temperature spike alarm, complete an OTP verified home delivery, "
+        "inspect active staff sessions in the Admin Console, and close the shift register using the Daily Z-Report."
     )
 
     # =========================================================================
-    # SLIDE 13: TEST RESULTS & QUALITY VERIFICATION METRICS
+    # SLIDE 17: QUALITY VERIFICATION & 24 AUTOMATED TEST RESULTS
     # =========================================================================
-    slide13 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide13, BG_LIGHT)
-    add_header(slide13, "Quality Verification & 24 Automated Test Results", "RUBRIC: IMPLEMENTED FUNCTIONALITY")
+    slide17 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide17, BG_LIGHT)
+    add_header(slide17, "Quality Verification & 24 Automated Test Results", "RUBRIC: IMPLEMENTED FUNCTIONALITY")
 
-    # 4 Big Stat Metric Cards
     metrics = [
         ("24 / 24", "Automated Tests Passed", "100% pass rate across end-to-end unit, integration, and security test suites.", TEAL_ACCENT),
         ("0%", "Medication Dispensing Errors", "Achieved via automated Poka-Yoke CDSS allergy and interaction barriers.", CORAL_DANGER),
@@ -986,9 +1302,9 @@ def create_review1_deck():
 
     for i, (stat, label, desc, col) in enumerate(metrics):
         x = Inches(0.8) + Inches(i * 2.98)
-        c = add_card(slide13, x, Inches(1.8), Inches(2.78), Inches(2.2))
+        c = add_card(slide17, x, Inches(1.8), Inches(2.78), Inches(2.2))
 
-        tb = slide13.shapes.add_textbox(x + Inches(0.1), Inches(1.9), Inches(2.58), Inches(2.0))
+        tb = slide17.shapes.add_textbox(x + Inches(0.1), Inches(1.9), Inches(2.58), Inches(2.0))
         tf = tb.text_frame
         tf.word_wrap = True
 
@@ -1011,9 +1327,8 @@ def create_review1_deck():
         p3.font.size = Pt(9.5)
         p3.font.color.rgb = TEXT_MUTED
 
-    # Bottom Comparison Table: Manual Pharmacy vs. AegisPharm Enterprise
-    add_card(slide13, Inches(0.8), Inches(4.3), Inches(11.733), Inches(2.6))
-    tb_t = slide13.shapes.add_textbox(Inches(1.0), Inches(4.45), Inches(11.3), Inches(2.3))
+    add_card(slide17, Inches(0.8), Inches(4.3), Inches(11.733), Inches(2.6))
+    tb_t = slide17.shapes.add_textbox(Inches(1.0), Inches(4.45), Inches(11.3), Inches(2.3))
     tf_t = tb_t.text_frame
     tf_t.word_wrap = True
 
@@ -1044,83 +1359,85 @@ def create_review1_deck():
             p.font.color.rgb = TEXT_MAIN
         p.space_after = Pt(2)
 
-    add_notes(slide13,
+    add_notes(slide17,
         "Here are our empirical verification metrics: "
         "Our test suite passes 24 out of 24 automated unit and integration tests with a 100% success rate. "
         "The comparison table below demonstrates how AegisPharm transforms traditional manual vulnerabilities into standardized, automated TQM safeguards."
     )
 
     # =========================================================================
-    # SLIDE 14: CONCLUSION & REVIEW 1 DEFENSE Q&A (Dark Navy Theme)
+    # SLIDE 18: EXAMINER VIVA DEFENSE GUIDE & STRATEGIC CONCLUSION
     # =========================================================================
-    slide14 = prs.slides.add_slide(blank_layout)
-    set_slide_background(slide14, NAVY_DARK)
+    slide18 = prs.slides.add_slide(blank_layout)
+    set_slide_background(slide18, NAVY_DARK)
 
-    # Top strip
-    strip14 = slide14.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.15))
-    strip14.fill.solid()
-    strip14.fill.fore_color.rgb = TEAL_ACCENT
-    strip14.line.fill.background()
+    strip18 = slide18.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.15))
+    strip18.fill.solid()
+    strip18.fill.fore_color.rgb = TEAL_ACCENT
+    strip18.line.fill.background()
 
-    tb_end = slide14.shapes.add_textbox(Inches(1.0), Inches(1.1), Inches(11.3), Inches(3.4))
+    tb_end = slide18.shapes.add_textbox(Inches(1.0), Inches(0.9), Inches(11.3), Inches(3.8))
     tf_e = tb_end.text_frame
     tf_e.word_wrap = True
 
     pe0 = tf_e.paragraphs[0]
-    pe0.text = "REVIEW 1 SUMMARY & STRATEGIC CONCLUSION"
+    pe0.text = "REVIEW 1 SUMMARY & EXAMINER VIVA DEFENSE"
     pe0.font.size = Pt(13)
     pe0.font.bold = True
     pe0.font.color.rgb = TEAL_ACCENT
-    pe0.space_after = Pt(8)
+    pe0.space_after = Pt(6)
 
     pe1 = tf_e.add_paragraph()
-    pe1.text = "Review 1 Milestones Fully Delivered"
-    pe1.font.size = Pt(36)
+    pe1.text = "Review 1 Rubric Criteria Fully Delivered"
+    pe1.font.size = Pt(28)
     pe1.font.bold = True
     pe1.font.color.rgb = TEXT_WHITE
-    pe1.space_after = Pt(12)
+    pe1.space_after = Pt(8)
 
-    milestones = [
-        "✓ Problem Statement & Quality Objectives: Clearly formulated and aligned with TQM principles.",
-        "✓ Formal SRS Document: Comprehensive IEEE 830 functional and non-functional requirements specified.",
-        "✓ Scope & User Roles: 5 specialized RBAC workstations with granular access control implemented.",
-        "✓ Modular Folder Architecture: 6-tier decoupled structure separating core logic, config, and UIs.",
-        "✓ Database & CRUD Functionality: 14 relational tables in SQLite with complete CRUD operations working live.",
-        "✓ Working Application & Demo: Operational desktop (Edge Chromium) and web (FastAPI) applications demonstrated."
+    viva_qa = [
+        ("Q: Why SQLite instead of MySQL/MongoDB?", "A: Pharmacy dispensing requires zero-downtime, local-first offline resilience. SQLite provides 100% ACID compliance with WAL mode, sub-10ms query commit latency, and zero server crashes, while FastAPI supports networked counter syncing."),
+        ("Q: How does CDSS prevent medical malpractice?", "A: Deterministic Poka-Yoke cross-referencing patient allergy arrays and drug-drug contraindication matrices, mathematically blocking checkout without supervisor override."),
+        ("Q: How does FEFO reduce financial wastage?", "A: Sorts batch ledger by earliest expiration (`days_to_expiry ASC`), ensuring nearest-expiry viable lots are dispensed first, with automatic lockout of expired stock.")
     ]
-    for ms in milestones:
+    for q, a in viva_qa:
         p = tf_e.add_paragraph()
-        p.text = ms
-        p.font.size = Pt(12.5)
-        p.font.color.rgb = RGBColor(226, 232, 240)
-        p.space_after = Pt(5)
+        p.text = f"• {q} "
+        p.font.size = Pt(10.5)
+        p.font.bold = True
+        p.font.color.rgb = TEAL_LIGHT
 
-    # Thank You & Q&A Box
-    add_card(slide14, Inches(1.0), Inches(5.0), Inches(11.3), Inches(1.8), bg_color=NAVY_CARD, border_color=TEAL_ACCENT)
-    tb_qa = slide14.shapes.add_textbox(Inches(1.2), Inches(5.15), Inches(10.9), Inches(1.5))
+        p2 = tf_e.add_paragraph()
+        p2.text = f"  {a}"
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = RGBColor(226, 232, 240)
+        p2.space_after = Pt(4)
+
+    # Thank You Card (Bottom)
+    add_card(slide18, Inches(1.0), Inches(5.1), Inches(11.3), Inches(1.8), bg_color=NAVY_CARD, border_color=TEAL_ACCENT)
+    tb_qa = slide18.shapes.add_textbox(Inches(1.2), Inches(5.2), Inches(10.9), Inches(1.5))
     tf_qa = tb_qa.text_frame
     tf_qa.word_wrap = True
 
     pq1 = tf_qa.paragraphs[0]
-    pq1.text = "🙏 THANK YOU RESPECED FACULTY & EVALUATORS"
+    pq1.text = "🙏 THANK YOU RESPECTED FACULTY & EVALUATORS"
     pq1.font.size = Pt(15)
     pq1.font.bold = True
     pq1.font.color.rgb = TEAL_ACCENT
     pq1.space_after = Pt(4)
 
     pq2 = tf_qa.add_paragraph()
-    pq2.text = "Sincere gratitude to the Computer Science & Management faculty at Amrapali University for their academic guidance."
-    pq2.font.size = Pt(12)
+    pq2.text = "Sincere gratitude to the Computer Science & Engineering faculty at Amrapali University for their academic guidance."
+    pq2.font.size = Pt(11.5)
     pq2.font.color.rgb = TEXT_WHITE
-    pq2.space_after = Pt(6)
+    pq2.space_after = Pt(4)
 
     pq3 = tf_qa.add_paragraph()
-    pq3.text = "💬 The floor is now open for questions, code inspection, and live application demonstration. (Piyush Bhatt)"
-    pq3.font.size = Pt(13)
+    pq3.text = "💬 The floor is now open for questions, code inspection, and live application demonstration. (Candidate: Piyush Bhatt)"
+    pq3.font.size = Pt(12)
     pq3.font.bold = True
     pq3.font.color.rgb = RGBColor(148, 163, 184)
 
-    add_notes(slide14,
+    add_notes(slide18,
         "In conclusion, we have delivered 100% of the Review 1 rubric criteria: Problem Statement, Quality Objectives, "
         "IEEE 830 SRS, Scope and Roles, Modular Architecture, Database Design, CRUD operations, and a working demo. "
         "I thank my teachers at Amrapali University and invite your questions and live demonstration requests."
