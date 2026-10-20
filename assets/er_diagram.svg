@@ -1,0 +1,856 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2460 1920" width="100%" height="100%" style="background:#090d16; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+    <defs>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.7"/>
+        </filter>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+        </marker>
+        <marker id="circle" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+            <circle cx="5" cy="5" r="3" fill="#38bdf8"/>
+        </marker>
+    </defs>
+    
+<rect x="0" y="0" width="100%" height="100%" fill="#090d16"/>
+
+    <g transform="translate(60, 45)">
+        <text x="0" y="24" fill="#f8fafc" font-size="28" font-weight="800" letter-spacing="0.5">TQM Pharm Enterprise — Relational Database Architecture (ERD)</text>
+        <text x="0" y="52" fill="#94a3b8" font-size="14" font-weight="500">14 Relational Tables • 3NF Compliant • Multi-Table ACID Transactions • Concurrency via SQLite 3 WAL Mode</text>
+        <rect x="2000" y="-10" width="340" height="42" rx="8" fill="#131b2e" stroke="#1e293b" stroke-width="1.5"/>
+        <text x="2015" y="17" fill="#38bdf8" font-size="13" font-weight="800">AMRAPALI UNIVERSITY</text>
+        <text x="2195" y="17" fill="#e2e8f0" font-size="13">| Piyush Bhatt</text>
+    </g>
+    
+
+        <g transform="translate(60, 102)">
+            <rect x="0" y="0" width="540" height="28" rx="6" fill="#3b82f615" stroke="#3b82f640" stroke-width="1.5"/>
+            <circle cx="16" cy="14" r="5" fill="#3b82f6"/>
+            <text x="30" y="18" fill="#3b82f6" font-size="11" font-weight="800" letter-spacing="1.2">IDENTITY & AUDIT GOVERNANCE</text>
+        </g>
+        
+
+        <g transform="translate(660, 102)">
+            <rect x="0" y="0" width="540" height="28" rx="6" fill="#10b98115" stroke="#10b98140" stroke-width="1.5"/>
+            <circle cx="16" cy="14" r="5" fill="#10b981"/>
+            <text x="30" y="18" fill="#10b981" font-size="11" font-weight="800" letter-spacing="1.2">CLINICAL EHR & DISPENSING</text>
+        </g>
+        
+
+        <g transform="translate(1260, 102)">
+            <rect x="0" y="0" width="540" height="28" rx="6" fill="#f59e0b15" stroke="#f59e0b40" stroke-width="1.5"/>
+            <circle cx="16" cy="14" r="5" fill="#f59e0b"/>
+            <text x="30" y="18" fill="#f59e0b" font-size="11" font-weight="800" letter-spacing="1.2">PHARMACEUTICALS & SUPPLY CHAIN</text>
+        </g>
+        
+
+        <g transform="translate(1860, 102)">
+            <rect x="0" y="0" width="540" height="28" rx="6" fill="#f43f5e15" stroke="#f43f5e40" stroke-width="1.5"/>
+            <circle cx="16" cy="14" r="5" fill="#f43f5e"/>
+            <text x="30" y="18" fill="#f43f5e" font-size="11" font-weight="800" letter-spacing="1.2">POS SALES & LOGISTICS FLEET</text>
+        </g>
+        
+
+        <g transform="translate(60, 140)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="264" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#1e3a8a"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">staff</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#3b82f620" stroke="#3b82f6" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">IDENTITY & RBAC</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">role</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="113" width="28" height="15" rx="3" fill="#a855f7" />
+<text x="26" y="125" fill="#ffffff" font-size="9" font-weight="900" text-anchor="middle">UK</text>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">username</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">password</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">email</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">phone</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">branch</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(60, 480)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="288" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#1e3a8a"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">active_sessions</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#3b82f620" stroke="#3b82f6" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">PRESENCE TELEMETRY</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">session_id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="65" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="77" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="77" fill="#f8fafc" font-size="12" font-weight="700">user_id</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">name</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">role</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">terminal_name</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">ip_address</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">last_action</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">login_time</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="276" x2="532" y2="276" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="265" r="2" fill="#4b5563"/>
+<text x="48" y="269" fill="#cbd5e1" font-size="12" font-weight="500">last_heartbeat</text>
+<text x="524" y="269" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(60, 840)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="216" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#1e3a8a"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">audit_logs</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#3b82f620" stroke="#3b82f6" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">SECURITY AUDIT TRAIL</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">timestamp</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">user_name</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">role</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">action</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">details</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">level</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(60, 1150)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="504" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#0f766e"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">z_reports</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#14b8a620" stroke="#14b8a6" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">FINANCIAL GOVERNANCE</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">z_report_id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">report_date</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">generated_at</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="113" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="125" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="125" fill="#f8fafc" font-size="12" font-weight="700">generated_by</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">opening_float</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">cash_sales</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">cash_payouts</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">expected_cash</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">actual_cash</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="276" x2="532" y2="276" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="265" r="2" fill="#4b5563"/>
+<text x="48" y="269" fill="#cbd5e1" font-size="12" font-weight="500">variance</text>
+<text x="524" y="269" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="300" x2="532" y2="300" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="289" r="2" fill="#4b5563"/>
+<text x="48" y="293" fill="#cbd5e1" font-size="12" font-weight="500">upi_sales</text>
+<text x="524" y="293" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="324" x2="532" y2="324" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="313" r="2" fill="#4b5563"/>
+<text x="48" y="317" fill="#cbd5e1" font-size="12" font-weight="500">card_sales</text>
+<text x="524" y="317" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="348" x2="532" y2="348" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="337" r="2" fill="#4b5563"/>
+<text x="48" y="341" fill="#cbd5e1" font-size="12" font-weight="500">total_sales</text>
+<text x="524" y="341" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="372" x2="532" y2="372" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="361" r="2" fill="#4b5563"/>
+<text x="48" y="365" fill="#cbd5e1" font-size="12" font-weight="500">total_gst</text>
+<text x="524" y="365" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="396" x2="532" y2="396" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="385" r="2" fill="#4b5563"/>
+<text x="48" y="389" fill="#cbd5e1" font-size="12" font-weight="500">cgst</text>
+<text x="524" y="389" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="420" x2="532" y2="420" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="409" r="2" fill="#4b5563"/>
+<text x="48" y="413" fill="#cbd5e1" font-size="12" font-weight="500">sgst</text>
+<text x="524" y="413" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="444" x2="532" y2="444" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="433" r="2" fill="#4b5563"/>
+<text x="48" y="437" fill="#cbd5e1" font-size="12" font-weight="500">total_bills</text>
+<text x="524" y="437" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="468" x2="532" y2="468" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="457" r="2" fill="#4b5563"/>
+<text x="48" y="461" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="461" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="492" x2="532" y2="492" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="481" r="2" fill="#4b5563"/>
+<text x="48" y="485" fill="#cbd5e1" font-size="12" font-weight="500">notes</text>
+<text x="524" y="485" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(660, 140)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="264" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#065f46"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">patients</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#10b98120" stroke="#10b981" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">CLINICAL EHR</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">age</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">gender</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">phone</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">allergies</text>
+<text x="524" y="173" fill="#38bdf8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">JSON</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">chronic_conditions</text>
+<text x="524" y="197" fill="#38bdf8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">JSON</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">loyalty_points</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">recent_doctor</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(660, 480)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="312" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#065f46"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">prescriptions</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#10b98120" stroke="#10b981" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">CLINICAL DISPENSING</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">rx_id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">patient_name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="89" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="101" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="101" fill="#f8fafc" font-size="12" font-weight="700">patient_id</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">doctor_name</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">hospital</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">date</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">items</text>
+<text x="524" y="221" fill="#38bdf8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">JSON</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">notes</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="276" x2="532" y2="276" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="257" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="269" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="269" fill="#f8fafc" font-size="12" font-weight="700">verified_by</text>
+<text x="524" y="269" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="300" x2="532" y2="300" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="289" r="2" fill="#4b5563"/>
+<text x="48" y="293" fill="#cbd5e1" font-size="12" font-weight="500">verified_at</text>
+<text x="524" y="293" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(660, 880)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="360" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#991b1b"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">narcotic_register</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#ef444420" stroke="#ef4444" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">NDPS SCHEDULE X</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">timestamp</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="89" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="101" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="101" fill="#f8fafc" font-size="12" font-weight="700">rx_id</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">patient_name</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">patient_phone</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">doctor_name</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">doctor_reg_no</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="209" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="221" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="221" fill="#f8fafc" font-size="12" font-weight="700">medicine_name</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">batch_no</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="276" x2="532" y2="276" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="265" r="2" fill="#4b5563"/>
+<text x="48" y="269" fill="#cbd5e1" font-size="12" font-weight="500">quantity</text>
+<text x="524" y="269" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="300" x2="532" y2="300" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="281" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="293" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="293" fill="#f8fafc" font-size="12" font-weight="700">pharmacist_name</text>
+<text x="524" y="293" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="324" x2="532" y2="324" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="313" r="2" fill="#4b5563"/>
+<text x="48" y="317" fill="#cbd5e1" font-size="12" font-weight="500">pharmacist_reg_no</text>
+<text x="524" y="317" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="348" x2="532" y2="348" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="337" r="2" fill="#4b5563"/>
+<text x="48" y="341" fill="#cbd5e1" font-size="12" font-weight="500">auth_pin_verified</text>
+<text x="524" y="341" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+</g>
+
+        <g transform="translate(660, 1340)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="216" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#065f46"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">refill_schedules</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#10b98120" stroke="#10b981" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">CHRONIC ADHERENCE</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">patient_name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">patient_phone</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="113" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="125" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="125" fill="#f8fafc" font-size="12" font-weight="700">medicine_name</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">last_dispensed</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">next_due_date</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(1260, 140)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="456" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#92400e"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">medicines</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#f59e0b20" stroke="#f59e0b" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">CATALOG & STOCK</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">generic</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">category</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">schedule</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">manufacturer</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">batch</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">expiry</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">days_to_expiry</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="276" x2="532" y2="276" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="265" r="2" fill="#4b5563"/>
+<text x="48" y="269" fill="#cbd5e1" font-size="12" font-weight="500">stock</text>
+<text x="524" y="269" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="300" x2="532" y2="300" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="289" r="2" fill="#4b5563"/>
+<text x="48" y="293" fill="#cbd5e1" font-size="12" font-weight="500">unit</text>
+<text x="524" y="293" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="324" x2="532" y2="324" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="313" r="2" fill="#4b5563"/>
+<text x="48" y="317" fill="#cbd5e1" font-size="12" font-weight="500">mrp</text>
+<text x="524" y="317" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="348" x2="532" y2="348" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="337" r="2" fill="#4b5563"/>
+<text x="48" y="341" fill="#cbd5e1" font-size="12" font-weight="500">cost_price</text>
+<text x="524" y="341" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="372" x2="532" y2="372" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="361" r="2" fill="#4b5563"/>
+<text x="48" y="365" fill="#cbd5e1" font-size="12" font-weight="500">gst_pct</text>
+<text x="524" y="365" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="396" x2="532" y2="396" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="385" r="2" fill="#4b5563"/>
+<text x="48" y="389" fill="#cbd5e1" font-size="12" font-weight="500">rack</text>
+<text x="524" y="389" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="420" x2="532" y2="420" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="409" r="2" fill="#4b5563"/>
+<text x="48" y="413" fill="#cbd5e1" font-size="12" font-weight="500">cold_chain</text>
+<text x="524" y="413" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="444" x2="532" y2="444" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="433" r="2" fill="#4b5563"/>
+<text x="48" y="437" fill="#cbd5e1" font-size="12" font-weight="500">interactions</text>
+<text x="524" y="437" fill="#38bdf8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">JSON</text>
+</g>
+
+        <g transform="translate(1260, 710)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="192" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#0369a1"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">temperature_logs</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#0ea5e920" stroke="#0ea5e9" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">IOT COLD-CHAIN</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">timestamp</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">sensor_id</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">temperature</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">alert_triggered</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+</g>
+
+        <g transform="translate(1260, 980)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="240" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#6b21a8"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">suppliers</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#a855f720" stroke="#a855f7" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">SUPPLY CHAIN</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">contact_person</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">phone</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">email</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">gstin</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">address</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">payment_terms</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(1260, 1300)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="240" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#6b21a8"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">purchase_orders</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#a855f720" stroke="#a855f7" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">SUPPLY CHAIN</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">po_id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">date</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="89" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="101" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="101" fill="#f8fafc" font-size="12" font-weight="700">supplier_name</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">items_json</text>
+<text x="524" y="149" fill="#38bdf8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">JSON</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">total_amount</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">received_date</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="209" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="221" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="221" fill="#f8fafc" font-size="12" font-weight="700">created_by</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+        <g transform="translate(1860, 140)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="264" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#831843"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">invoices</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#f43f5e20" stroke="#f43f5e" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">POS & BILLING</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">invoice_id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">timestamp</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">patient_name</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="113" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="125" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="125" fill="#f8fafc" font-size="12" font-weight="700">cashier_name</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="145" r="2" fill="#4b5563"/>
+<text x="48" y="149" fill="#cbd5e1" font-size="12" font-weight="500">payment_method</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">subtotal</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">gst_amount</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">total_amount</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">items_json</text>
+<text x="524" y="245" fill="#38bdf8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">JSON</text>
+</g>
+
+        <g transform="translate(1860, 500)" filter="url(#shadow)">
+            <rect x="0" y="0" width="540" height="336" rx="10" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+            <path d="M 0 10 Q 0 0 10 0 L 530 0 Q 540 0 540 10 L 540 36 L 0 36 Z" fill="#374151"/>
+            <text x="16" y="23" fill="#f8fafc" font-size="15" font-weight="700">delivery_orders</text>
+            <rect x="400" y="8" width="126" height="20" rx="4" fill="#64748b20" stroke="#64748b" stroke-width="1"/>
+            <text x="463" y="22" fill="#f1f5f9" font-size="10" font-weight="700" text-anchor="middle">LOGISTICS & DISPATCH</text>
+        
+<line x1="8" y1="60" x2="532" y2="60" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="41" width="28" height="15" rx="3" fill="#f59e0b" />
+<text x="26" y="53" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+<text x="48" y="53" fill="#f8fafc" font-size="12" font-weight="700">order_id</text>
+<text x="524" y="53" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="84" x2="532" y2="84" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="73" r="2" fill="#4b5563"/>
+<text x="48" y="77" fill="#cbd5e1" font-size="12" font-weight="500">patient_name</text>
+<text x="524" y="77" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="108" x2="532" y2="108" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="97" r="2" fill="#4b5563"/>
+<text x="48" y="101" fill="#cbd5e1" font-size="12" font-weight="500">address</text>
+<text x="524" y="101" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="132" x2="532" y2="132" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="121" r="2" fill="#4b5563"/>
+<text x="48" y="125" fill="#cbd5e1" font-size="12" font-weight="500">phone</text>
+<text x="524" y="125" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="156" x2="532" y2="156" stroke="#1f2937" stroke-width="0.8"/>
+<rect x="12" y="137" width="28" height="15" rx="3" fill="#0ea5e9" />
+<text x="26" y="149" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+<text x="48" y="149" fill="#f8fafc" font-size="12" font-weight="700">agent_name</text>
+<text x="524" y="149" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="180" x2="532" y2="180" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="169" r="2" fill="#4b5563"/>
+<text x="48" y="173" fill="#cbd5e1" font-size="12" font-weight="500">status</text>
+<text x="524" y="173" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="204" x2="532" y2="204" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="193" r="2" fill="#4b5563"/>
+<text x="48" y="197" fill="#cbd5e1" font-size="12" font-weight="500">time_slot</text>
+<text x="524" y="197" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="228" x2="532" y2="228" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="217" r="2" fill="#4b5563"/>
+<text x="48" y="221" fill="#cbd5e1" font-size="12" font-weight="500">items_count</text>
+<text x="524" y="221" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="252" x2="532" y2="252" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="241" r="2" fill="#4b5563"/>
+<text x="48" y="245" fill="#cbd5e1" font-size="12" font-weight="500">cold_chain_pack</text>
+<text x="524" y="245" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">INTEGER</text>
+<line x1="8" y1="276" x2="532" y2="276" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="265" r="2" fill="#4b5563"/>
+<text x="48" y="269" fill="#cbd5e1" font-size="12" font-weight="500">amount</text>
+<text x="524" y="269" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">REAL</text>
+<line x1="8" y1="300" x2="532" y2="300" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="289" r="2" fill="#4b5563"/>
+<text x="48" y="293" fill="#cbd5e1" font-size="12" font-weight="500">payment_status</text>
+<text x="524" y="293" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+<line x1="8" y1="324" x2="532" y2="324" stroke="#1f2937" stroke-width="0.8"/>
+<circle cx="26" cy="313" r="2" fill="#4b5563"/>
+<text x="48" y="317" fill="#cbd5e1" font-size="12" font-weight="500">otp</text>
+<text x="524" y="317" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="end" font-family="monospace">TEXT</text>
+</g>
+
+            <g>
+                <path d="M 85 404 L 85 480" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="93" y="432.0" width="110" height="18" rx="3" fill="#090d16" stroke="#38bdf8" stroke-width="0.8"/>
+                <text x="99" y="445.0" fill="#38bdf8" font-size="9" font-weight="700">1:N (user_id)</text>
+            </g>
+            
+
+            <g>
+                <path d="M 85 404 L 85 840" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="93" y="612.0" width="110" height="18" rx="3" fill="#090d16" stroke="#38bdf8" stroke-width="0.8"/>
+                <text x="99" y="625.0" fill="#38bdf8" font-size="9" font-weight="700">1:N (user_name)</text>
+            </g>
+            
+
+            <g>
+                <path d="M 685 404 L 685 480" stroke="#10b981" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="693" y="432.0" width="110" height="18" rx="3" fill="#090d16" stroke="#10b981" stroke-width="0.8"/>
+                <text x="699" y="445.0" fill="#10b981" font-size="9" font-weight="700">1:N (patient_id)</text>
+            </g>
+            
+
+            <g>
+                <path d="M 685 792 L 685 880" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="693" y="826.0" width="110" height="18" rx="3" fill="#090d16" stroke="#ef4444" stroke-width="0.8"/>
+                <text x="699" y="839.0" fill="#ef4444" font-size="9" font-weight="700">1:N (rx_id)</text>
+            </g>
+            
+
+            <g>
+                <path d="M 1285 596 L 1285 710" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="1293" y="643.0" width="110" height="18" rx="3" fill="#090d16" stroke="#0ea5e9" stroke-width="0.8"/>
+                <text x="1299" y="656.0" fill="#0ea5e9" font-size="9" font-weight="700">1:N (sensor_id)</text>
+            </g>
+            
+
+            <g>
+                <path d="M 1285 1220 L 1285 1300" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="1293" y="1250.0" width="110" height="18" rx="3" fill="#090d16" stroke="#a855f7" stroke-width="0.8"/>
+                <text x="1299" y="1263.0" fill="#a855f7" font-size="9" font-weight="700">1:N (supplier_name)</text>
+            </g>
+            
+
+            <g>
+                <path d="M 1885 404 L 1885 500" stroke="#f43f5e" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)" marker-start="url(#circle)"/>
+                <rect x="1893" y="442.0" width="110" height="18" rx="3" fill="#090d16" stroke="#f43f5e" stroke-width="0.8"/>
+                <text x="1899" y="455.0" fill="#f43f5e" font-size="9" font-weight="700">1:N (patient_name)</text>
+            </g>
+            
+
+    <g transform="translate(60, 1830)">
+        <rect x="0" y="0" width="2340" height="60" rx="8" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+        <text x="20" y="36" fill="#f8fafc" font-size="12" font-weight="800">KEY DEFINITION:</text>
+        
+        <rect x="140" y="24" width="28" height="16" rx="3" fill="#f59e0b"/>
+        <text x="154" y="36" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">PK</text>
+        <text x="175" y="36" fill="#cbd5e1" font-size="12">Primary Key</text>
+
+        <rect x="270" y="24" width="28" height="16" rx="3" fill="#0ea5e9"/>
+        <text x="284" y="36" fill="#0f172a" font-size="9" font-weight="900" text-anchor="middle">FK</text>
+        <text x="305" y="36" fill="#cbd5e1" font-size="12">Foreign Key (Indexed)</text>
+
+        <rect x="460" y="24" width="28" height="16" rx="3" fill="#a855f7"/>
+        <text x="474" y="36" fill="#ffffff" font-size="9" font-weight="900" text-anchor="middle">UK</text>
+        <text x="495" y="36" fill="#cbd5e1" font-size="12">Unique Constraint</text>
+
+        <text x="640" y="36" fill="#94a3b8" font-size="12">Engine: <tspan fill="#38bdf8">SQLite 3 WAL Mode</tspan> | Concurrency: <tspan fill="#38bdf8">Multi-threaded Non-blocking</tspan> | Normalization: <tspan fill="#38bdf8">Third Normal Form (3NF)</tspan></text>
+        <text x="2310" y="36" fill="#e2e8f0" font-size="12" font-weight="700" text-anchor="end">Lead Architect: Piyush Bhatt</text>
+    </g>
+    
+</svg>
