@@ -22,6 +22,8 @@ from core.db import (
     get_all_patients, add_patient, get_patient_by_phone, update_patient_loyalty,
     get_narcotic_records, add_narcotic_record,
     get_all_suppliers, get_all_purchase_orders, add_purchase_order, update_purchase_order_status,
+    record_goods_receipt, get_supplier_consignment_ledger, get_supplier_consignment_summary,
+    settle_supplier_payment, get_supplier_payouts,
     get_temperature_logs, add_temperature_log,
     get_refill_schedules, update_refill_status,
     get_dashboard_analytics, get_daily_z_report_data,
@@ -596,6 +598,128 @@ class TestTQMPharmFeatures(unittest.TestCase):
         self.assertTrue(export_res["success"])
         self.assertTrue(os.path.exists(export_res["filepath"]))
         self.assertGreater(os.path.getsize(export_res["filepath"]), 50)
+
+
+    # --- 18. PHARMA CONSIGNMENT & PAY-ON-SALE SETTLEMENT ---
+    def test_19_consignment_pay_on_sale_and_supplier_settlement(self):
+        """
+        Validates the pharma consignment business model:
+        1. When new stock arrives & is delivered from company, stock goes high with Rs 0 upfront cost.
+        2. When pieces are sold (e.g. 50 pieces @ Rs 100 with dealer cost Rs 10), payable is calculated:
+           Payable = 50 * 10 = Rs 500.
+           Pharmacy Profit = 50 * (100 - 10) = Rs 4,500.
+           Remaining unsold stock = 50 units (Rs 0 owed until sold).
+        3. Settlement payment of Rs 500 reduces balance due to Rs 0.00.
+        """
+        ts = int(datetime.now().timestamp())
+        med_name = f"ConsignMed_{ts}"
+        med_id = f"MED-CONSIGN-{ts}"
+        po_id = f"PO-CONSIGN-{ts}"
+        sup_name = "Sunrise Pharma Wholesalers"
+        cost_price = 10.0
+        selling_price = 100.0
+        inward_qty = 100
+
+        # Step 1: Inward New Order (Delivered / Goods Received)
+        po_data = {
+            "po_id": po_id,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "supplier_name": sup_name,
+            "status": "Goods Received",
+            "items": [{"medicine": med_name, "qty": inward_qty, "rate": cost_price, "selling_price": selling_price}],
+            "total_amount": inward_qty * cost_price,
+            "received_date": datetime.now().strftime("%Y-%m-%d"),
+            "created_by": "Dr. Rajesh Kulkarni",
+            "auto_increment_stock": True
+        }
+        add_po_success = add_purchase_order(po_data)
+        self.assertTrue(add_po_success, "Purchase order with Goods Received should save successfully")
+
+        # Verify initial consignment ledger state: 100 received, 0 sold, 0 payable
+        batches = get_supplier_consignment_ledger(sup_name)
+        target_b = next((b for b in batches if b["po_id"] == po_id and b["medicine_name"] == med_name), None)
+        self.assertIsNotNone(target_b, "Consignment batch must be created automatically upon Goods Received")
+        self.assertEqual(target_b["received_qty"], inward_qty)
+        self.assertEqual(target_b["units_sold"], 0)
+        self.assertEqual(target_b["accrued_payable"], 0.0, "Initial payable to company must be Rs 0 until pieces are sold")
+        self.assertEqual(target_b["unsold_stock"], inward_qty)
+        self.assertEqual(target_b["balance_due"], 0.0)
+
+        # Step 2: Sell 50 units at POS (Selling Price = Rs 100, Dealer Cost = Rs 10)
+        sold_units = 50
+        invoice_data = {
+            "invoice_id": f"INV-CONSIGN-{ts}",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "patient_name": "Consignment Verification Patient",
+            "cashier_name": "Amit Deshmukh",
+            "payment_method": "Cash",
+            "subtotal": sold_units * selling_price,
+            "gst_amount": 0.0,
+            "total_amount": sold_units * selling_price,
+            "items": [
+                {
+                    "id": target_b["medicine_id"],
+                    "name": med_name,
+                    "qty": sold_units,
+                    "rate": selling_price,
+                    "amount": sold_units * selling_price
+                }
+            ]
+        }
+        inv_success, inv_err = create_invoice(invoice_data)
+        self.assertTrue(inv_success, f"Invoice creation failed: {inv_err}")
+
+        # Step 3: Verify dynamic calculations after sale
+        batches_after = get_supplier_consignment_ledger(sup_name)
+        b_after = next((b for b in batches_after if b["id"] == target_b["id"]), None)
+        self.assertIsNotNone(b_after)
+
+        expected_payable = sold_units * cost_price            # 50 * 10 = Rs 500
+        expected_profit = sold_units * (selling_price - cost_price)  # 50 * 90 = Rs 4,500
+        expected_unsold = inward_qty - sold_units            # 100 - 50 = 50 pieces
+
+        self.assertEqual(b_after["units_sold"], sold_units)
+        self.assertEqual(b_after["unsold_stock"], expected_unsold)
+        self.assertEqual(b_after["accrued_payable"], expected_payable, "Owed to company must equal 50 * Rs 10 = Rs 500.00")
+        self.assertEqual(b_after["pharmacy_profit"], expected_profit, "Pharmacy gross margin must equal 50 * Rs 90 = Rs 4,500.00")
+        self.assertEqual(b_after["balance_due"], expected_payable)
+
+        # Step 4: Settle Payment to Supplier (Rs 500)
+        payout_payload = {
+            "supplier_name": sup_name,
+            "batch_id": b_after["id"],
+            "po_id": po_id,
+            "medicine_name": med_name,
+            "units_settled": sold_units,
+            "rate": cost_price,
+            "amount_paid": expected_payable,
+            "payment_mode": "NEFT Bank Transfer",
+            "reference_no": f"UTR-{ts}",
+            "notes": "Full settlement for 50 pieces sold on consignment",
+            "paid_by": "Dr. Rajesh Kulkarni"
+        }
+        settle_success, payout_res = settle_supplier_payment(payout_payload)
+        self.assertTrue(settle_success, f"Settlement failed: {payout_res}")
+        self.assertTrue(str(payout_res).startswith("PAY-"))
+
+        # Step 5: Verify post-settlement state (Balance Due = Rs 0.00)
+        batches_settled = get_supplier_consignment_ledger(sup_name)
+        b_settled = next((b for b in batches_settled if b["id"] == target_b["id"]), None)
+        self.assertEqual(b_settled["total_paid"], expected_payable)
+        self.assertEqual(b_settled["balance_due"], 0.0, "Balance due must be Rs 0.00 after settlement")
+
+        # Verify payout record in supplier_payouts table
+        payouts = get_supplier_payouts(sup_name)
+        self.assertTrue(any(p["reference_no"] == f"UTR-{ts}" for p in payouts))
+
+        # Step 6: Test Bridge RPC wrappers
+        from core.bridge import PharmacyBridge
+        bridge = PharmacyBridge()
+        bridge.login("admin", "admin123")
+        b_summary = bridge.get_supplier_consignment_summary()
+        self.assertIn("total_accrued_payable", b_summary)
+        self.assertIn("total_profit_earned", b_summary)
+        self.assertIn("total_balance_due", b_summary)
 
 if __name__ == "__main__":
     unittest.main()

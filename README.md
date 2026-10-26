@@ -100,7 +100,10 @@ erDiagram
 
     %% CLUSTER 3: PHARMACEUTICALS, IOT & SUPPLY CHAIN
     SUPPLIERS ||--o{ PURCHASE_ORDERS : "fulfills"
+    SUPPLIERS ||--o{ CONSIGNMENT_BATCHES : "inwards"
+    CONSIGNMENT_BATCHES ||--o{ SUPPLIER_PAYOUTS : "settles"
     MEDICINES ||--o{ TEMPERATURE_LOGS : "monitored_by_iot"
+    MEDICINES ||--o{ CONSIGNMENT_BATCHES : "consigned_stock"
     PURCHASE_ORDERS }o--o{ MEDICINES : "restocks"
 
     %% CLUSTER 4: POS BILLING & FINANCIAL RECONCILIATION
@@ -293,9 +296,36 @@ erDiagram
         string status "CLOSED & SIGNED or AUDIT REVIEW"
         string notes "Cashier shift remarks"
     }
+
+    CONSIGNMENT_BATCHES {
+        int id PK "Autoincrement consignment ID"
+        string po_id FK "References purchase_orders(po_id)"
+        string supplier_name FK "References suppliers(name)"
+        string medicine_name FK "References medicines(name)"
+        string batch_no "Supplier batch identifier"
+        int received_qty "Delivered consignment quantity"
+        float cost_price "Procurement rate owed upon sale"
+        float selling_price "Retail MRP at counter"
+        int units_sold "Quantity sold to patients"
+        float accrued_payable "units_sold * cost_price"
+        float total_paid "Total payouts settled to supplier"
+        datetime created_at "Goods receipt timestamp"
+    }
+
+    SUPPLIER_PAYOUTS {
+        int id PK "Autoincrement payout ID"
+        int consignment_id FK "References consignment_batches(id)"
+        string supplier_name FK "References suppliers(name)"
+        float amount_paid "Settled payout amount"
+        string payment_method "Bank Transfer, UPI, Cheque, Cash"
+        string reference_no "Transaction UTR or Cheque number"
+        string notes "Settlement remarks"
+        string settled_by FK "References staff(name)"
+        datetime settled_at "Settlement timestamp"
+    }
 ```
 
-### 📋 14-Table Relational Schema Architecture
+### 📋 16-Table Relational Schema Architecture
 
 | Domain Cluster | Table Name | Primary Key | Key Relationships & Foreign Keys | Role / Purpose |
 | :--- | :--- | :--- | :--- | :--- |
@@ -313,6 +343,8 @@ erDiagram
 | **💳 Sales & POS** | `invoices` | `invoice_id` | `cashier_name -> staff.name` | Retail GST bills, multi-tender transactions |
 | **💳 Sales & POS** | `delivery_orders` | `order_id` | `agent_name -> staff.name` | Dispatch routing, Kanban stages, 4-digit OTP e-POD |
 | **💳 Sales & POS** | `z_reports` | `z_report_id` | `generated_by -> staff.name` | Shift cash drawer reconciliation and till closure |
+| **📦 Consignment & Pay-on-Sale** | `consignment_batches` | `id` | `supplier_name -> suppliers.name`, `po_id -> purchase_orders.po_id` | Pay-on-sale consignment inventory, cost rate, sold count, accrued liability |
+| **📦 Consignment & Pay-on-Sale** | `supplier_payouts` | `id` | `consignment_id -> consignment_batches.id`, `settled_by -> staff.name` | Supplier disbursement vouchers, payment references (UTR/Cheque), settlement history |
 
 
 ---
@@ -343,6 +375,8 @@ erDiagram
 - **Goods Receipt Notes (GRN)**: Inward supplier shipments with PO number, supplier selection, received quantity, batch number, expiry date, and unit cost.
 - **Cold-Chain IoT Monitor**: Live circular temperature gauge, 24-hour telemetry log stream, and simulated temperature spike alarms (`ALERT: Exceeded 8.0°C`).
 - **Suppliers Directory**: Manage distributors, contact persons, phone numbers, and payment terms.
+- **Pharmaceutical Consignment & Pay-on-Sale Ledger**: Zero-upfront procurement workflow. When stock arrives, it enters sellable inventory immediately while supplier payable remains ₹0 until dispensing. When items sell at POS, the system automatically calculates supplier payables (`units_sold * cost_price`) and pharmacy gross margin (`units_sold * (selling_price - cost_price)`).
+- **Supplier Settlement Payouts**: Real-time batch-level or supplier-level payout settlements (Cash, Bank Transfer, Cheque, UPI) with balance tracking, payment reference logging, and complete settlement audit trail.
 
 ### 4. 🚚 Delivery Fleet & Logistics
 - **Active Route Board**: Kanban columns for `Packaging`, `Out for Delivery`, and `Delivered`.
@@ -413,7 +447,7 @@ python apps/admin_app.py
 ```
 
 ### Option D: Automated Full-Feature Test Suite
-Run the 18-point automated test suite covering all security, clinical, pos, inventory, config, logging, UI rendering, and desktop bridge functions:
+Run the comprehensive 25-point automated integration test suite covering all security, clinical, pos, inventory, config, logging, UI rendering, and desktop bridge functions:
 ```bash
 python tests/test_all_features.py
 ```

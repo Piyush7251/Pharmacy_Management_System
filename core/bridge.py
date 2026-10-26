@@ -18,6 +18,8 @@ from core.db import (
     get_all_patients, add_patient, get_patient_by_phone, update_patient_loyalty,
     get_narcotic_records, add_narcotic_record,
     get_all_suppliers, get_all_purchase_orders, add_purchase_order, update_purchase_order_status,
+    record_goods_receipt, get_supplier_consignment_ledger, get_supplier_consignment_summary,
+    settle_supplier_payment, get_supplier_payouts,
     get_temperature_logs, add_temperature_log,
     get_refill_schedules, update_refill_status,
     get_dashboard_analytics, get_active_sessions, update_session_heartbeat,
@@ -362,6 +364,51 @@ class PharmacyBridge:
         """Update status of purchase order."""
         success = update_purchase_order_status(po_id, status)
         return {"success": success}
+
+    # --- 6.1 SUPPLIER CONSIGNMENT & PAY-ON-SALE LEDGER ---
+
+    def get_supplier_consignment_ledger(self, supplier_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retrieve real-time pay-on-sale consignment batches and payable calculations."""
+        return get_supplier_consignment_ledger(supplier_name)
+
+    def get_supplier_consignment_summary(self) -> Dict[str, Any]:
+        """Retrieve overall KPI totals for consignment inwarded, sold, payable, and profit."""
+        return get_supplier_consignment_summary()
+
+    def settle_supplier_payment(self, payout_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Settle payments to company/supplier for sold consignment units."""
+        user_name = self._current_user.get("name", "Staff") if self._current_user else "Staff"
+        payout_data["paid_by"] = user_name
+        success, res = settle_supplier_payment(payout_data)
+        if success:
+            log_activity(
+                action="Supplier Payout Settled",
+                details=f"Paid ₹{float(payout_data.get('amount_paid', 0)):.2f} to {payout_data.get('supplier_name')} for {payout_data.get('units_settled', 0)} sold units via {payout_data.get('payment_mode')}.",
+                user_name=user_name,
+                role=self._current_user.get("role", "Inventory") if self._current_user else "Inventory",
+                level="INFO"
+            )
+            return {"success": True, "payout_id": res}
+        return {"success": False, "error": str(res)}
+
+    def get_supplier_payouts(self, supplier_name: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        """Retrieve historical settlement payouts made to suppliers."""
+        return get_supplier_payouts(supplier_name, limit)
+
+    def record_goods_receipt(self, po_id: str, received_date: Optional[str] = None) -> Dict[str, Any]:
+        """Mark purchase order as delivered/received and inward into consignment stock with 0 upfront payment."""
+        success = record_goods_receipt(po_id, received_date)
+        if success:
+            log_activity(
+                action="Goods Received (Consignment)",
+                details=f"Marked {po_id} as delivered/received. Stock added to consignment ledger with pay-on-sale terms.",
+                user_name=self._current_user.get("name", "Staff") if self._current_user else "Staff",
+                role="Inventory",
+                level="INFO"
+            )
+            return {"success": True}
+        return {"success": False, "error": "Failed to mark goods received."}
+
 
     # --- 7. COLD CHAIN TELEMETRY & REFILL ADHERENCE ---
 

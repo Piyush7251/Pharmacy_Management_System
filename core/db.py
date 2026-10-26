@@ -8,6 +8,7 @@ patients, suppliers, purchase orders, narcotic NDPS register, and cold chain log
 import sqlite3
 import os
 import json
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
@@ -269,6 +270,46 @@ def init_db():
     );
     """)
     
+    
+    # 15. Consignment Batches (Pay-on-Sale / Sale-or-Return Stock)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS consignment_batches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        po_id TEXT NOT NULL,
+        supplier_name TEXT NOT NULL,
+        medicine_id TEXT,
+        medicine_name TEXT NOT NULL,
+        batch_no TEXT NOT NULL,
+        received_date TEXT NOT NULL,
+        received_qty INTEGER NOT NULL,
+        cost_price REAL NOT NULL,
+        selling_price REAL NOT NULL,
+        units_sold INTEGER NOT NULL DEFAULT 0,
+        units_paid INTEGER NOT NULL DEFAULT 0,
+        total_paid REAL NOT NULL DEFAULT 0.0,
+        status TEXT DEFAULT 'Active',
+        created_at TEXT NOT NULL
+    );
+    """)
+
+    # 16. Supplier Settlement Payouts (Payments to Company for Sold Stock)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS supplier_payouts (
+        payout_id TEXT PRIMARY KEY,
+        timestamp TEXT NOT NULL,
+        supplier_name TEXT NOT NULL,
+        po_id TEXT,
+        medicine_name TEXT,
+        units_settled INTEGER NOT NULL DEFAULT 0,
+        rate REAL NOT NULL DEFAULT 0.0,
+        amount_paid REAL NOT NULL,
+        payment_mode TEXT NOT NULL DEFAULT 'NEFT Bank Transfer',
+        reference_no TEXT,
+        notes TEXT,
+        paid_by TEXT NOT NULL
+    );
+    """)
+
     # Seed initial default data
     seed_initial_data(cursor)
     
@@ -402,6 +443,22 @@ def seed_initial_data(cursor):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("INSERT INTO audit_logs (timestamp, user_name, role, action, details, level) VALUES (?, ?, ?, ?, ?, ?)",
                        (now, "System", "System", "System Initialized", "All enterprise database tables verified and loaded.", "INFO"))
+
+    # 12. Initial Consignment Batches (Pay-on-Sale Ledger)
+    cursor.execute("SELECT COUNT(*) as count FROM consignment_batches")
+    if cursor.fetchone()["count"] == 0:
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        date_str = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+        sample_consignments = [
+            ("PO-2026-901", "MedLife Pharma Distributors", "MED-001", "Augmentin 625 Duo Tablet", "AUG-2025-09", date_str, 100, 10.0, 100.0, 50, 0, 0.0, "Active", now_str),
+            ("PO-2026-881", "Apex Healthcare Supply Co.", "MED-002", "Pan-D Capsule", "PAND-883", date_str, 150, 135.0, 199.0, 40, 0, 0.0, "Active", now_str),
+            ("PO-2026-882", "ColdChain Vaccines India", "MED-005", "Lantus Solostar Insulin Pen", "LAN-4401", date_str, 50, 540.0, 685.0, 15, 0, 0.0, "Active", now_str),
+        ]
+        cursor.executemany("""
+        INSERT INTO consignment_batches (po_id, supplier_name, medicine_id, medicine_name, batch_no, received_date, received_qty, cost_price, selling_price, units_sold, units_paid, total_paid, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, sample_consignments)
+
 
 
 # --- USER AUTHENTICATION & STAFF CRUD FUNCTIONS ---
@@ -634,6 +691,29 @@ def create_invoice(invoice_data):
             qty = it.get("qty", 1)
             if med_id:
                 cur.execute("UPDATE medicines SET stock = MAX(0, stock - ?) WHERE id = ?", (qty, med_id))
+                # Attribute sold units to active consignment batches for Pay-on-Sale tracking
+        for it in invoice_data.get("items", []):
+            med_id = it.get("med_id") or it.get("id")
+            med_name = it.get("name") or it.get("medicine")
+            qty = int(it.get("qty", 1))
+            if not med_id and not med_name:
+                continue
+            cur.execute("""
+            SELECT id, received_qty, units_sold 
+            FROM consignment_batches 
+            WHERE (medicine_id = ? OR medicine_name = ?) AND (received_qty > units_sold)
+            ORDER BY received_date ASC, id ASC
+            """, (med_id, med_name))
+            c_batches = cur.fetchall()
+            rem = qty
+            for cb in c_batches:
+                avail = cb["received_qty"] - cb["units_sold"]
+                if avail > 0:
+                    take = min(avail, rem)
+                    cur.execute("UPDATE consignment_batches SET units_sold = units_sold + ? WHERE id = ?", (take, cb["id"]))
+                    rem -= take
+                    if rem <= 0:
+                        break
         conn.commit()
         success, err = True, None
     except Exception as e:
@@ -846,6 +926,9 @@ def add_purchase_order(po_data):
             json.dumps(po_data["items"]), po_data["total_amount"],
             po_data.get("received_date"), po_data["created_by"]
         ))
+        if po_data.get("status") in ("Received & Added to Stock", "Goods Received", "Delivered"):
+            auto_inc = po_data.get("auto_increment_stock", False)
+            _internal_inward_consignment(cur, po_data, auto_increment_stock=auto_inc)
         conn.commit()
         success = True
     except Exception:
@@ -937,6 +1020,16 @@ def update_purchase_order_status(po_id, status, received_date=None):
             cur.execute("UPDATE purchase_orders SET status = ?, received_date = ? WHERE po_id = ?", (status, received_date, po_id))
         else:
             cur.execute("UPDATE purchase_orders SET status = ? WHERE po_id = ?", (status, po_id))
+        if status in ("Goods Received", "Received & Added to Stock", "Delivered"):
+            cur.execute("SELECT * FROM purchase_orders WHERE po_id = ?", (po_id,))
+            po_row = cur.fetchone()
+            if po_row:
+                p_dict = dict(po_row)
+                try:
+                    p_dict["items"] = json.loads(p_dict.get("items_json", "[]"))
+                except Exception:
+                    p_dict["items"] = []
+                _internal_inward_consignment(cur, p_dict, auto_increment_stock=True)
         conn.commit()
         success = True
     except Exception:
@@ -1166,3 +1259,236 @@ def get_all_z_reports(limit: int = 50) -> List[Dict[str, Any]]:
 # Initialize database on import
 init_db()
 
+
+
+# --- SUPPLIER CONSIGNMENT & PAY-ON-SALE FUNCTIONS ---
+
+def _internal_inward_consignment(cur, po_data, auto_increment_stock=True):
+    po_id = po_data["po_id"]
+    sup_name = po_data["supplier_name"]
+    items = po_data.get("items", [])
+    rec_date = po_data.get("received_date") or datetime.now().strftime("%Y-%m-%d")
+    now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    for it in items:
+        if isinstance(it, str):
+            med_name = it
+            qty = 10
+            rate = 0.0
+        elif isinstance(it, dict):
+            med_name = it.get("medicine") or it.get("name")
+            qty = int(it.get("qty", 0))
+            rate = float(it.get("rate", 0.0))
+        else:
+            continue
+            
+        if not med_name or qty <= 0:
+            continue
+            
+        # Avoid duplicate batch entries for same po_id and medicine
+        cur.execute("SELECT COUNT(*) as cnt FROM consignment_batches WHERE po_id = ? AND medicine_name = ?", (po_id, med_name))
+        if cur.fetchone()["cnt"] > 0:
+            continue
+            
+        cur.execute("SELECT id, name, mrp, cost_price, batch FROM medicines WHERE name = ? OR id = ?", (med_name, med_name))
+        med_row = cur.fetchone()
+        
+        custom_mrp = float(it.get("selling_price") or it.get("mrp") or 0.0) if isinstance(it, dict) else 0.0
+        if med_row:
+            med_id = med_row["id"]
+            mrp = custom_mrp if custom_mrp > 0 else float(med_row["mrp"])
+            cp = rate if rate > 0 else float(med_row["cost_price"])
+            batch_no = med_row["batch"]
+            if auto_increment_stock:
+                cur.execute("UPDATE medicines SET stock = stock + ? WHERE id = ?", (qty, med_id))
+        else:
+            med_id = f"MED-{secrets.token_hex(3).upper()}"
+            cp = rate if rate > 0 else 10.0
+            mrp = custom_mrp if custom_mrp > 0 else (round(cp * 1.5, 2) if cp > 0 else 100.0)
+            batch_no = f"BAT-{datetime.now().strftime('%m%y')}"
+            cur.execute("""
+            INSERT INTO medicines (id, name, generic, category, schedule, manufacturer, batch, expiry, days_to_expiry, stock, unit, mrp, cost_price, gst_pct, rack, cold_chain, interactions)
+            VALUES (?, ?, ?, 'General', 'OTC', ?, ?, ?, 365, ?, 'Strips', ?, ?, 12.0, 'Rack-A1', 0, '[]')
+            """, (med_id, med_name, med_name, sup_name, batch_no, (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d"), qty, mrp, cp))
+
+        # Insert consignment batch: Inwarded stock on consignment, 0 upfront payment
+        cur.execute("""
+        INSERT INTO consignment_batches (po_id, supplier_name, medicine_id, medicine_name, batch_no, received_date, received_qty, cost_price, selling_price, units_sold, units_paid, total_paid, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0.0, 'Active', ?)
+        """, (po_id, sup_name, med_id, med_name, batch_no, rec_date, qty, cp, mrp, now_ts))
+
+
+def record_goods_receipt(po_id, received_date=None, auto_add_stock=True):
+    """
+    Mark an incoming purchase order as delivered/received.
+    Increases inventory stock in medicines table and logs a new consignment batch
+    with 0 upfront payment (pay-on-sale terms).
+    """
+    rec_d = received_date or datetime.now().strftime("%Y-%m-%d")
+    return update_purchase_order_status(po_id, "Goods Received", rec_d)
+
+
+def get_supplier_consignment_ledger(supplier_name=None):
+    """
+    Retrieve full pay-on-sale consignment ledger.
+    Calculates:
+    - Inwarded stock quantity (delivered from company)
+    - Units sold so far at POS
+    - Remaining unsold stock on hand (₹0 liability to pharmacy until sold)
+    - Payable to company = Units Sold * Cost Price
+    - Pharmacy Gross Profit = Units Sold * (Selling Price - Cost Price)
+    - Total Paid and Net Balance Due
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    if supplier_name and supplier_name != "ALL":
+        cur.execute("SELECT * FROM consignment_batches WHERE supplier_name = ? ORDER BY id DESC", (supplier_name,))
+    else:
+        cur.execute("SELECT * FROM consignment_batches ORDER BY id DESC")
+    rows = cur.fetchall()
+    conn.close()
+    
+    result = []
+    for r in rows:
+        d = dict(r)
+        cost = float(d["cost_price"])
+        mrp = float(d["selling_price"])
+        sold = int(d["units_sold"])
+        received = int(d["received_qty"])
+        paid = float(d["total_paid"])
+        
+        unit_margin = round(mrp - cost, 2)
+        unsold_stock = max(0, received - sold)
+        accrued_payable = round(sold * cost, 2)            # Total owed to company for sold pieces
+        pharmacy_profit = round(sold * unit_margin, 2)       # Total profit earned by pharmacy
+        gross_sales_val = round(sold * mrp, 2)              # Total retail sales collected
+        balance_due = round(max(0.0, accrued_payable - paid), 2)  # Remaining amount to pay company
+        
+        d["unit_margin"] = unit_margin
+        d["unsold_stock"] = unsold_stock
+        d["accrued_payable"] = accrued_payable
+        d["pharmacy_profit"] = pharmacy_profit
+        d["gross_sales_val"] = gross_sales_val
+        d["balance_due"] = balance_due
+        result.append(d)
+    return result
+
+
+def get_supplier_consignment_summary():
+    """
+    Retrieve overall high-level totals across all consignment batches.
+    """
+    ledger = get_supplier_consignment_ledger()
+    total_inward_units = sum(x["received_qty"] for x in ledger)
+    total_units_sold = sum(x["units_sold"] for x in ledger)
+    total_unsold_units = sum(x["unsold_stock"] for x in ledger)
+    total_accrued_payable = round(sum(x["accrued_payable"] for x in ledger), 2)
+    total_profit_earned = round(sum(x["pharmacy_profit"] for x in ledger), 2)
+    total_gross_sales = round(sum(x["gross_sales_val"] for x in ledger), 2)
+    total_paid = round(sum(x["total_paid"] for x in ledger), 2)
+    total_balance_due = round(sum(x["balance_due"] for x in ledger), 2)
+    
+    return {
+        "total_inward_units": total_inward_units,
+        "total_units_sold": total_units_sold,
+        "total_unsold_units": total_unsold_units,
+        "total_accrued_payable": total_accrued_payable,
+        "total_profit_earned": total_profit_earned,
+        "total_gross_sales": total_gross_sales,
+        "total_paid": total_paid,
+        "total_balance_due": total_balance_due,
+        "total_batches_count": len(ledger)
+    }
+
+
+def settle_supplier_payment(payout_data):
+    """
+    Record payment to supplier/dealer for sold stock.
+    payout_data: {
+        'supplier_name': str,
+        'batch_id': Optional[int],
+        'po_id': Optional[str],
+        'medicine_name': Optional[str],
+        'units_settled': int,
+        'amount_paid': float,
+        'payment_mode': str,  # 'UPI', 'NEFT Bank Transfer', 'Cheque', 'Cash'
+        'reference_no': str,
+        'notes': str,
+        'paid_by': str
+    }
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        payout_id = f"PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        supplier_name = payout_data["supplier_name"]
+        amount_paid = float(payout_data["amount_paid"])
+        units_settled = int(payout_data.get("units_settled", 0))
+        batch_id = payout_data.get("batch_id")
+        
+        cur.execute("""
+        INSERT INTO supplier_payouts (payout_id, timestamp, supplier_name, po_id, medicine_name, units_settled, rate, amount_paid, payment_mode, reference_no, notes, paid_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            payout_id, ts, supplier_name,
+            payout_data.get("po_id", ""),
+            payout_data.get("medicine_name", ""),
+            units_settled,
+            float(payout_data.get("rate", 0.0)),
+            amount_paid,
+            payout_data.get("payment_mode", "NEFT Bank Transfer"),
+            payout_data.get("reference_no", ""),
+            payout_data.get("notes", ""),
+            payout_data.get("paid_by", "Admin")
+        ))
+        
+        # Update consignment batch if specified, or distribute across supplier batches
+        if batch_id:
+            cur.execute("""
+            UPDATE consignment_batches 
+            SET total_paid = total_paid + ?,
+                units_paid = units_paid + ?,
+                status = CASE WHEN (units_paid + ?) >= units_sold AND units_sold >= received_qty THEN 'Settled' ELSE status END
+            WHERE id = ?
+            """, (amount_paid, units_settled, units_settled, batch_id))
+        else:
+            # Distribute payment to active batches for this supplier
+            cur.execute("""
+            SELECT id, (units_sold * cost_price - total_paid) as due
+            FROM consignment_batches
+            WHERE supplier_name = ? AND (units_sold * cost_price) > total_paid
+            ORDER BY id ASC
+            """, (supplier_name,))
+            unpaid_batches = cur.fetchall()
+            rem = amount_paid
+            for ub in unpaid_batches:
+                if rem <= 0:
+                    break
+                due_val = max(0.0, float(ub["due"]))
+                pay_val = min(rem, due_val)
+                cur.execute("UPDATE consignment_batches SET total_paid = total_paid + ? WHERE id = ?", (pay_val, ub["id"]))
+                rem -= pay_val
+                
+        conn.commit()
+        success, err = True, None
+    except Exception as e:
+        success, err = False, str(e)
+    finally:
+        conn.close()
+    return success, err or payout_id
+
+
+def get_supplier_payouts(supplier_name=None, limit=100):
+    """
+    Retrieve historical settlement payouts made to suppliers.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    if supplier_name and supplier_name != "ALL":
+        cur.execute("SELECT * FROM supplier_payouts WHERE supplier_name = ? ORDER BY timestamp DESC LIMIT ?", (supplier_name, limit))
+    else:
+        cur.execute("SELECT * FROM supplier_payouts ORDER BY timestamp DESC LIMIT ?", (limit,))
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]

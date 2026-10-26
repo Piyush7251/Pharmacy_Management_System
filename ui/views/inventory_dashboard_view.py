@@ -25,7 +25,9 @@ from ui.components.chart_canvas import ColdChainChartCanvas
 from core.db import (
     get_all_medicines, add_medicine, update_medicine_stock, delete_medicine,
     get_all_suppliers, get_all_purchase_orders, add_purchase_order,
-    get_temperature_logs, add_temperature_log, get_connection
+    get_temperature_logs, add_temperature_log, get_connection,
+    get_supplier_consignment_ledger, get_supplier_consignment_summary,
+    settle_supplier_payment, get_supplier_payouts
 )
 
 class InventoryDashboardView(ctk.CTkFrame):
@@ -85,11 +87,13 @@ class InventoryDashboardView(ctk.CTkFrame):
         
         self.tab_stock = self.tabview.add("📊 Stock List & Batches")
         self.tab_grn = self.tabview.add("📦 Supplier Orders (Stock In)")
+        self.tab_consignment = self.tabview.add("🤝 Pay-on-Sale Ledger")
         self.tab_cold = self.tabview.add("❄️ Fridge Temperature (2-8°C)")
         self.tab_suppliers = self.tabview.add("🏢 Medicine Suppliers")
         
         self.setup_stock_tab()
         self.setup_grn_tab()
+        self.setup_consignment_tab()
         self.setup_cold_tab()
         self.setup_suppliers_tab()
 
@@ -716,5 +720,380 @@ class InventoryDashboardView(ctk.CTkFrame):
         self.medicines = get_all_medicines()
         self.render_stock()
         self.render_grn_orders()
+        self.render_consignment_ledger()
         self.render_temp_logs()
         self.render_suppliers()
+
+
+
+    # --- TAB: PAY-ON-SALE / CONSIGNMENT LEDGER ---
+
+    def setup_consignment_tab(self):
+        self.tab_consignment.grid_columnconfigure(0, weight=1)
+        self.tab_consignment.grid_rowconfigure(2, weight=1)
+        
+        # Banner explaining the Pay-as-Sold principle
+        info_banner = ctk.CTkFrame(self.tab_consignment, fg_color=COLORS["bg_card"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        info_banner.grid(row=0, column=0, sticky="ew", padx=10, pady=(6, 4))
+        info_banner.grid_columnconfigure(0, weight=1)
+        
+        banner_txt = (
+            "🤝 PHARMA CONSIGNMENT & PAY-ON-SALE: New stock received from dealers has ₹0 upfront payment. "
+            "Company payment is calculated dynamically on sale: [Units Sold × Dealer Rate]. "
+            "The pharmacy retains the full retail margin [Selling Price - Dealer Rate] as gross profit."
+        )
+        ctk.CTkLabel(
+            info_banner,
+            text=banner_txt,
+            font=FONTS["small_bold"],
+            text_color=COLORS["clinical"],
+            wraplength=1050,
+            justify="left"
+        ).pack(anchor="w", padx=14, pady=8)
+
+        # Filter & Action Control Strip
+        ctrl_bar = ctk.CTkFrame(self.tab_consignment, fg_color="transparent")
+        ctrl_bar.grid(row=1, column=0, sticky="ew", padx=10, pady=4)
+        ctrl_bar.grid_columnconfigure(0, weight=1)
+        
+        self.consign_search = ctk.CTkEntry(
+            ctrl_bar,
+            placeholder_text="🔍 Filter by medicine name, supplier, or batch lot...",
+            font=FONTS["body"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            border_color=COLORS["border"],
+            height=34
+        )
+        self.consign_search.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        self.consign_search.bind("<KeyRelease>", lambda e: self.render_consignment_ledger())
+        
+        right_actions = ctk.CTkFrame(ctrl_bar, fg_color="transparent")
+        right_actions.grid(row=0, column=1)
+        
+        self.opt_consign_sup = ctk.CTkOptionMenu(
+            right_actions,
+            values=["All Suppliers"],
+            font=FONTS["small_bold"],
+            fg_color=COLORS["bg_surface"],
+            text_color=COLORS["text_main"],
+            button_color=COLORS["border"],
+            height=34,
+            command=lambda val: self.render_consignment_ledger()
+        )
+        self.opt_consign_sup.pack(side="left", padx=4)
+        
+        btn_settle = ctk.CTkButton(
+            right_actions,
+            text="💸 Settle Supplier Payment",
+            height=34,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["inventory"],
+            hover_color=COLORS["inventory_hover"],
+            text_color="#FFFFFF",
+            command=self.open_settle_payment_modal
+        )
+        btn_settle.pack(side="left", padx=4)
+
+        btn_hist = ctk.CTkButton(
+            right_actions,
+            text="📜 Payout History",
+            height=34,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["bg_card"],
+            hover_color=COLORS["border"],
+            text_color=COLORS["text_main"],
+            border_width=1,
+            border_color=COLORS["border"],
+            command=self.open_payout_history_modal
+        )
+        btn_hist.pack(side="left", padx=4)
+
+        # Scrollable ledger display area
+        self.consign_scroll = ctk.CTkScrollableFrame(self.tab_consignment, fg_color="transparent")
+        self.consign_scroll.grid(row=2, column=0, sticky="nsew", padx=10, pady=(4, 10))
+        self.consign_scroll.grid_columnconfigure(0, weight=1)
+
+    def render_consignment_ledger(self):
+        for w in self.consign_scroll.winfo_children():
+            w.destroy()
+            
+        summary = get_supplier_consignment_summary()
+        selected_sup = getattr(self, "opt_consign_sup", None)
+        sup_filter = selected_sup.get() if selected_sup else "All Suppliers"
+        query_sup = None if sup_filter in ("All Suppliers", "ALL") else sup_filter
+        
+        batches = get_supplier_consignment_ledger(query_sup)
+        
+        # Populate supplier dropdown options if needed
+        all_suppliers = get_all_suppliers()
+        sup_names = ["All Suppliers"] + [s["name"] for s in all_suppliers]
+        if selected_sup and list(selected_sup.cget("values")) != sup_names:
+            selected_sup.configure(values=sup_names)
+
+        # 1. KPI Metrics Summary Cards Strip
+        kpi_frame = ctk.CTkFrame(self.consign_scroll, fg_color="transparent")
+        kpi_frame.pack(fill="x", pady=(0, 10))
+        for col_idx in range(5):
+            kpi_frame.grid_columnconfigure(col_idx, weight=1)
+
+        kpis = [
+            ("📦 Consignment Inwarded", f"{summary['total_inward_units']} Units", COLORS["inventory"]),
+            ("🏷️ Units Sold So Far", f"{summary['total_units_sold']} Units", COLORS["clinical"]),
+            ("💳 Accrued to Companies", f"₹ {summary['total_accrued_payable']:,.2f}", COLORS["warning"]),
+            ("💰 Pharmacy Profit Earned", f"₹ {summary['total_profit_earned']:,.2f}", COLORS["success"]),
+            ("⚖️ Net Balance Due", f"₹ {summary['total_balance_due']:,.2f}", COLORS["danger"] if summary['total_balance_due'] > 0 else COLORS["success"])
+        ]
+
+        for i, (title, val, col) in enumerate(kpis):
+            card = ctk.CTkFrame(kpi_frame, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+            card.grid(row=0, column=i, sticky="ew", padx=3)
+            ctk.CTkLabel(card, text=title, font=FONTS["micro"], text_color=COLORS["text_dim"]).pack(padx=8, pady=(6, 2))
+            ctk.CTkLabel(card, text=val, font=FONTS["body_bold"], text_color=col).pack(padx=8, pady=(0, 6))
+
+        # Search filter
+        search_txt = self.consign_search.get().strip().lower() if hasattr(self, "consign_search") else ""
+        if search_txt:
+            batches = [b for b in batches if (
+                search_txt in b["medicine_name"].lower() or
+                search_txt in b["supplier_name"].lower() or
+                search_txt in b["batch_no"].lower() or
+                search_txt in b["po_id"].lower()
+            )]
+
+        if not batches:
+            empty_box = ctk.CTkFrame(self.consign_scroll, fg_color=COLORS["bg_surface"], corner_radius=8)
+            empty_box.pack(fill="x", pady=20)
+            ctk.CTkLabel(empty_box, text="No consignment batches matching criteria.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=20)
+            return
+
+        # Render list of consignment cards
+        for b in batches:
+            card = ctk.CTkFrame(self.consign_scroll, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+            card.pack(fill="x", pady=4)
+            card.grid_columnconfigure(0, weight=1)
+            
+            # Header Row
+            hdr = ctk.CTkFrame(card, fg_color="transparent")
+            hdr.pack(fill="x", padx=12, pady=(10, 4))
+            hdr.grid_columnconfigure(1, weight=1)
+            
+            sup_badge = ctk.CTkLabel(hdr, text=f"🏭 {b['supplier_name']}", font=FONTS["body_bold"], text_color=COLORS["text_main"])
+            sup_badge.grid(row=0, column=0, sticky="w")
+            
+            po_badge = ctk.CTkLabel(hdr, text=f"Order: {b['po_id']} | Recv: {b['received_date']}", font=FONTS["small"], text_color=COLORS["text_dim"])
+            po_badge.grid(row=0, column=1, sticky="w", padx=12)
+            
+            status_color = COLORS["danger"] if b["balance_due"] > 0 else COLORS["success"]
+            status_text = f"Due: ₹{b['balance_due']:,.2f}" if b["balance_due"] > 0 else "Fully Settled"
+            st_lbl = ctk.CTkLabel(hdr, text=status_text, font=FONTS["small_bold"], text_color=status_color)
+            st_lbl.grid(row=0, column=2, sticky="e")
+
+            # Details Grid
+            body = ctk.CTkFrame(card, fg_color=COLORS["bg_card"], corner_radius=8)
+            body.pack(fill="x", padx=12, pady=(4, 10))
+            for c_idx in range(7):
+                body.grid_columnconfigure(c_idx, weight=1)
+                
+            cols_data = [
+                ("Medicine Item", b["medicine_name"], COLORS["text_main"]),
+                ("Cost (Dealer)", f"₹ {b['cost_price']:.2f}", COLORS["warning"]),
+                ("Retail (MRP)", f"₹ {b['selling_price']:.2f}", COLORS["text_main"]),
+                ("Unit Margin", f"₹ {b['unit_margin']:.2f}", COLORS["clinical"]),
+                ("Inward / Sold", f"{b['received_qty']} / {b['units_sold']}", COLORS["text_main"]),
+                ("Owed to Co.", f"₹ {b['accrued_payable']:,.2f}", COLORS["warning"]),
+                ("Profit Earned", f"₹ {b['pharmacy_profit']:,.2f}", COLORS["success"])
+            ]
+            
+            for c_i, (lbl_t, val_t, color_t) in enumerate(cols_data):
+                f_cell = ctk.CTkFrame(body, fg_color="transparent")
+                f_cell.grid(row=0, column=c_i, padx=6, pady=6, sticky="w")
+                ctk.CTkLabel(f_cell, text=lbl_t, font=FONTS["micro"], text_color=COLORS["text_dim"]).pack(anchor="w")
+                ctk.CTkLabel(f_cell, text=val_t, font=FONTS["small_bold"], text_color=color_t).pack(anchor="w")
+                
+            # Quick Settle Button on Row if Balance Due > 0
+            if b["balance_due"] > 0:
+                action_box = ctk.CTkFrame(card, fg_color="transparent")
+                action_box.pack(fill="x", padx=12, pady=(0, 10))
+                
+                info_lbl = ctk.CTkLabel(
+                    action_box,
+                    text=f"Stock Remaining: {b['unsold_stock']} units (₹0 owed until sold) | Paid: ₹{b['total_paid']:.2f}",
+                    font=FONTS["small"],
+                    text_color=COLORS["text_dim"]
+                )
+                info_lbl.pack(side="left")
+                
+                btn_row_settle = ctk.CTkButton(
+                    action_box,
+                    text=f"💸 Settle ₹{b['balance_due']:,.2f} to {b['supplier_name']}",
+                    height=28,
+                    font=FONTS["small_bold"],
+                    fg_color=COLORS["success"],
+                    hover_color=COLORS["success_hover"],
+                    text_color="#FFFFFF",
+                    command=lambda b_item=b: self.open_settle_payment_modal(b_item)
+                )
+                btn_row_settle.pack(side="right")
+
+    def open_settle_payment_modal(self, batch_data=None):
+        win = ctk.CTkToplevel(self)
+        win.title("💸 Settle Payment to Company (Pay-on-Sale)")
+        win.geometry("560x520")
+        win.resizable(False, False)
+        win.grab_set()
+        
+        all_batches = get_supplier_consignment_ledger()
+        eligible_batches = [b for b in all_batches if b["balance_due"] > 0]
+        
+        ctk.CTkLabel(win, text="💸 Settle Supplier Payment (Pay-on-Sale)", font=FONTS["h3"], text_color=COLORS["inventory"]).pack(pady=(16, 4))
+        ctk.CTkLabel(
+            win,
+            text="Payment is made only for sold consignment units. Unsold inventory has ₹0 payable.",
+            font=FONTS["small"],
+            text_color=COLORS["text_dim"]
+        ).pack(pady=(0, 12))
+        
+        form = ctk.CTkFrame(win, fg_color="transparent")
+        form.pack(fill="both", expand=True, padx=24, pady=0)
+        form.grid_columnconfigure(1, weight=1)
+        
+        # Batch Selector
+        ctk.CTkLabel(form, text="Consignment Batch:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=0, column=0, sticky="w", pady=6)
+        
+        batch_options = [f"{b['supplier_name']} — {b['medicine_name']} (Due: ₹{b['balance_due']:,.2f})" for b in eligible_batches]
+        if not batch_options:
+            batch_options = ["No pending supplier dues"]
+            
+        def_idx = 0
+        if batch_data and batch_data in eligible_batches:
+            def_idx = eligible_batches.index(batch_data)
+            
+        opt_batch = ctk.CTkOptionMenu(
+            form,
+            values=batch_options,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            height=32
+        )
+        opt_batch.grid(row=0, column=1, sticky="ew", pady=6)
+        if batch_options:
+            opt_batch.set(batch_options[def_idx])
+            
+        # Amount
+        ctk.CTkLabel(form, text="Settlement Amount (₹):", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=1, column=0, sticky="w", pady=6)
+        ent_amt = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+        ent_amt.grid(row=1, column=1, sticky="ew", pady=6)
+        init_due = eligible_batches[def_idx]["balance_due"] if eligible_batches else 0.0
+        ent_amt.insert(0, str(init_due))
+        
+        def on_batch_change(choice):
+            for b in eligible_batches:
+                if b["supplier_name"] in choice and b["medicine_name"] in choice:
+                    ent_amt.delete(0, "end")
+                    ent_amt.insert(0, str(b["balance_due"]))
+                    break
+        opt_batch.configure(command=on_batch_change)
+        
+        # Payment Mode
+        ctk.CTkLabel(form, text="Payment Mode:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=2, column=0, sticky="w", pady=6)
+        opt_mode = ctk.CTkOptionMenu(
+            form,
+            values=["NEFT / RTGS Bank Transfer", "Dynamic UPI QR", "Company Cheque", "Cash"],
+            font=FONTS["body"],
+            fg_color=COLORS["bg_input"],
+            text_color=COLORS["text_main"],
+            height=32
+        )
+        opt_mode.grid(row=2, column=1, sticky="ew", pady=6)
+        
+        # Reference UTR
+        ctk.CTkLabel(form, text="Bank Ref / UTR No:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=3, column=0, sticky="w", pady=6)
+        ent_ref = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+        ent_ref.grid(row=3, column=1, sticky="ew", pady=6)
+        ent_ref.insert(0, f"UTR-{datetime.now().strftime('%m%d%H%M')}")
+        
+        # Notes
+        ctk.CTkLabel(form, text="Settlement Remarks:", font=FONTS["body_bold"], text_color=COLORS["text_main"]).grid(row=4, column=0, sticky="w", pady=6)
+        ent_notes = ctk.CTkEntry(form, font=FONTS["body"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], height=32)
+        ent_notes.grid(row=4, column=1, sticky="ew", pady=6)
+        ent_notes.insert(0, "Pay-on-sale reconciliation payout")
+
+        def submit_payout():
+            try:
+                amt = float(ent_amt.get().strip())
+                if amt <= 0:
+                    raise ValueError
+            except ValueError:
+                messagebox.showwarning("Invalid", "Enter a valid settlement amount.", parent=win)
+                return
+                
+            selected_choice = opt_batch.get()
+            target_batch = next((b for b in eligible_batches if b["supplier_name"] in selected_choice and b["medicine_name"] in selected_choice), None)
+            
+            p_data = {
+                "supplier_name": target_batch["supplier_name"] if target_batch else "Supplier",
+                "batch_id": target_batch["id"] if target_batch else None,
+                "po_id": target_batch["po_id"] if target_batch else "",
+                "medicine_name": target_batch["medicine_name"] if target_batch else "",
+                "units_settled": target_batch["units_sold"] if target_batch else 0,
+                "rate": target_batch["cost_price"] if target_batch else 0.0,
+                "amount_paid": amt,
+                "payment_mode": opt_mode.get(),
+                "reference_no": ent_ref.get().strip(),
+                "notes": ent_notes.get().strip(),
+                "paid_by": self.user_data["name"]
+            }
+            
+            success, res = settle_supplier_payment(p_data)
+            if success:
+                win.destroy()
+                self.render_consignment_ledger()
+                show_toast(self, "Payment Settled", f"Paid ₹{amt:,.2f} to {p_data['supplier_name']} ({res}).", "success")
+            else:
+                messagebox.showerror("Settlement Failed", str(res), parent=win)
+
+        ctk.CTkButton(
+            win,
+            text="Confirm & Record Supplier Payout",
+            height=40,
+            font=FONTS["body_bold"],
+            fg_color=COLORS["success"],
+            hover_color=COLORS["success_hover"],
+            text_color="#FFFFFF",
+            command=submit_payout
+        ).pack(fill="x", padx=24, pady=16)
+
+    def open_payout_history_modal(self):
+        win = ctk.CTkToplevel(self)
+        win.title("📜 Supplier Settlement Payout History")
+        win.geometry("750x450")
+        win.grab_set()
+        
+        ctk.CTkLabel(win, text="📜 Supplier Settlement Payout History", font=FONTS["h3"], text_color=COLORS["inventory"]).pack(pady=(16, 8))
+        
+        payouts = get_supplier_payouts(limit=50)
+        
+        scroll = ctk.CTkScrollableFrame(win, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=20, pady=(0, 16))
+        
+        if not payouts:
+            ctk.CTkLabel(scroll, text="No payout records found.", font=FONTS["body"], text_color=COLORS["text_dim"]).pack(pady=30)
+            return
+            
+        for p in payouts:
+            card = ctk.CTkFrame(scroll, fg_color=COLORS["bg_card"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+            card.pack(fill="x", pady=4)
+            card.grid_columnconfigure(1, weight=1)
+            
+            left = ctk.CTkFrame(card, fg_color="transparent")
+            left.grid(row=0, column=0, padx=12, pady=8, sticky="w")
+            ctk.CTkLabel(left, text=f"{p['payout_id']} • {p['timestamp']}", font=FONTS["micro"], text_color=COLORS["text_dim"]).pack(anchor="w")
+            ctk.CTkLabel(left, text=f"🏭 {p['supplier_name']} — {p['medicine_name'] or 'Consignment'}", font=FONTS["body_bold"], text_color=COLORS["text_main"]).pack(anchor="w")
+            ctk.CTkLabel(left, text=f"Ref: {p['reference_no']} | Mode: {p['payment_mode']} | By: {p['paid_by']}", font=FONTS["small"], text_color=COLORS["text_dim"]).pack(anchor="w")
+            
+            right = ctk.CTkFrame(card, fg_color="transparent")
+            right.grid(row=0, column=1, padx=12, pady=8, sticky="e")
+            ctk.CTkLabel(right, text=f"₹ {p['amount_paid']:,.2f}", font=FONTS["h3"], text_color=COLORS["success"]).pack(anchor="e")
+            ctk.CTkLabel(right, text=f"{p['units_settled']} units settled", font=FONTS["small"], text_color=COLORS["text_dim"]).pack(anchor="e")

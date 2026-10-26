@@ -4067,17 +4067,21 @@
             const main = document.getElementById("main-content");
             main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading FEFO Batch Ledger & Cold-Chain IoT...</div>`;
 
-            const [meds, tempLogs, suppliers, pos] = await Promise.all([
+            const [meds, tempLogs, suppliers, pos, consignmentLedger, consignmentSummary] = await Promise.all([
                 callBridge("get_all_medicines"),
                 callBridge("get_temperature_logs"),
                 callBridge("get_all_suppliers"),
-                callBridge("get_all_purchase_orders")
+                callBridge("get_all_purchase_orders"),
+                callBridge("get_supplier_consignment_ledger"),
+                callBridge("get_supplier_consignment_summary")
             ]);
 
             State.medicines = meds || [];
             State.tempLogs = tempLogs || [];
             State.suppliers = suppliers || [];
             State.purchaseOrders = pos || [];
+            State.consignmentLedger = consignmentLedger || [];
+            State.consignmentSummary = consignmentSummary || {};
 
             const currentTab = State.activeInvTab || "catalog";
 
@@ -4100,6 +4104,9 @@
                     </button>
                     <button class="tab-btn ${currentTab === 'grn' ? 'active' : ''}" onclick="switchInventoryTab('grn')">
                         📑 Purchase Orders & GRN (${(pos || []).length})
+                    </button>
+                    <button class="tab-btn ${currentTab === 'consignment' ? 'active' : ''}" onclick="switchInventoryTab('consignment')">
+                        🤝 Pay-on-Sale Consignment (${(State.consignmentLedger || []).length})
                     </button>
                     <button class="tab-btn ${currentTab === 'coldchain' ? 'active' : ''}" onclick="switchInventoryTab('coldchain')">
                         ❄️ Cold Chain IoT Telemetry
@@ -4236,6 +4243,108 @@
                         </div>
                     </div>
                 `;
+            } else if (tab === "consignment") {
+                const cLedger = State.consignmentLedger || [];
+                const cSum = State.consignmentSummary || {};
+                
+                return `
+                    <!-- 1. Consignment Explanation Banner -->
+                    <div class="card" style="border-left: 4px solid var(--info); margin-bottom: 20px;">
+                        <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <strong style="font-size: 14px; color: var(--text-main);">🤝 Pharma Consignment &amp; Pay-on-Sale Protocol</strong>
+                                <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">
+                                    New stock ordered from suppliers is received at <strong>₹0 upfront payment</strong>.
+                                    Payment to company is calculated dynamically on sale: <strong>[Units Sold × Dealer Cost]</strong>.
+                                    The pharmacy retains the full retail margin <strong>[Retail Price - Dealer Cost]</strong> as gross profit.
+                                    Unsold inventory in stock remains on consignment at ₹0 liability.
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-success" onclick="openWebSettlePaymentModal()">💸 Settle Supplier Payment</button>
+                                <button class="btn-secondary" onclick="openWebPayoutHistoryModal()">📜 Payout History</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Financial KPI Metric Cards -->
+                    <div class="stats-grid" style="margin-bottom: 20px;">
+                        <div class="stat-card" style="border-left: 4px solid var(--brand-primary);">
+                            <div class="stat-card-title">Consignment Inwarded</div>
+                            <div class="stat-card-value" style="color: var(--brand-primary);">${cSum.total_inward_units || 0} Units</div>
+                            <div class="stat-card-sub"><span style="color: var(--text-main); font-weight: 600;">${(cLedger || []).length}</span> Active Supply Batches</div>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid var(--info);">
+                            <div class="stat-card-title">Units Sold So Far</div>
+                            <div class="stat-card-value" style="color: var(--info);">${cSum.total_units_sold || 0} Units</div>
+                            <div class="stat-card-sub">Retail Volume: ₹ ${(cSum.total_gross_sales || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid var(--warning);">
+                            <div class="stat-card-title">Accrued to Companies</div>
+                            <div class="stat-card-value" style="color: var(--warning);">₹ ${(cSum.total_accrued_payable || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                            <div class="stat-card-sub">Calculated: Units Sold × Dealer Rate</div>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid var(--success);">
+                            <div class="stat-card-title">Pharmacy Profit Earned</div>
+                            <div class="stat-card-value" style="color: var(--success);">₹ ${(cSum.total_profit_earned || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                            <div class="stat-card-sub">Retail Margin Retained by Store</div>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid ${(cSum.total_balance_due || 0) > 0 ? 'var(--danger)' : 'var(--success)'};">
+                            <div class="stat-card-title">Net Balance Due</div>
+                            <div class="stat-card-value" style="color: ${(cSum.total_balance_due || 0) > 0 ? 'var(--danger)' : 'var(--success)'};">₹ ${(cSum.total_balance_due || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                            <div class="stat-card-sub">Paid: ₹ ${(cSum.total_paid || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Consignment Batches Table -->
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div class="card-title">🤝 Real-Time Pay-on-Sale Consignment Ledger (${(cLedger || []).length} Batches)</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Supplier Name</th>
+                                        <th>Medicine Item</th>
+                                        <th>Dealer Cost</th>
+                                        <th>Retail MRP</th>
+                                        <th>Margin</th>
+                                        <th>Inwarded</th>
+                                        <th>Sold</th>
+                                        <th>Unsold Stock</th>
+                                        <th>Owed to Co.</th>
+                                        <th>Pharmacy Profit</th>
+                                        <th>Paid</th>
+                                        <th>Balance Due</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(cLedger || []).map(b => `
+                                        <tr>
+                                            <td><strong>${b.supplier_name}</strong><br><small style="color: var(--text-muted);">${b.po_id} • ${b.received_date}</small></td>
+                                            <td><strong>${b.medicine_name}</strong><br><code>${b.batch_no}</code></td>
+                                            <td><span style="color: var(--warning); font-weight: 700;">₹ ${b.cost_price.toFixed(2)}</span></td>
+                                            <td>₹ ${b.selling_price.toFixed(2)}</td>
+                                            <td><span class="badge badge-success">+₹ ${b.unit_margin.toFixed(2)}</span></td>
+                                            <td>${b.received_qty}</td>
+                                            <td><strong style="color: var(--info);">${b.units_sold}</strong></td>
+                                            <td><span class="badge ${b.unsold_stock > 0 ? 'badge-neutral' : 'badge-danger'}">${b.unsold_stock} (₹0 owed)</span></td>
+                                            <td><strong style="color: var(--warning);">₹ ${b.accrued_payable.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></td>
+                                            <td><strong style="color: var(--success);">₹ ${b.pharmacy_profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></td>
+                                            <td>₹ ${b.total_paid.toFixed(2)}</td>
+                                            <td><strong style="color: ${b.balance_due > 0 ? 'var(--danger)' : 'var(--success)'};">₹ ${b.balance_due.toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></td>
+                                            <td>
+                                                ${b.balance_due > 0 ? `<button class="btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="openWebSettlePaymentModal(${b.id})">💸 Settle</button>` : `<span class="badge badge-success">✓ Settled</span>`}
+                                            </td>
+                                        </tr>
+                                    `).join("") || '<tr><td colspan="13" style="text-align: center; color: var(--text-muted); padding: 16px;">No consignment batches active.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
             } else if (tab === "coldchain") {
                 let latestTemp = (tempLogs && tempLogs[0]) ? tempLogs[0].temperature : 4.2;
                 return `
@@ -4284,6 +4393,160 @@
                     </div>
                 `;
             }
+        }
+
+// =========================================================================
+        // 4B. CONSIGNMENT & PAY-ON-SALE SETTLEMENT MODALS
+        // =========================================================================
+
+        function openWebSettlePaymentModal(batchId) {
+            const batches = (State.consignmentLedger || []).filter(b => b.balance_due > 0);
+            if (batches.length === 0) {
+                showToast("All Settled", "No pending supplier dues on sold consignment stock.", "info");
+                return;
+            }
+
+            let selBatch = batchId ? batches.find(b => b.id === batchId) : batches[0];
+            if (!selBatch && batches.length > 0) selBatch = batches[0];
+
+            let batchOpts = batches.map(b => `
+                <option value="${b.id}" ${selBatch && selBatch.id === b.id ? 'selected' : ''}>
+                    ${b.supplier_name} — ${b.medicine_name} (Due: ₹${b.balance_due.toFixed(2)})
+                </option>
+            `).join("");
+
+            openModal(
+                "💸 Settle Supplier Payment (Pay-on-Sale)",
+                `
+                <div style="font-size: 13px; line-height: 1.6; color: var(--text-main);">
+                    <div style="background: var(--bg-hover); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; border: 1px solid var(--border-color);">
+                        <strong>Pay-as-Sold Principle:</strong> In pharmaceutical consignment, payment is made strictly for units sold. Unsold stock has ₹0 payable.
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label">Select Consignment Item:</label>
+                        <select id="web-settle-batch-id" class="form-control" onchange="onWebSettleBatchChange(this.value)">
+                            ${batchOpts}
+                        </select>
+                    </div>
+
+                    <div class="form-row" style="margin-bottom: 12px;">
+                        <div>
+                            <label class="form-label">Settlement Amount (₹):</label>
+                            <input type="number" id="web-settle-amount" class="form-control" value="${selBatch ? selBatch.balance_due : 0}">
+                        </div>
+                        <div>
+                            <label class="form-label">Payment Mode:</label>
+                            <select id="web-settle-mode" class="form-control">
+                                <option>NEFT / RTGS Bank Transfer</option>
+                                <option>Dynamic UPI QR</option>
+                                <option>Company Cheque</option>
+                                <option>Cash</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-bottom: 12px;">
+                        <div>
+                            <label class="form-label">Bank UTR / Reference No:</label>
+                            <input type="text" id="web-settle-ref" class="form-control" value="UTR-${Date.now().toString().slice(-8)}">
+                        </div>
+                        <div>
+                            <label class="form-label">Remarks:</label>
+                            <input type="text" id="web-settle-notes" class="form-control" value="Pay-on-sale reconciliation payout">
+                        </div>
+                    </div>
+                </div>
+                `,
+                `<button class="btn-success" onclick="submitWebSupplierPayout()">Confirm &amp; Record Payout</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
+                "600px"
+            );
+        }
+
+        function onWebSettleBatchChange(batchId) {
+            const b = (State.consignmentLedger || []).find(x => x.id === parseInt(batchId));
+            if (b) {
+                const amtEl = document.getElementById("web-settle-amount");
+                if (amtEl) amtEl.value = b.balance_due;
+            }
+        }
+
+        async function submitWebSupplierPayout() {
+            const batchId = parseInt(document.getElementById("web-settle-batch-id").value);
+            const amt = parseFloat(document.getElementById("web-settle-amount").value);
+            const mode = document.getElementById("web-settle-mode").value;
+            const ref = document.getElementById("web-settle-ref").value;
+            const notes = document.getElementById("web-settle-notes").value;
+
+            if (!amt || amt <= 0) {
+                showToast("Invalid Amount", "Please enter a valid payment amount.", "warning");
+                return;
+            }
+
+            const b = (State.consignmentLedger || []).find(x => x.id === batchId);
+
+            const pData = {
+                supplier_name: b ? b.supplier_name : "Supplier",
+                batch_id: batchId,
+                po_id: b ? b.po_id : "",
+                medicine_name: b ? b.medicine_name : "",
+                units_settled: b ? b.units_sold : 0,
+                rate: b ? b.cost_price : 0.0,
+                amount_paid: amt,
+                payment_mode: mode,
+                reference_no: ref,
+                notes: notes,
+                paid_by: State.currentUser ? State.currentUser.name : "Admin"
+            };
+
+            const res = await callBridge("settle_supplier_payment", pData);
+            if (res && res.success) {
+                showToast("Payment Settled", `Paid ₹${amt.toFixed(2)} to ${pData.supplier_name} (${res.payout_id}).`, "success");
+                closeModal();
+                renderInventoryDashboard();
+            } else {
+                showToast("Settlement Failed", (res && res.error) || "Could not record payment.", "error");
+            }
+        }
+
+        async function openWebPayoutHistoryModal() {
+            const payouts = await callBridge("get_supplier_payouts", null, 50);
+            let rows = (payouts || []).map(p => `
+                <tr>
+                    <td><strong>${p.payout_id}</strong><br><small style="color: var(--text-muted);">${p.timestamp}</small></td>
+                    <td><strong>${p.supplier_name}</strong><br><small style="color: var(--text-muted);">${p.medicine_name || 'Consignment'}</small></td>
+                    <td><strong style="color: var(--success);">₹ ${(p.amount_paid || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</strong></td>
+                    <td>${p.units_settled || 0} units</td>
+                    <td><span class="badge badge-info">${p.payment_mode}</span></td>
+                    <td><code>${p.reference_no || 'N/A'}</code></td>
+                    <td>${p.paid_by}</td>
+                </tr>
+            `).join("");
+
+            openModal(
+                "📜 Supplier Settlement Payout History",
+                `
+                <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Payout ID</th>
+                                <th>Supplier &amp; Medicine</th>
+                                <th>Amount Paid</th>
+                                <th>Units Settled</th>
+                                <th>Payment Mode</th>
+                                <th>Reference / UTR</th>
+                                <th>Paid By</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows || '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 16px;">No payout history recorded yet.</td></tr>'}</tbody>
+                    </table>
+                </div>
+                `,
+                `<button class="btn-secondary" onclick="closeModal()">Close</button>`,
+                "850px"
+            );
         }
 
         async function simulateTempSpike() {

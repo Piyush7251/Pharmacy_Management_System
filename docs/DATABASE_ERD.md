@@ -469,6 +469,45 @@ Daily financial reconciliation, tender verification, cash variance, and tax tota
 
 ---
 
+### 15. `consignment_batches` — Pay-on-Sale / Sale-or-Return Stock
+Tracks supplier stock received at ₹0 upfront payment, with company payable calculated dynamically on sale.
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique Consignment Batch Identifier. |
+| `po_id` | `TEXT` | `FOREIGN KEY -> purchase_orders(po_id)` | Linked purchase order / GRN inwarding reference. |
+| `supplier_name` | `TEXT` | `FOREIGN KEY -> suppliers(name)` | Manufacturing laboratory or distributor. |
+| `medicine_id` | `TEXT` | `FOREIGN KEY -> medicines(id)` | Linked pharmaceutical SKU. |
+| `medicine_name` | `TEXT` | `NOT NULL` | Brand / generic drug name. |
+| `batch_no` | `TEXT` | `NOT NULL` | Manufacturing batch / lot number. |
+| `received_date` | `TEXT` | `NOT NULL` | Delivery inward date (`YYYY-MM-DD`). |
+| `received_qty` | `INTEGER` | `NOT NULL` | Total units received on consignment. |
+| `cost_price` | `REAL` | `NOT NULL` | Dealer purchase cost per unit (e.g. ₹10.00). |
+| `selling_price` | `REAL` | `NOT NULL` | Retail price / MRP per unit (e.g. ₹100.00). |
+| `units_sold` | `INTEGER` | `DEFAULT 0` | Units dispensed at POS (triggers company payable). |
+| `units_paid` | `INTEGER` | `DEFAULT 0` | Units settled with supplier. |
+| `total_paid` | `REAL` | `DEFAULT 0.0` | Total payout amount remitted to supplier. |
+| `status` | `TEXT` | `DEFAULT 'Active'` | Batch state (`Active`, `Payment Due`, `Settled`). |
+| `created_at` | `TEXT` | `NOT NULL` | Record creation timestamp. |
+
+### 16. `supplier_payouts` — Supplier Settlement Payouts & Remittances
+Records financial disbursements made to companies/dealers for sold consignment inventory.
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `payout_id` | `TEXT` | `PRIMARY KEY` | Unique Settlement Identifier (e.g. `PAY-20261026183000`). |
+| `timestamp` | `TEXT` | `NOT NULL` | Settlement transaction timestamp. |
+| `supplier_name` | `TEXT` | `FOREIGN KEY -> suppliers(name)` | Receiving pharmaceutical company / distributor. |
+| `po_id` | `TEXT` | `NULLABLE` | Associated purchase order. |
+| `medicine_name` | `TEXT` | `NULLABLE` | Associated consignment formulation. |
+| `units_settled` | `INTEGER` | `DEFAULT 0` | Number of sold pieces settled in this payout. |
+| `rate` | `REAL` | `DEFAULT 0.0` | Agreed dealer cost rate per unit. |
+| `amount_paid` | `REAL` | `NOT NULL` | Remitted payout amount (INR). |
+| `payment_mode` | `TEXT` | `DEFAULT 'NEFT Bank Transfer'` | Mode (`NEFT Bank Transfer`, `Dynamic UPI QR`, `Cheque`, `Cash`). |
+| `reference_no` | `TEXT` | `NULLABLE` | Bank UTR or electronic transaction reference. |
+| `notes` | `TEXT` | `NULLABLE` | Settlement reconciliation remarks. |
+| `paid_by` | `TEXT` | `NOT NULL` | Authorizing manager / pharmacist user. |
+
+---
+
 ## ⚡ Concurrency & Storage Engine Design
 
 1. **Write-Ahead Logging (WAL)**:
