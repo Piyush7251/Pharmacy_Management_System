@@ -4216,27 +4216,38 @@
                                         <tr>
                                             <th>PO / GRN ID</th>
                                             <th>Supplier Name</th>
-                                            <th>Medicine SKU</th>
-                                            <th>Ordered Quantity</th>
-                                            <th>Invoice Amount</th>
-                                            <th>Order Date</th>
-                                            <th>Cold-Chain</th>
+                                            <th>Medicine Item</th>
+                                            <th>Quantity</th>
+                                            <th>Total Value</th>
+                                            <th>Date</th>
                                             <th>Status</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${(pos || []).map(po => `
+                                        ${(pos || []).map(po => {
+                                            const it = (po.items && po.items.length > 0) ? po.items[0] : null;
+                                            const medName = it ? (it.medicine || it.name || 'Batch Consignment') : (po.medicine_name || 'Batch Consignment');
+                                            const qty = it ? (it.qty || 100) : (po.quantity || 100);
+                                            const isReceived = po.status.includes('Received') || po.status.includes('Completed') || po.status.includes('Inwarded') || po.status.includes('Stocked');
+                                            return `
                                             <tr>
                                                 <td><strong>${po.po_id}</strong></td>
                                                 <td>${po.supplier_name}</td>
-                                                <td>${po.medicine_name || po.medicine_id || 'Batch Consignment'}</td>
-                                                <td><strong>${po.quantity || 100}</strong> units</td>
+                                                <td>${medName}</td>
+                                                <td><strong>${qty}</strong> units</td>
                                                 <td>₹ ${(po.total_amount || 0).toFixed(2)}</td>
-                                                <td>${po.created_at || 'Today'}</td>
-                                                <td>${po.cold_chain_verified ? '<span class="badge badge-info">❄️ Cold-Chain Verified</span>' : '<span class="badge badge-neutral">Ambient</span>'}</td>
-                                                <td><span class="badge ${po.status.includes('Completed') || po.status.includes('Inwarded') ? 'badge-success' : 'badge-warning'}">${po.status}</span></td>
+                                                <td>${po.date || po.created_at || 'Today'}</td>
+                                                <td><span class="badge ${isReceived ? 'badge-success' : 'badge-warning'}">${po.status}</span></td>
+                                                <td>
+                                                    ${isReceived
+                                                        ? '<span style="color:var(--success); font-size:11px; font-weight:700;">✓ In Pay-on-Sale</span>'
+                                                        : `<button class="btn-primary" style="font-size:11px; padding:3px 8px;" onclick="inwardExistingPO('${po.po_id}')">📥 Inward Stock</button>`
+                                                    }
+                                                </td>
                                             </tr>
-                                        `).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No purchase orders inwarded yet.</td></tr>'}
+                                            `;
+                                        }).join("") || '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 16px;">No purchase orders inwarded yet.</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>
@@ -4886,11 +4897,42 @@
             }
         }
 
+        function onGrnMedSelectChange(medId) {
+            const med = (State.medicines || []).find(m => m.id === medId);
+            if (med) {
+                const rate = med.cost_price || (med.mrp * 0.7);
+                const rateEl = document.getElementById("grn-rate");
+                const mrpEl = document.getElementById("grn-mrp");
+                if (rateEl) rateEl.value = rate.toFixed(2);
+                if (mrpEl) mrpEl.value = med.mrp.toFixed(2);
+                recalcGrnTotal();
+            }
+        }
+
+        function recalcGrnTotal() {
+            const qty = parseInt(document.getElementById("grn-qty").value, 10) || 0;
+            const rate = parseFloat(document.getElementById("grn-rate").value) || 0.0;
+            const amtEl = document.getElementById("grn-amount");
+            if (amtEl) amtEl.value = (qty * rate).toFixed(2);
+        }
+
         function openInwardGRNModal() {
             const randPo = `PO-2026-${Math.floor(100 + Math.random() * 900)}`;
+            const sList = (State.suppliers && State.suppliers.length > 0)
+                ? State.suppliers.map(s => s.name)
+                : ["Cipla Healthcare Distributors", "Sun Pharma Logistics", "Abbott India Depot", "Dr. Reddy's Central Wholesale"];
+            const medsList = State.medicines || [];
+            const defaultMed = medsList[0] || null;
+            const defaultRate = defaultMed ? (defaultMed.cost_price || (defaultMed.mrp * 0.7)) : 10.0;
+            const defaultMrp = defaultMed ? defaultMed.mrp : 100.0;
+            const defaultQty = 50;
+
             openModal(
-                "📦 Inward Goods Received Note (GRN)",
+                "📦 Inward Goods Received Note (Pay-on-Sale GRN)",
                 `
+                <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text-main); line-height: 1.5;">
+                    🤝 <strong>Pharma Pay-on-Sale Protocol:</strong> Stock enters your inventory immediately with <strong>₹0 upfront payment</strong>. Payment to company is calculated dynamically upon sale: <em>[Units Sold × Dealer Cost]</em>. Unsold stock costs ₹0.
+                </div>
                 <form id="grn-form" onsubmit="event.preventDefault(); submitInwardGRN();">
                     <div class="form-row">
                         <div>
@@ -4900,41 +4942,48 @@
                         <div>
                             <label class="form-label">Pharmaceutical Supplier</label>
                             <select id="grn-supplier" class="form-control">
-                                <option value="Cipla Healthcare Distributors">Cipla Healthcare Distributors</option>
-                                <option value="Sun Pharma Logistics">Sun Pharma Logistics</option>
-                                <option value="Abbott India Depot">Abbott India Depot</option>
-                                <option value="Dr. Reddy's Central Wholesale">Dr. Reddy's Central Wholesale</option>
+                                ${sList.map(s => `<option value="${s}">${s}</option>`).join("")}
                             </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div>
-                            <label class="form-label">Inwarding Medicine SKU</label>
-                            <select id="grn-med-select" class="form-control">
-                                ${State.medicines.map(m => `<option value="${m.id}">${m.name} (${m.batch})</option>`).join("")}
+                            <label class="form-label">Inwarding Medicine Item</label>
+                            <select id="grn-med-select" class="form-control" onchange="onGrnMedSelectChange(this.value)">
+                                ${medsList.map(m => `<option value="${m.id}">${m.name} (${m.batch || 'Batch'})</option>`).join("")}
                             </select>
                         </div>
                         <div>
                             <label class="form-label">Received Stock Quantity</label>
-                            <input type="number" id="grn-qty" class="form-control" value="50" min="1" required>
+                            <input type="number" id="grn-qty" class="form-control" value="${defaultQty}" min="1" required oninput="recalcGrnTotal()">
                         </div>
                     </div>
                     <div class="form-row">
                         <div>
-                            <label class="form-label">Invoice / Challan Value (₹)</label>
-                            <input type="number" step="0.01" id="grn-amount" class="form-control" value="1250.00" required>
+                            <label class="form-label">Dealer Cost Price (₹ per unit)</label>
+                            <input type="number" step="0.01" id="grn-rate" class="form-control" value="${defaultRate.toFixed(2)}" required oninput="recalcGrnTotal()">
+                        </div>
+                        <div>
+                            <label class="form-label">Counter Retail MRP (₹ per unit)</label>
+                            <input type="number" step="0.01" id="grn-mrp" class="form-control" value="${defaultMrp.toFixed(2)}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="form-label">Total Inward Valuation (₹)</label>
+                            <input type="number" step="0.01" id="grn-amount" class="form-control" value="${(defaultQty * defaultRate).toFixed(2)}" readonly style="background:var(--bg-hover);">
                         </div>
                         <div>
                             <label class="form-label">Cold-Chain Check</label>
                             <select id="grn-cold" class="form-control">
-                                <option value="Verified">✓ Cold Chain Verified (2-8°C)</option>
                                 <option value="Ambient">Standard Ambient Inward</option>
+                                <option value="Verified">✓ Cold Chain Verified (2-8°C)</option>
                             </select>
                         </div>
                     </div>
                 </form>
                 `,
-                `<button class="btn-primary" onclick="submitInwardGRN()">Accept & Inward Stock</button>
+                `<button class="btn-primary" onclick="submitInwardGRN()">Accept & Inward to Pay-on-Sale</button>
                  <button class="btn-secondary" onclick="closeModal()">Cancel</button>`,
                 "650px"
             );
@@ -4945,12 +4994,19 @@
             const supplier = document.getElementById("grn-supplier").value;
             const medId = document.getElementById("grn-med-select").value;
             const qty = parseInt(document.getElementById("grn-qty").value, 10);
-            const amt = parseFloat(document.getElementById("grn-amount").value);
+            const rate = parseFloat(document.getElementById("grn-rate").value) || 0.0;
+            const mrp = parseFloat(document.getElementById("grn-mrp").value) || 0.0;
+            const amt = parseFloat(document.getElementById("grn-amount").value) || (qty * rate);
 
-            if (!poId || isNaN(qty) || isNaN(amt)) {
+            if (!poId || isNaN(qty) || qty <= 0) {
                 showToast("Missing Fields", "Please enter valid PO details and quantity.", "warning");
                 return;
             }
+
+            const selectedMed = (State.medicines || []).find(m => m.id === medId);
+            const medName = selectedMed ? selectedMed.name : medId;
+            const costPrice = rate > 0 ? rate : (selectedMed ? selectedMed.cost_price : (amt / qty));
+            const sellingPrice = mrp > 0 ? mrp : (selectedMed ? selectedMed.mrp : (costPrice * 1.5));
 
             const poData = {
                 po_id: poId,
@@ -4960,14 +5016,36 @@
                 total_amount: amt,
                 status: "Received & Added to Stock",
                 created_by: "Inventory Manager",
-                items: [{ med_id: medId, qty: qty }]
+                auto_increment_stock: false,
+                items: [{
+                    med_id: medId,
+                    medicine: medName,
+                    name: medName,
+                    qty: qty,
+                    rate: costPrice,
+                    cost_price: costPrice,
+                    selling_price: sellingPrice,
+                    mrp: sellingPrice
+                }]
             };
 
-            await callBridge("add_purchase_order", poData);
+            const res = await callBridge("add_purchase_order", poData);
             await callBridge("update_medicine_stock", medId, qty);
-            showToast("GRN Inwarded", `Received ${qty} units for ${poId}. Stock incremented!`, "success");
+            showToast("GRN Inwarded", `Inwarded ${qty} units of ${medName} (${poId}). Stock & Pay-on-Sale Ledger updated!`, "success");
             closeModal();
-            renderInventoryDashboard();
+            State.activeInvTab = "consignment";
+            await renderInventoryDashboard();
+        }
+
+        async function inwardExistingPO(poId) {
+            const res = await callBridge("record_goods_receipt", poId);
+            if (res && res.success !== false) {
+                showToast("GRN Received", `PO ${poId} marked as Goods Received & active in Pay-on-Sale Ledger!`, "success");
+                State.activeInvTab = "consignment";
+                await renderInventoryDashboard();
+            } else {
+                showToast("Error", (res && res.error) || "Could not inward PO.", "error");
+            }
         }
 
         function openCreateDeliveryModal() {

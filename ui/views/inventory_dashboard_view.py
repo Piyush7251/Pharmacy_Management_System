@@ -444,11 +444,29 @@ class InventoryDashboardView(ctk.CTkFrame):
             st_col = COLORS["clinical"] if "Received" in po["status"] else COLORS["warning"]
             lbl_st = ctk.CTkLabel(r1, text=f" {po['status']} ", font=FONTS["small_bold"], fg_color=st_col, text_color="#FFFFFF", corner_radius=4)
             lbl_st.grid(row=0, column=1, sticky="e")
+
+            if "Received" not in po.get("status", ""):
+                btn_recv = ctk.CTkButton(
+                    r1, text="📥 Inward (Pay-on-Sale)", height=24, font=FONTS["small_bold"],
+                    fg_color=COLORS["clinical"], hover_color=COLORS["clinical_hover"], text_color="#FFFFFF",
+                    command=lambda pid=po["po_id"]: self.mark_po_received(pid)
+                )
+                btn_recv.grid(row=0, column=2, padx=(8, 0), sticky="e")
             
             items_str = ", ".join(f"{it.get('medicine', 'Item')} (Qty: {it.get('qty', 10)})" if isinstance(it, dict) else str(it) for it in po.get("items", []))
             info_txt = f"📅 Date: {po['date']} | Total Value: ₹{po['total_amount']:.2f} | Received by: {po['created_by']}\n📦 Medicines Received: {items_str}"
             lbl_info = ctk.CTkLabel(c, text=info_txt, font=FONTS["small"], text_color=COLORS["text_muted"], justify="left")
             lbl_info.grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
+
+    def mark_po_received(self, po_id):
+        from core.db import record_goods_receipt
+        record_goods_receipt(po_id)
+        self.load_all_data()
+        try:
+            self.tabview.set("🤝 Pay-on-Sale Ledger")
+        except Exception:
+            pass
+        show_toast(self, "Goods Received", f"{po_id} inwarded & active in Pay-on-Sale Ledger.", "success")
 
     def open_inward_grn_modal(self):
         win = ctk.CTkToplevel(self)
@@ -493,20 +511,33 @@ class InventoryDashboardView(ctk.CTkFrame):
             po_id = ent_po.get().strip() or f"PO-{datetime.now().strftime('%M%S')}"
             selected_med = opt_med.get()
             
+            match_med = next((m for m in self.medicines if m["name"] == selected_med), None)
+            mrp_val = float(match_med["mrp"]) if match_med else (rate_val * 1.5)
+            med_id = match_med["id"] if match_med else f"MED-{datetime.now().strftime('%M%S')}"
+
             po_obj = {
                 "po_id": po_id,
                 "date": datetime.now().strftime("%Y-%m-%d"),
                 "supplier_name": opt_s.get(),
                 "status": "Received & Added to Stock",
-                "items": [{"medicine": selected_med, "qty": qty_val, "rate": rate_val}],
+                "items": [{
+                    "medicine": selected_med,
+                    "name": selected_med,
+                    "med_id": med_id,
+                    "qty": qty_val,
+                    "rate": rate_val,
+                    "cost_price": rate_val,
+                    "selling_price": mrp_val,
+                    "mrp": mrp_val
+                }],
                 "total_amount": qty_val * rate_val,
                 "received_date": datetime.now().strftime("%Y-%m-%d"),
-                "created_by": self.user_data["name"]
+                "created_by": self.user_data["name"],
+                "auto_increment_stock": False
             }
             add_purchase_order(po_obj)
             
             # Increment stock in DB
-            match_med = next((m for m in self.medicines if m["name"] == selected_med), None)
             if match_med:
                 update_medicine_stock(match_med["id"], qty_val)
                 match_med["stock"] += qty_val
@@ -514,7 +545,12 @@ class InventoryDashboardView(ctk.CTkFrame):
             win.destroy()
             self.render_grn_orders()
             self.render_stock()
-            show_toast(self, "Stock Received", f"{po_id}: Added +{qty_val} units of {selected_med}.", "success")
+            self.render_consignment_ledger()
+            try:
+                self.tabview.set("🤝 Pay-on-Sale Ledger")
+            except Exception:
+                pass
+            show_toast(self, "Stock Received", f"{po_id}: Inwarded {qty_val} units of {selected_med} to Pay-on-Sale Ledger.", "success")
 
         ctk.CTkButton(win, text="Add to Stock", height=38, font=FONTS["body_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save).pack(pady=16)
 

@@ -926,10 +926,13 @@ def get_all_purchase_orders():
         norm_items = []
         for it in raw_items:
             if isinstance(it, dict):
+                m_label = it.get("medicine") or it.get("name") or it.get("med_name") or it.get("med_id") or "Medicine"
                 norm_items.append({
-                    "medicine": it.get("medicine", "Medicine"),
-                    "qty": it.get("qty", 10),
-                    "rate": float(it.get("rate", 0.0))
+                    "medicine": m_label,
+                    "name": m_label,
+                    "med_id": it.get("med_id") or it.get("id"),
+                    "qty": int(it.get("qty", 10)),
+                    "rate": float(it.get("rate") or it.get("cost_price") or it.get("cost") or 0.0)
                 })
             elif isinstance(it, str):
                 norm_items.append({
@@ -1301,44 +1304,68 @@ init_db()
 
 def _internal_inward_consignment(cur, po_data, auto_increment_stock=True):
     po_id = po_data["po_id"]
-    sup_name = po_data["supplier_name"]
+    sup_name = po_data.get("supplier_name", "Pharma Supplier")
     items = po_data.get("items", [])
-    rec_date = po_data.get("received_date") or datetime.now().strftime("%Y-%m-%d")
+    if isinstance(items, str):
+        try:
+            items = json.loads(items)
+        except Exception:
+            items = []
+    rec_date = po_data.get("received_date") or po_data.get("date") or datetime.now().strftime("%Y-%m-%d")
     now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     for it in items:
         if isinstance(it, str):
             med_name = it
+            med_id_hint = None
             qty = 10
             rate = 0.0
+            custom_mrp = 0.0
         elif isinstance(it, dict):
-            med_name = it.get("medicine") or it.get("name")
+            med_name = it.get("medicine") or it.get("name") or it.get("med_name")
+            med_id_hint = it.get("med_id") or it.get("id")
             qty = int(it.get("qty", 0))
-            rate = float(it.get("rate", 0.0))
+            rate = float(it.get("rate") or it.get("cost_price") or it.get("cost") or 0.0)
+            custom_mrp = float(it.get("selling_price") or it.get("mrp") or 0.0)
         else:
             continue
             
+        # Resolve medicine from med_id_hint if med_name was not provided
+        if not med_name and med_id_hint:
+            cur.execute("SELECT id, name, mrp, cost_price, batch FROM medicines WHERE id = ? OR name = ?", (med_id_hint, med_id_hint))
+            r = cur.fetchone()
+            if r:
+                med_name = r["name"]
+                if rate <= 0:
+                    rate = float(r["cost_price"])
+                if custom_mrp <= 0:
+                    custom_mrp = float(r["mrp"])
+
         if not med_name or qty <= 0:
             continue
             
         # Avoid duplicate batch entries for same po_id and medicine
-        cur.execute("SELECT COUNT(*) as cnt FROM consignment_batches WHERE po_id = ? AND medicine_name = ?", (po_id, med_name))
-        if cur.fetchone()["cnt"] > 0:
+        cur.execute("SELECT id FROM consignment_batches WHERE po_id = ? AND (medicine_name = ? OR medicine_id = ?)", (po_id, med_name, med_id_hint or ''))
+        existing_batch = cur.fetchone()
+        if existing_batch:
             continue
             
         cur.execute("SELECT id, name, mrp, cost_price, batch FROM medicines WHERE name = ? OR id = ?", (med_name, med_name))
         med_row = cur.fetchone()
+        if not med_row and med_id_hint:
+            cur.execute("SELECT id, name, mrp, cost_price, batch FROM medicines WHERE id = ?", (med_id_hint,))
+            med_row = cur.fetchone()
         
-        custom_mrp = float(it.get("selling_price") or it.get("mrp") or 0.0) if isinstance(it, dict) else 0.0
         if med_row:
             med_id = med_row["id"]
+            med_name = med_row["name"]
             mrp = custom_mrp if custom_mrp > 0 else float(med_row["mrp"])
             cp = rate if rate > 0 else float(med_row["cost_price"])
             batch_no = med_row["batch"]
             if auto_increment_stock:
                 cur.execute("UPDATE medicines SET stock = stock + ? WHERE id = ?", (qty, med_id))
         else:
-            med_id = f"MED-{secrets.token_hex(3).upper()}"
+            med_id = med_id_hint or f"MED-{secrets.token_hex(3).upper()}"
             cp = rate if rate > 0 else 10.0
             mrp = custom_mrp if custom_mrp > 0 else (round(cp * 1.5, 2) if cp > 0 else 100.0)
             batch_no = f"BAT-{datetime.now().strftime('%m%y')}"
