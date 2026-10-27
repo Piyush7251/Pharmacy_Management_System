@@ -3748,6 +3748,18 @@
                                 <span id="cart-total">₹ 0.00</span>
                             </div>
 
+                            <!-- Deliver to Home Fleet Checkbox -->
+                            <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--brand-primary); margin: 0;">
+                                    <input type="checkbox" id="pos-route-delivery" style="width: 16px; height: 16px; accent-color: var(--brand-primary);" onchange="togglePosDeliveryFields(this.checked)">
+                                    <span>🛵 Route to Home Delivery Fleet</span>
+                                </label>
+                                <div id="pos-delivery-extra" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(14, 165, 233, 0.3);">
+                                    <label class="form-label" style="font-size: 11px;">Delivery Destination Address</label>
+                                    <input type="text" id="pos-deliv-address" class="form-control" style="font-size: 12px; padding: 6px 10px;" placeholder="Flat / Street Address" value="402, Green Glen Heights, Sector 14, Navi Mumbai">
+                                </div>
+                            </div>
+
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                                 <button class="btn-success" onclick="checkout('Cash')">💵 Cash</button>
                                 <button class="btn-primary" onclick="checkout('UPI / QR')">📱 UPI QR</button>
@@ -3897,14 +3909,41 @@
                 }))
             };
 
+            const isDelivery = document.getElementById("pos-route-delivery") && document.getElementById("pos-route-delivery").checked;
+            const delivAddress = (document.getElementById("pos-deliv-address") && document.getElementById("pos-deliv-address").value.trim()) || "402, Green Glen Heights, Sector 14, Navi Mumbai";
+
             const res = await callBridge("create_invoice", invData);
             if (res && res.success) {
+                if (isDelivery) {
+                    const delivData = {
+                        order_id: `ORD-${invData.invoice_id.slice(-6)}`,
+                        patient_name: `${custName} (Home Delivery)`,
+                        address: delivAddress,
+                        phone: custPhone || "+91 98200 44556",
+                        patient_phone: custPhone || "+91 98200 44556",
+                        agent_name: "Ramesh Kumar (Bike Fleet #01)",
+                        status: "Packaging & Verification",
+                        time_slot: "Standard Delivery (Today)",
+                        items_count: State.cart.length,
+                        cold_chain_pack: State.cart.some(c => c.med && c.med.cold_chain),
+                        amount: total,
+                        payment_status: `Paid (${method})`,
+                        otp: "4821"
+                    };
+                    await callBridge("create_delivery_order", delivData);
+                    showToast("Routed to Fleet", `Order ${delivData.order_id} automatically sent to Delivery Kanban!`, "success");
+                }
                 showToast("Invoice Generated", `Bill ${invData.invoice_id} saved successfully!`, "success");
                 clearCart();
                 openReceiptModal(invData);
             } else {
                 showToast("Checkout Failed", (res && res.error) || "Error generating invoice.", "error");
             }
+        }
+
+        function togglePosDeliveryFields(checked) {
+            const el = document.getElementById("pos-delivery-extra");
+            if (el) el.style.display = checked ? "block" : "none";
         }
 
         function openReceiptModal(inv) {
