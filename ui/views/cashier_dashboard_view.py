@@ -22,7 +22,7 @@ from ui.theme import COLORS, FONTS
 from ui.components.toast import show_toast
 from ui.components.qr_canvas import DynamicUPIQR
 from core.db import (
-    get_all_medicines, get_all_prescriptions, create_invoice,
+    get_all_medicines, add_medicine, get_all_prescriptions, create_invoice,
     get_all_invoices, create_delivery_order, get_patient_by_phone,
     update_patient_loyalty
 )
@@ -60,6 +60,30 @@ class CashierDashboardView(ctk.CTkFrame):
         
         lbl_cashier = ctk.CTkLabel(right_box, text=f"Cashier: {self.user_data['name']} (Counter #01)", font=FONTS["small_bold"], text_color=COLORS["text_dim"])
         lbl_cashier.pack(side="left", padx=(0, 10))
+
+        btn_add_med = ctk.CTkButton(
+            right_box,
+            text="➕ New Medicine",
+            height=30,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["inventory"],
+            hover_color=COLORS["inventory_hover"],
+            text_color="#FFFFFF",
+            command=self.open_quick_add_medicine_modal
+        )
+        btn_add_med.pack(side="left", padx=(0, 8))
+
+        btn_refresh = ctk.CTkButton(
+            right_box,
+            text="🔄 Refresh",
+            height=30,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_secondary"],
+            hover_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["btn_secondary_text"],
+            command=self.refresh_catalog_manual
+        )
+        btn_refresh.pack(side="left", padx=(0, 8))
         
         btn_import_rx = ctk.CTkButton(
             right_box,
@@ -179,7 +203,20 @@ class CashierDashboardView(ctk.CTkFrame):
             text_color="#FFFFFF",
             command=self.simulate_barcode_scan
         )
-        btn_scan.grid(row=0, column=1)
+        btn_scan.grid(row=0, column=1, padx=(0, 6))
+
+        btn_refresh_bar = ctk.CTkButton(
+            search_box,
+            text="🔄 Refresh",
+            width=90,
+            height=36,
+            font=FONTS["small_bold"],
+            fg_color=COLORS["btn_secondary"],
+            hover_color=COLORS["btn_secondary_hover"],
+            text_color=COLORS["btn_secondary_text"],
+            command=self.refresh_catalog_manual
+        )
+        btn_refresh_bar.grid(row=0, column=2)
         
         # Category Filter Pills
         cat_bar = ctk.CTkFrame(self.tab_pos, fg_color="transparent")
@@ -290,6 +327,92 @@ class CashierDashboardView(ctk.CTkFrame):
         self.medicines = get_all_medicines()
         self.filter_catalog()
 
+    def refresh_catalog_manual(self):
+        self.load_inventory()
+        show_toast(self, "Catalog Synchronized", f"{len(self.medicines)} medicines loaded from database.", "info")
+
+    def open_quick_add_medicine_modal(self):
+        win = ctk.CTkToplevel(self)
+        win.title("➕ Quick Add Medicine SKU")
+        win.geometry("480x560")
+        win.configure(fg_color=COLORS["bg_surface"])
+        win.transient(self)
+        win.grab_set()
+
+        ctk.CTkLabel(win, text="➕ Register New Medicine SKU", font=FONTS["h3"], text_color=COLORS["inventory"]).pack(padx=20, pady=(16, 4), anchor="w")
+        ctk.CTkLabel(win, text="Direct counter entry — updates inventory & billing catalog immediately.", font=FONTS["small"], text_color=COLORS["text_dim"]).pack(padx=20, pady=(0, 12), anchor="w")
+
+        fields = [
+            ("Medicine / Brand Name *", "name", "e.g. Dolo 650 Tablet"),
+            ("Generic Formula", "generic", "e.g. Paracetamol 650mg"),
+            ("Batch Code *", "batch", f"BAT-{datetime.now().strftime('%y%m%d')}"),
+            ("Stock Quantity *", "stock", "100"),
+            ("MRP (₹) *", "mrp", "35.00"),
+            ("Therapeutic Category", "cat", "General Medicine"),
+            ("Storage Rack", "rack", "Rack A-01"),
+        ]
+
+        entries = {}
+        form_frame = ctk.CTkFrame(win, fg_color="transparent")
+        form_frame.pack(fill="both", expand=True, padx=20, pady=4)
+
+        for lbl, key, dflt in fields:
+            row = ctk.CTkFrame(form_frame, fg_color="transparent")
+            row.pack(fill="x", pady=4)
+            ctk.CTkLabel(row, text=lbl, font=FONTS["small_bold"], text_color=COLORS["text_main"], width=160, anchor="w").pack(side="left")
+            ent = ctk.CTkEntry(row, font=FONTS["small"], fg_color=COLORS["bg_input"], text_color=COLORS["text_main"], border_color=COLORS["border"])
+            ent.insert(0, dflt)
+            ent.pack(side="right", fill="x", expand=True)
+            entries[key] = ent
+
+        def save_quick_drug():
+            name = entries["name"].get().strip()
+            batch = entries["batch"].get().strip()
+            if not name or not batch:
+                messagebox.showerror("Validation Error", "Medicine name and batch code are required.")
+                return
+            try:
+                stock_val = int(entries["stock"].get().strip() or "0")
+                mrp_val = float(entries["mrp"].get().strip() or "0.0")
+            except ValueError:
+                messagebox.showerror("Validation Error", "Stock and MRP must be numeric.")
+                return
+
+            med_obj = {
+                "id": f"MED-{int(datetime.now().timestamp())}",
+                "name": name,
+                "generic": entries["generic"].get().strip() or name,
+                "category": entries["cat"].get().strip() or "General Medicine",
+                "schedule": "Schedule H",
+                "manufacturer": "Pharma Labs Ltd.",
+                "batch": batch,
+                "expiry": "2027-12-31",
+                "days_to_expiry": 365,
+                "stock": stock_val,
+                "unit": "Strips",
+                "mrp": mrp_val,
+                "cost_price": mrp_val * 0.7,
+                "gst_pct": 12.0,
+                "rack": entries["rack"].get().strip() or "Rack A-01",
+                "cold_chain": False,
+                "interactions": []
+            }
+            success, err = add_medicine(med_obj)
+            if success:
+                win.destroy()
+                self.load_inventory()
+                self.search_ent.delete(0, "end")
+                self.search_ent.insert(0, name)
+                self.filter_catalog()
+                show_toast(self, "Medicine Added", f"{name} ({batch}) added to inventory and catalog.", "success")
+            else:
+                messagebox.showerror("Error", err or "Failed to save medicine.")
+
+        btn_row = ctk.CTkFrame(win, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=16)
+        ctk.CTkButton(btn_row, text="Cancel", width=100, height=34, font=FONTS["small"], fg_color=COLORS["btn_secondary"], hover_color=COLORS["btn_secondary_hover"], text_color=COLORS["btn_secondary_text"], command=win.destroy).pack(side="left")
+        ctk.CTkButton(btn_row, text="Save & Add to Catalog", height=34, font=FONTS["small_bold"], fg_color=COLORS["inventory"], hover_color=COLORS["inventory_hover"], text_color="#FFFFFF", command=save_quick_drug).pack(side="right", fill="x", expand=True, padx=(10, 0))
+
     def set_category_filter(self, cat):
         self.selected_category = cat
         self.filter_catalog()
@@ -302,7 +425,15 @@ class CashierDashboardView(ctk.CTkFrame):
             filtered = [m for m in filtered if self.selected_category.lower() in m.get("category", "").lower()]
             
         if q:
-            filtered = [m for m in filtered if q in m["name"].lower() or q in m["generic"].lower() or q in m["batch"].lower() or q in m.get("rack", "").lower()]
+            filtered = [
+                m for m in filtered
+                if q in m.get("name", "").lower() or
+                   q in m.get("generic", "").lower() or
+                   q in m.get("batch", "").lower() or
+                   q in m.get("id", "").lower() or
+                   q in m.get("category", "").lower() or
+                   q in m.get("rack", "").lower()
+            ]
             
         self.render_catalog(filtered)
 

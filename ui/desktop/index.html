@@ -3673,7 +3673,9 @@
                         <h1>💳 Cashier POS & Express Billing</h1>
                         <p>Fast barcode lookup, FEFO batch selection, split payments (Cash, UPI QR, Card) & GST receipt printer</p>
                     </div>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn-primary" onclick="openAddMedicineModal()">➕ Add New Medicine</button>
+                        <button class="btn-secondary" onclick="refreshPosCatalog()">🔄 Refresh Catalog</button>
                         <button class="btn-secondary" onclick="openImportRxModal()">📋 Import Approved Rx (${State.approvedPrescriptions.length})</button>
                         <button class="btn-secondary" onclick="openSalesHistoryModal()">🧾 Sales Ledger</button>
                     </div>
@@ -3774,33 +3776,79 @@
             updateCartSummary();
         }
 
+        async function refreshPosCatalog(silent = false) {
+            const [meds, approvedRx] = await Promise.all([
+                callBridge("get_all_medicines"),
+                callBridge("get_all_prescriptions")
+            ]);
+            State.medicines = meds || [];
+            State.approvedPrescriptions = (approvedRx || []).filter(r => (r.status || '').includes("Verified") || (r.status || '').includes("Approved"));
+
+            const searchInput = document.getElementById("pos-search");
+            const q = searchInput ? searchInput.value.trim() : "";
+            if (q) {
+                filterPosCatalog(q);
+            } else {
+                const body = document.getElementById("pos-catalog-body");
+                if (body) {
+                    body.innerHTML = renderPosCatalogRows(State.medicines);
+                }
+            }
+            if (!silent) {
+                showToast("Catalog Synchronized", `${State.medicines.length} medicines loaded from central inventory database.`, "info");
+            }
+        }
+
         function renderPosCatalogRows(medList) {
-            return (medList || []).map(m => `
+            if (!medList || medList.length === 0) {
+                return `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            <div>No medicines found in catalog matching search.</div>
+                            <button class="btn-primary" style="margin-top: 10px; padding: 6px 14px; font-size: 12px;" onclick="openAddMedicineModal()">➕ Add New Medicine SKU</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            return medList.map(m => {
+                const mrpVal = (typeof m.mrp === 'number') ? m.mrp : (parseFloat(m.mrp) || 0.0);
+                const stockVal = parseInt(m.stock, 10) || 0;
+                return `
                 <tr>
                     <td>
-                        <strong>${m.name}</strong><br>
+                        <strong>${m.name || 'Unnamed Product'}</strong><br>
                         <small style="color: var(--text-muted);">${m.generic || ''}</small>
                     </td>
-                    <td><code>${m.batch}</code></td>
+                    <td><code>${m.batch || 'BAT-01'}</code></td>
                     <td>
-                        <span class="badge ${m.stock < 20 ? 'badge-danger' : 'badge-success'}">${m.stock}</span>
+                        <span class="badge ${stockVal < 20 ? 'badge-danger' : 'badge-success'}">${stockVal}</span>
                     </td>
-                    <td><strong>₹ ${m.mrp.toFixed(2)}</strong></td>
+                    <td><strong>₹ ${mrpVal.toFixed(2)}</strong></td>
                     <td>
                         <button class="btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="addToCart('${m.id}')">+ Add</button>
                     </td>
                 </tr>
-            `).join("");
+            `;}).join("");
         }
 
         function filterPosCatalog(q) {
-            const query = q.toLowerCase();
-            const filtered = State.medicines.filter(m => 
-                m.name.toLowerCase().includes(query) || 
+            const query = (q || '').trim().toLowerCase();
+            if (!query) {
+                const body = document.getElementById("pos-catalog-body");
+                if (body) body.innerHTML = renderPosCatalogRows(State.medicines);
+                return;
+            }
+            const filtered = (State.medicines || []).filter(m => 
+                (m.name || '').toLowerCase().includes(query) || 
                 (m.generic || '').toLowerCase().includes(query) ||
-                m.batch.toLowerCase().includes(query)
+                (m.batch || '').toLowerCase().includes(query) ||
+                (m.id || '').toLowerCase().includes(query) ||
+                (m.category || '').toLowerCase().includes(query)
             );
-            document.getElementById("pos-catalog-body").innerHTML = renderPosCatalogRows(filtered);
+            const body = document.getElementById("pos-catalog-body");
+            if (body) {
+                body.innerHTML = renderPosCatalogRows(filtered);
+            }
         }
 
         function addToCart(medId) {
@@ -4934,7 +4982,29 @@
             if (res && res.success) {
                 showToast("Medicine Added", `${medData.name} (Batch: ${medData.batch}) added to inventory.`, "success");
                 closeModal();
-                renderInventoryDashboard();
+
+                // Synchronize global medicines catalog from database
+                State.medicines = await callBridge("get_all_medicines") || [];
+
+                // If currently on Cashier POS, update the POS catalog table immediately!
+                const posCatalogBody = document.getElementById("pos-catalog-body");
+                if (posCatalogBody) {
+                    const searchInput = document.getElementById("pos-search");
+                    if (searchInput) {
+                        searchInput.value = medData.name;
+                        filterPosCatalog(medData.name);
+                    } else {
+                        posCatalogBody.innerHTML = renderPosCatalogRows(State.medicines);
+                    }
+                } else if (State.activeRole === "Inventory Manager" || document.getElementById("inventory-tab-content")) {
+                    renderInventoryDashboard();
+                } else {
+                    if (State.activeRole === "Cashier") {
+                        renderCashierDashboard();
+                    } else {
+                        renderInventoryDashboard();
+                    }
+                }
             } else {
                 showToast("Error", (res && res.error) || "Could not add medicine.", "error");
             }
