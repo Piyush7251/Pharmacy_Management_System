@@ -550,17 +550,31 @@ def add_medicine(med_data):
     conn = get_connection()
     cur = conn.cursor()
     try:
+        med_id = med_data.get("id") or f"MED-{int(datetime.now().timestamp())}"
+        name = med_data.get("name") or "Unknown Medicine"
+        generic = med_data.get("generic") or name
+        category = med_data.get("category") or "General Medicine"
+        schedule = med_data.get("schedule") or med_data.get("schedule_type") or "Schedule H"
+        manufacturer = med_data.get("manufacturer") or "Pharma Labs Ltd."
+        batch = med_data.get("batch") or "BATCH-01"
+        expiry = med_data.get("expiry") or "2027-12-31"
+        days_to_expiry = int(med_data.get("days_to_expiry") or 365)
+        stock = int(med_data.get("stock") or 0)
+        unit = med_data.get("unit") or med_data.get("dosage_form") or "Strips"
+        mrp = float(med_data.get("mrp") or 0.0)
+        cost_price = float(med_data.get("cost_price") or med_data.get("cost") or (mrp * 0.7))
+        gst_pct = float(med_data.get("gst_pct") or 12.0)
+        rack = med_data.get("rack") or "Rack A-01"
+        cold_chain = 1 if med_data.get("cold_chain") else 0
+        interactions = json.dumps(med_data.get("interactions", []))
+
         cur.execute("""
         INSERT INTO medicines (id, name, generic, category, schedule, manufacturer, batch, expiry, days_to_expiry, stock, unit, mrp, cost_price, gst_pct, rack, cold_chain, interactions)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            med_data["id"], med_data["name"], med_data["generic"], med_data["category"],
-            med_data["schedule"], med_data["manufacturer"], med_data["batch"],
-            med_data["expiry"], med_data["days_to_expiry"], med_data["stock"],
-            med_data["unit"], med_data["mrp"], med_data["cost_price"],
-            med_data["gst_pct"], med_data["rack"],
-            1 if med_data.get("cold_chain") else 0,
-            json.dumps(med_data.get("interactions", []))
+            med_id, name, generic, category, schedule, manufacturer, batch,
+            expiry, days_to_expiry, stock, unit, mrp, cost_price, gst_pct, rack,
+            cold_chain, interactions
         ))
         conn.commit()
         success, err = True, None
@@ -777,15 +791,28 @@ def create_delivery_order(deliv_data):
     conn = get_connection()
     cur = conn.cursor()
     try:
+        order_id = deliv_data.get("order_id") or f"ORD-{int(datetime.now().timestamp())}"
+        patient_name = deliv_data.get("patient_name") or "Customer"
+        address = deliv_data.get("address") or "Standard Address"
+        phone = deliv_data.get("phone") or deliv_data.get("patient_phone") or "+91 98200 00000"
+        agent_name = deliv_data.get("agent_name") or "Unassigned Rider"
+        status = deliv_data.get("status") or "Packaging & Verification"
+        time_slot = deliv_data.get("time_slot") or "15:00 - 16:30"
+        items_count = int(deliv_data.get("items_count") or 1)
+        amount = float(deliv_data.get("amount") or 0.0)
+        payment_status = deliv_data.get("payment_status") or (f"Cash on Delivery (₹{amount:.2f})" if amount > 0 else "Prepaid")
+        otp = str(deliv_data.get("otp") or "4821")
+        cold_chain_pack = 1 if deliv_data.get("cold_chain_pack") else 0
+
         cur.execute("""
         INSERT INTO delivery_orders (order_id, patient_name, address, phone, agent_name, status, time_slot, items_count, cold_chain_pack, amount, payment_status, otp)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            deliv_data["order_id"], deliv_data["patient_name"], deliv_data["address"],
-            deliv_data["phone"], deliv_data["agent_name"], deliv_data["status"],
-            deliv_data["time_slot"], deliv_data["items_count"],
-            1 if deliv_data.get("cold_chain_pack") else 0,
-            deliv_data["amount"], deliv_data["payment_status"], deliv_data.get("otp", "1234")
+            order_id, patient_name, address,
+            phone, agent_name, status,
+            time_slot, items_count,
+            cold_chain_pack,
+            amount, payment_status, otp
         ))
         conn.commit()
         success, err = True, None
@@ -918,15 +945,24 @@ def add_purchase_order(po_data):
     conn = get_connection()
     cur = conn.cursor()
     try:
+        po_id = po_data.get("po_id") or f"PO-{int(datetime.now().timestamp())}"
+        po_date = po_data.get("date") or po_data.get("order_date") or datetime.now().strftime("%Y-%m-%d")
+        supplier_name = po_data.get("supplier_name") or "MedPharma Distributors"
+        status = po_data.get("status") or "Pending Delivery"
+        items = po_data.get("items") or po_data.get("items_json") or []
+        total_amount = float(po_data.get("total_amount") or 0.0)
+        received_date = po_data.get("received_date") or (po_date if status in ("Received & Added to Stock", "Goods Received", "Delivered", "Received & Stocked") else None)
+        created_by = po_data.get("created_by") or "Inventory Manager"
+
         cur.execute("""
         INSERT INTO purchase_orders (po_id, date, supplier_name, status, items_json, total_amount, received_date, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            po_data["po_id"], po_data["date"], po_data["supplier_name"], po_data["status"],
-            json.dumps(po_data["items"]), po_data["total_amount"],
-            po_data.get("received_date"), po_data["created_by"]
+            po_id, po_date, supplier_name, status,
+            json.dumps(items), total_amount,
+            received_date, created_by
         ))
-        if po_data.get("status") in ("Received & Added to Stock", "Goods Received", "Delivered"):
+        if status in ("Received & Added to Stock", "Goods Received", "Delivered", "Received & Stocked"):
             auto_inc = po_data.get("auto_increment_stock", False)
             _internal_inward_consignment(cur, po_data, auto_increment_stock=auto_inc)
         conn.commit()

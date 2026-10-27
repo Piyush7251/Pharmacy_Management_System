@@ -4848,20 +4848,27 @@
         }
 
         async function submitAddMedicine() {
+            const mrpVal = parseFloat(document.getElementById("new-med-mrp").value) || 0.0;
             const medData = {
                 id: document.getElementById("new-med-id").value.trim(),
                 name: document.getElementById("new-med-name").value.trim(),
-                generic: document.getElementById("new-med-generic").value.trim(),
-                category: document.getElementById("new-med-category").value.trim(),
+                generic: document.getElementById("new-med-generic").value.trim() || document.getElementById("new-med-name").value.trim(),
+                category: document.getElementById("new-med-category").value.trim() || "General Medicine",
                 batch: document.getElementById("new-med-batch").value.trim(),
                 expiry: document.getElementById("new-med-expiry").value,
                 stock: parseInt(document.getElementById("new-med-stock").value, 10),
-                cost: parseFloat(document.getElementById("new-med-mrp").value) * 0.7,
-                mrp: parseFloat(document.getElementById("new-med-mrp").value),
+                cost_price: mrpVal * 0.7,
+                cost: mrpVal * 0.7,
+                mrp: mrpVal,
                 cold_chain: document.getElementById("new-med-cold").value === "1",
-                rack: document.getElementById("new-med-rack").value.trim(),
-                dosage_form: "Tablet",
-                schedule_type: "Schedule H"
+                rack: document.getElementById("new-med-rack").value.trim() || "Rack A-01",
+                unit: "Strips",
+                dosage_form: "Strips",
+                schedule: "Schedule H",
+                schedule_type: "Schedule H",
+                manufacturer: "Pharma Labs Ltd.",
+                days_to_expiry: 365,
+                gst_pct: 12.0
             };
 
             if (!medData.name || !medData.batch || isNaN(medData.stock) || isNaN(medData.mrp)) {
@@ -4947,10 +4954,12 @@
 
             const poData = {
                 po_id: poId,
-                supplier_name: supplier,
+                date: new Date().toISOString().slice(0, 10),
                 order_date: new Date().toISOString().slice(0, 10),
+                supplier_name: supplier,
                 total_amount: amt,
-                status: "Received & Stocked",
+                status: "Received & Added to Stock",
+                created_by: "Inventory Manager",
                 items: [{ med_id: medId, qty: qty }]
             };
 
@@ -5016,13 +5025,19 @@
         }
 
         async function submitCreateDelivery() {
+            const phoneVal = (document.getElementById("new-deliv-phone") ? document.getElementById("new-deliv-phone").value.trim() : "") || "+91 98201 12345";
+            const amtVal = parseFloat(document.getElementById("new-deliv-amt").value) || 0.0;
             const delivData = {
                 order_id: document.getElementById("new-deliv-id").value.trim(),
                 patient_name: document.getElementById("new-deliv-name").value.trim(),
-                patient_phone: document.getElementById("new-deliv-phone").value.trim(),
+                phone: phoneVal,
+                patient_phone: phoneVal,
                 address: document.getElementById("new-deliv-addr").value.trim(),
                 agent_name: document.getElementById("new-deliv-agent").value,
-                amount: parseFloat(document.getElementById("new-deliv-amt").value) || 0.0,
+                amount: amtVal,
+                payment_status: amtVal > 0 ? "Cash on Delivery" : "Prepaid",
+                time_slot: "Standard Delivery (Today)",
+                items_count: 1,
                 cold_chain_pack: document.getElementById("new-deliv-cold").value === "1",
                 status: "Packaging & Verification",
                 otp: "4821"
