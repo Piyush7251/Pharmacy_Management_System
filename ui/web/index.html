@@ -3532,8 +3532,12 @@
                 return;
             }
 
+            const matchedPatient = (State.patients || []).find(p => (p.name || '').toLowerCase() === patientName.toLowerCase());
+            const patientId = matchedPatient ? matchedPatient.id : `PAT-${Math.floor(100 + Math.random() * 900)}`;
+
             const rxData = {
                 rx_id: rxId,
+                patient_id: patientId,
                 patient_name: patientName,
                 doctor_name: doctorName,
                 hospital: hospital,
