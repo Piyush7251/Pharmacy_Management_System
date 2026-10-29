@@ -10,7 +10,12 @@ import os
 from datetime import datetime
 
 # Add workspace directory to python path for modular imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+if getattr(sys, 'frozen', False):
+    BASE_DIR = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
 import customtkinter as ctk
 from ui.theme import COLORS, FONTS

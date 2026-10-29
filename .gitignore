@@ -24,3 +24,7 @@ logs/*.log
 backups/*.db
 backups/*.csv
 *.db
+
+# PyInstaller
+build/
+dist/

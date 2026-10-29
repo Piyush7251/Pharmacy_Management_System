@@ -5,16 +5,23 @@ inventory alert thresholds, receipt formatting, and file persistence via config.
 """
 
 import os
+import sys
 import json
 import threading
 from dataclasses import dataclass, field, asdict
 from typing import Dict, Any
 
 # Root directory of the application
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_FILE_PATH = os.path.join(BASE_DIR, "config.json")
-BACKUP_DIR_DEFAULT = os.path.join(BASE_DIR, "backups")
-LOGS_DIR_DEFAULT = os.path.join(BASE_DIR, "logs")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = getattr(sys, '_MEIPASS', os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~/.tqmpharm"), "config.json")
+    BACKUP_DIR_DEFAULT = os.path.join(os.path.expanduser("~/.tqmpharm"), "backups")
+    LOGS_DIR_DEFAULT = os.path.join(os.path.expanduser("~/.tqmpharm"), "logs")
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    CONFIG_FILE_PATH = os.path.join(BASE_DIR, "config.json")
+    BACKUP_DIR_DEFAULT = os.path.join(BASE_DIR, "backups")
+    LOGS_DIR_DEFAULT = os.path.join(BASE_DIR, "logs")
 
 @dataclass
 class StoreConfig:
