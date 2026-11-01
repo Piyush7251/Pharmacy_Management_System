@@ -43,9 +43,11 @@ class CashierDashboardView(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
         
+        self._med_sig = ""
         self.setup_header()
         self.setup_tabs()
         self.load_inventory()
+        self.after(3000, self.auto_refresh_loop)
 
     def setup_header(self):
         hdr = ctk.CTkFrame(self, height=54, fg_color=COLORS["bg_surface"], corner_radius=10, border_width=1, border_color=COLORS["border"])
@@ -72,6 +74,9 @@ class CashierDashboardView(ctk.CTkFrame):
             command=self.open_quick_add_medicine_modal
         )
         btn_add_med.pack(side="left", padx=(0, 8))
+
+        lbl_sync = ctk.CTkLabel(right_box, text="⚡ Auto-Sync (3s)", font=FONTS["small_bold"], text_color=COLORS["clinical"])
+        lbl_sync.pack(side="left", padx=(0, 8))
 
         btn_refresh = ctk.CTkButton(
             right_box,
@@ -325,7 +330,24 @@ class CashierDashboardView(ctk.CTkFrame):
 
     def load_inventory(self):
         self.medicines = get_all_medicines()
+        self._med_sig = "|".join(f"{m['id']}:{m['stock']}:{m.get('batch','')}" for m in self.medicines)
         self.filter_catalog()
+
+    def auto_refresh_loop(self):
+        if not self.winfo_exists():
+            return
+        try:
+            current_meds = get_all_medicines()
+            sig = "|".join(f"{m['id']}:{m['stock']}:{m.get('batch','')}" for m in current_meds)
+            if sig != getattr(self, "_med_sig", ""):
+                self._med_sig = sig
+                self.medicines = current_meds
+                self.filter_catalog()
+        except Exception:
+            pass
+        finally:
+            if self.winfo_exists():
+                self.after(3000, self.auto_refresh_loop)
 
     def refresh_catalog_manual(self):
         self.load_inventory()

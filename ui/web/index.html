@@ -616,6 +616,15 @@
         }
 
         /* --- BADGES --- */
+        @keyframes pulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .live-dot {
+            animation: pulseDot 2s infinite;
+        }
+
         .badge {
             display: inline-flex;
             align-items: center;
@@ -1444,7 +1453,10 @@
             analytics: null,
             activeAdminTab: "overview",
             activePharmaTab: "rxs",
-            activeInvTab: "catalog"
+            activeInvTab: "catalog",
+            autoSyncEnabled: true,
+            lastStockSignature: "",
+            isSyncing: false
         };
 
         // --- BACKEND BRIDGE CALL WRAPPER (DESKTOP RPC + WEB REST HYBRID) ---
@@ -1497,6 +1509,21 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // --- AUTOMATIC STOCK REFRESH ENGINE (3s Periodic + Focus Events) ---
+        setInterval(() => {
+            autoSyncStockAndCatalog(false);
+        }, 3000);
+
+        window.addEventListener("focus", () => {
+            autoSyncStockAndCatalog(true);
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                autoSyncStockAndCatalog(true);
+            }
+        });
 
         // --- THEME MANAGEMENT ---
         function applyTheme(t) {
@@ -1565,6 +1592,9 @@
 
         function closeModal() {
             document.getElementById("app-modal").classList.remove("active");
+            if (document.getElementById("pos-catalog-body")) {
+                autoSyncStockAndCatalog(true);
+            }
         }
 
         // --- LOGIN DASHBOARD & AUTHENTICATION HANDLERS ---
@@ -3674,9 +3704,13 @@
                         <p>Fast barcode lookup, FEFO batch selection, split payments (Cash, UPI QR, Card) & GST receipt printer</p>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="pos-auto-sync-status" onclick="toggleAutoSync()" style="cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 11px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px;" title="Real-time automatic stock refresh is active (every 3s). Click to toggle.">
+                            <span class="live-dot" style="width: 8px; height: 8px; background: #10B981; border-radius: 50%; display: inline-block;"></span>
+                            <span id="pos-auto-sync-text">⚡ Auto-Refresh: ON</span>
+                        </span>
                         <button class="btn-primary" onclick="openAddMedicineModal()">➕ Add New Medicine</button>
                         <button class="btn-secondary" onclick="refreshPosCatalog()">🔄 Refresh Catalog</button>
-                        <button class="btn-secondary" onclick="openImportRxModal()">📋 Import Approved Rx (${State.approvedPrescriptions.length})</button>
+                        <button class="btn-secondary" id="pos-btn-import-rx" onclick="openImportRxModal()">📋 Import Approved Rx (${State.approvedPrescriptions.length})</button>
                         <button class="btn-secondary" onclick="openSalesHistoryModal()">🧾 Sales Ledger</button>
                     </div>
                 </div>
@@ -3776,24 +3810,138 @@
             updateCartSummary();
         }
 
-        async function refreshPosCatalog(silent = false) {
-            const [meds, approvedRx] = await Promise.all([
-                callBridge("get_all_medicines"),
-                callBridge("get_all_prescriptions")
-            ]);
-            State.medicines = meds || [];
-            State.approvedPrescriptions = (approvedRx || []).filter(r => (r.status || '').includes("Verified") || (r.status || '').includes("Approved"));
+        // --- REAL-TIME AUTOMATIC STOCK REFRESH ENGINE ---
+        function computeStockSignature(medsList) {
+            if (!medsList || !Array.isArray(medsList)) return "";
+            return medsList.map(m => `${m.id}:${m.stock}:${m.batch || ''}:${m.mrp || 0}`).join(";");
+        }
 
-            const searchInput = document.getElementById("pos-search");
-            const q = searchInput ? searchInput.value.trim() : "";
-            if (q) {
-                filterPosCatalog(q);
-            } else {
-                const body = document.getElementById("pos-catalog-body");
-                if (body) {
-                    body.innerHTML = renderPosCatalogRows(State.medicines);
+        function toggleAutoSync() {
+            State.autoSyncEnabled = !State.autoSyncEnabled;
+            const badge = document.getElementById("pos-auto-sync-status");
+            const txt = document.getElementById("pos-auto-sync-text");
+            if (State.autoSyncEnabled) {
+                if (badge) {
+                    badge.style.color = "#10B981";
+                    badge.style.background = "rgba(16, 185, 129, 0.1)";
+                    badge.style.borderColor = "rgba(16, 185, 129, 0.25)";
                 }
+                if (txt) txt.textContent = "⚡ Auto-Refresh: ON";
+                autoSyncStockAndCatalog(true);
+                showToast("Auto-Refresh Enabled", "Stock levels will now refresh automatically in real time (every 3s).", "success");
+            } else {
+                if (badge) {
+                    badge.style.color = "var(--text-muted)";
+                    badge.style.background = "var(--bg-active)";
+                    badge.style.borderColor = "var(--border)";
+                }
+                if (txt) txt.textContent = "⏸️ Auto-Refresh: PAUSED";
+                showToast("Auto-Refresh Paused", "Stock auto-sync paused. Click to re-enable.", "info");
             }
+        }
+
+        function pulseLiveSyncIndicator(msg = "Synced") {
+            const txt = document.getElementById("pos-auto-sync-text");
+            if (!txt || !State.autoSyncEnabled) return;
+            txt.textContent = `✓ ${msg}`;
+            setTimeout(() => {
+                if (txt && State.autoSyncEnabled) {
+                    txt.textContent = "⚡ Auto-Refresh: ON";
+                }
+            }, 1200);
+        }
+
+        async function autoSyncStockAndCatalog(force = false) {
+            if (State.isSyncing) return;
+            State.isSyncing = true;
+
+            try {
+                if (!State.currentUser || (!State.autoSyncEnabled && !force)) {
+                    return;
+                }
+
+                const posCatalogBody = document.getElementById("pos-catalog-body");
+                const invTableBody = document.getElementById("inventory-table-body");
+
+                // Only query database if a stock view is actively mounted or forced
+                if (!posCatalogBody && !invTableBody && !force) {
+                    return;
+                }
+
+                const [freshMeds, freshRx] = await Promise.all([
+                    callBridge("get_all_medicines"),
+                    posCatalogBody ? callBridge("get_all_prescriptions") : Promise.resolve(null)
+                ]);
+
+                if (!freshMeds || !Array.isArray(freshMeds)) return;
+
+                const newSig = computeStockSignature(freshMeds);
+                const hasChanged = (newSig !== State.lastStockSignature);
+
+                if (hasChanged || force) {
+                    State.lastStockSignature = newSig;
+                    State.medicines = freshMeds;
+
+                    // 1. If Cashier POS catalog is active:
+                    if (posCatalogBody) {
+                        if (freshRx && Array.isArray(freshRx)) {
+                            State.approvedPrescriptions = freshRx.filter(r => (r.status || '').includes("Verified") || (r.status || '').includes("Approved"));
+                            const rxBtn = document.getElementById("pos-btn-import-rx");
+                            if (rxBtn) {
+                                rxBtn.innerHTML = `📋 Import Approved Rx (${State.approvedPrescriptions.length})`;
+                            }
+                        }
+
+                        const searchInput = document.getElementById("pos-search");
+                        const q = searchInput ? searchInput.value.trim() : "";
+                        const scrollParent = posCatalogBody.closest('.card-body');
+                        const prevScroll = scrollParent ? scrollParent.scrollTop : 0;
+
+                        if (q) {
+                            filterPosCatalog(q);
+                        } else {
+                            posCatalogBody.innerHTML = renderPosCatalogRows(State.medicines);
+                        }
+
+                        if (scrollParent) {
+                            scrollParent.scrollTop = prevScroll;
+                        }
+
+                        // Update in-cart stock references if any items are in cart
+                        if (State.cart && State.cart.length > 0) {
+                            State.cart.forEach(item => {
+                                const freshMatch = State.medicines.find(m => m.id === item.med.id);
+                                if (freshMatch) {
+                                    item.med.stock = freshMatch.stock;
+                                }
+                            });
+                        }
+
+                        pulseLiveSyncIndicator("Synced");
+                    }
+
+                    // 2. If Inventory table is active on catalog tab:
+                    if (invTableBody && State.activeInvTab === "catalog") {
+                        const invSearchInput = document.getElementById("inventory-search");
+                        const invQ = invSearchInput ? invSearchInput.value.trim() : "";
+                        if (invQ) {
+                            filterInventoryCatalog(invQ);
+                        } else {
+                            const countEl = document.getElementById("inv-count");
+                            if (countEl) countEl.innerText = State.medicines.length;
+                            filterInventoryCatalog("");
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("[AutoSync] Error during background stock refresh:", err);
+            } finally {
+                State.isSyncing = false;
+            }
+        }
+
+        async function refreshPosCatalog(silent = false) {
+            await autoSyncStockAndCatalog(true);
             if (!silent) {
                 showToast("Catalog Synchronized", `${State.medicines.length} medicines loaded from central inventory database.`, "info");
             }
@@ -3983,6 +4131,8 @@
                 }
                 showToast("Invoice Generated", `Bill ${invData.invoice_id} saved successfully!`, "success");
                 clearCart();
+                // Immediately refresh stock so updated stock is visible right away!
+                await autoSyncStockAndCatalog(true);
                 openReceiptModal(invData);
             } else {
                 showToast("Checkout Failed", (res && res.error) || "Error generating invoice.", "error");
