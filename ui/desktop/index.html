@@ -4181,7 +4181,6 @@
                 }))
             };
 
-            const isDelivery = document.getElementById("pos-route-delivery") && document.getElementById("pos-route-delivery").checked;
             const delivAddress = (document.getElementById("pos-deliv-address") && document.getElementById("pos-deliv-address").value.trim()) || "402, Green Glen Heights, Sector 14, Navi Mumbai";
 
             const res = await callBridge("create_invoice", invData);
