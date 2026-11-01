@@ -2194,7 +2194,7 @@
                         </div>
                         <div>
                             <label class="form-label">Contact Phone</label>
-                            <input type="text" id="new-staff-phone" class="form-control" placeholder="+91 98201 0000X">
+                            <input type="tel" id="new-staff-phone" class="form-control" placeholder="9820100000" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)">
                         </div>
                     </div>
                     <div class="form-row">
@@ -2228,6 +2228,14 @@
             if (!staffId || !name || !username || !password) {
                 showToast("Missing Fields", "Please fill all required fields.", "warning");
                 return;
+            }
+
+            if (phone) {
+                const cleanP = phone.replace(/\D/g, "");
+                if (cleanP.length !== 10 || !/^[6-9]/.test(cleanP)) {
+                    showToast("Invalid Contact Phone", "Staff mobile number must be a valid 10-digit number starting with 6, 7, 8, or 9.", "warning");
+                    return;
+                }
             }
 
             const res = await callBridge("create_staff_user", staffId, name, role, username, password, email, phone, branch);
@@ -2294,7 +2302,7 @@
                     <div class="form-row">
                         <div>
                             <label class="form-label">Contact Phone</label>
-                            <input type="text" id="edit-staff-phone" class="form-control" value="${staff.phone || ''}">
+                            <input type="tel" id="edit-staff-phone" class="form-control" value="${staff.phone ? staff.phone.replace(/\D/g, '').slice(-10) : ''}" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)">
                         </div>
                         <div>
                             <label class="form-label">Email Address</label>
@@ -3748,7 +3756,7 @@
                     <div class="pos-cart-panel">
                         <div class="card-header">
                             <div class="card-title">🛒 Active Billing Cart (<span id="cart-item-count">${State.cart.length}</span> items)</div>
-                            <button class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="clearCart()">Clear</button>
+                            <button class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="clearCart(true)">Clear</button>
                         </div>
 
                         <div class="pos-cart-items" id="pos-cart-items">
@@ -3759,11 +3767,27 @@
                         <div style="padding: 12px 16px; border-top: 1px solid var(--border); background: var(--bg-surface);">
                             <div class="form-row" style="margin-bottom: 0;">
                                 <div>
-                                    <label class="form-label">Customer Mobile</label>
-                                    <input type="text" id="cust-phone" class="form-control" placeholder="+91 98200 12345" onchange="lookupCustomer(this.value)">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <label class="form-label" style="margin-bottom: 0;">Customer Mobile</label>
+                                        <span id="cust-phone-counter" style="font-size: 11px; font-weight: 600; color: var(--text-muted);">0 / 10</span>
+                                    </div>
+                                    <input type="tel" 
+                                           id="cust-phone" 
+                                           class="form-control" 
+                                           placeholder="10-digit mobile (e.g. 9820012345)" 
+                                           maxlength="10" 
+                                           inputmode="numeric" 
+                                           autocomplete="tel" 
+                                           oninput="handleCustomerPhoneInput(this)" 
+                                           onblur="validateCustomerPhoneOnBlur(this)"
+                                           style="font-variant-numeric: tabular-nums; letter-spacing: 0.5px;">
+                                    <div id="cust-phone-feedback" style="font-size: 11px; margin-top: 4px; min-height: 16px; line-height: 1.3;"></div>
                                 </div>
                                 <div>
-                                    <label class="form-label">Customer Name</label>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <label class="form-label" style="margin-bottom: 0;">Customer Name</label>
+                                        <span style="font-size: 11px; color: var(--text-muted);">(Optional / Walk-in)</span>
+                                    </div>
                                     <input type="text" id="cust-name" class="form-control" placeholder="Counter Customer">
                                 </div>
                             </div>
@@ -4024,9 +4048,29 @@
             renderCartUI();
         }
 
-        function clearCart() {
+        function clearCart(resetCustomer = false) {
             State.cart = [];
             renderCartUI();
+            if (resetCustomer) {
+                const phoneInput = document.getElementById("cust-phone");
+                const nameInput = document.getElementById("cust-name");
+                const counter = document.getElementById("cust-phone-counter");
+                const feedback = document.getElementById("cust-phone-feedback");
+                if (phoneInput) {
+                    phoneInput.value = "";
+                    phoneInput.style.borderColor = "";
+                }
+                if (nameInput) {
+                    nameInput.value = "";
+                }
+                if (counter) {
+                    counter.textContent = "0 / 10";
+                    counter.style.color = "var(--text-muted)";
+                }
+                if (feedback) {
+                    feedback.innerHTML = "";
+                }
+            }
         }
 
         function renderCartItems() {
@@ -4082,8 +4126,40 @@
 
             const total = State.cart.reduce((acc, i) => acc + (i.med.mrp * i.qty), 0);
             const gst = total * 0.12;
-            const custName = document.getElementById("cust-name")?.value.trim() || "Counter Walk-in";
-            const custPhone = document.getElementById("cust-phone")?.value.trim() || "";
+            const custName = document.getElementById("cust-name")?.value.trim() || "Counter Customer";
+            const phoneInput = document.getElementById("cust-phone");
+            let custPhone = phoneInput ? phoneInput.value.trim() : "";
+
+            // Validate customer mobile if provided
+            if (custPhone) {
+                custPhone = custPhone.replace(/\D/g, "");
+                if (custPhone.length !== 10) {
+                    showToast("Invalid Mobile Number", `Customer phone number must be exactly 10 digits (currently ${custPhone.length}).`, "error");
+                    if (phoneInput) {
+                        phoneInput.focus();
+                        phoneInput.style.borderColor = "#EF4444";
+                    }
+                    return;
+                }
+                if (!/^[6-9]/.test(custPhone)) {
+                    showToast("Invalid Mobile Format", "Mobile number must begin with 6, 7, 8, or 9.", "error");
+                    if (phoneInput) {
+                        phoneInput.focus();
+                        phoneInput.style.borderColor = "#EF4444";
+                    }
+                    return;
+                }
+            }
+
+            const isDelivery = document.getElementById("pos-route-delivery") && document.getElementById("pos-route-delivery").checked;
+            if (isDelivery && !custPhone) {
+                showToast("Mobile Number Required", "Customer 10-digit mobile number is mandatory for Home Delivery dispatch.", "warning");
+                if (phoneInput) {
+                    phoneInput.focus();
+                    phoneInput.style.borderColor = "#F59E0B";
+                }
+                return;
+            }
 
             const invData = {
                 invoice_id: `INV-${Date.now().toString().slice(-8)}`,
@@ -4130,7 +4206,7 @@
                     showToast("Routed to Fleet", `Order ${delivData.order_id} automatically sent to Delivery Kanban!`, "success");
                 }
                 showToast("Invoice Generated", `Bill ${invData.invoice_id} saved successfully!`, "success");
-                clearCart();
+                clearCart(true);
                 // Immediately refresh stock so updated stock is visible right away!
                 await autoSyncStockAndCatalog(true);
                 openReceiptModal(invData);
@@ -4201,14 +4277,96 @@
             );
         }
 
+        // --- CUSTOMER MOBILE INPUT SANITIZATION & REAL-TIME VALIDATION ---
+        function handleCustomerPhoneInput(input) {
+            if (!input) return;
+            let raw = input.value || "";
+
+            // Automatically strip any non-digit character (only digits allowed)
+            let digits = raw.replace(/\D/g, "");
+
+            // If user pastes +91... or leading 0..., sanitize automatically
+            if (digits.length === 12 && digits.startsWith("91")) {
+                digits = digits.slice(2);
+            } else if (digits.length === 11 && digits.startsWith("0")) {
+                digits = digits.slice(1);
+            }
+
+            // Strictly enforce max 10 digits
+            digits = digits.slice(0, 10);
+            input.value = digits;
+
+            const counter = document.getElementById("cust-phone-counter");
+            const feedback = document.getElementById("cust-phone-feedback");
+
+            if (counter) {
+                counter.textContent = `${digits.length} / 10`;
+            }
+
+            if (digits.length === 0) {
+                input.style.borderColor = "";
+                if (counter) counter.style.color = "var(--text-muted)";
+                if (feedback) feedback.innerHTML = "";
+                return;
+            }
+
+            if (digits.length < 10) {
+                input.style.borderColor = "#F59E0B";
+                if (counter) counter.style.color = "#F59E0B";
+                if (feedback) {
+                    feedback.innerHTML = `<span style="color: #D97706; font-weight: 500;">⚠️ ${10 - digits.length} more digit${(10 - digits.length) > 1 ? 's' : ''} required (10 digits)</span>`;
+                }
+            } else if (digits.length === 10) {
+                const isValidStart = /^[6-9]/.test(digits);
+                if (isValidStart) {
+                    input.style.borderColor = "#10B981";
+                    if (counter) counter.style.color = "#10B981";
+                    if (feedback) {
+                        feedback.innerHTML = `<span style="color: #10B981; font-weight: 600;">✓ Valid 10-digit mobile number</span>`;
+                    }
+                    // Auto-trigger customer profile lookup immediately upon 10th digit
+                    lookupCustomer(digits);
+                } else {
+                    input.style.borderColor = "#EF4444";
+                    if (counter) counter.style.color = "#EF4444";
+                    if (feedback) {
+                        feedback.innerHTML = `<span style="color: #EF4444; font-weight: 500;">❌ Mobile number must start with 6, 7, 8, or 9</span>`;
+                    }
+                }
+            }
+        }
+
+        function validateCustomerPhoneOnBlur(input) {
+            if (!input) return;
+            const digits = (input.value || "").trim();
+            if (digits.length > 0 && digits.length < 10) {
+                input.style.borderColor = "#EF4444";
+                const counter = document.getElementById("cust-phone-counter");
+                const feedback = document.getElementById("cust-phone-feedback");
+                if (counter) counter.style.color = "#EF4444";
+                if (feedback) {
+                    feedback.innerHTML = `<span style="color: #EF4444; font-weight: 600;">❌ Incomplete phone number (${digits.length}/10 digits entered)</span>`;
+                }
+            }
+        }
+
         async function lookupCustomer(phone) {
-            const cleanPhone = phone ? phone.trim() : "";
-            if (!cleanPhone || cleanPhone.length < 5) return;
+            const cleanPhone = phone ? phone.replace(/\D/g, "").slice(0, 10) : "";
+            if (!cleanPhone || cleanPhone.length !== 10) return;
             const patient = await callBridge("get_patient_by_phone", cleanPhone);
             const nameEl = document.getElementById("cust-name");
-            if (patient && nameEl) {
-                nameEl.value = patient.name;
+            const feedback = document.getElementById("cust-phone-feedback");
+            if (patient) {
+                if (nameEl) nameEl.value = patient.name;
+                const allergies = (patient.allergies || []).join(", ");
+                if (feedback) {
+                    feedback.innerHTML = `<span style="color: #10B981; font-weight: 600;">✓ Found: ${patient.name} (${patient.loyalty_points || 0} pts)${allergies ? ' <span style="color: #EF4444;">⚠️ Allergies: ' + allergies + '</span>' : ''}</span>`;
+                }
                 showToast("Patient Profile Found", `${patient.name} (Loyalty Points: ${patient.loyalty_points || 0})`, "info");
+            } else {
+                if (feedback && /^[6-9]/.test(cleanPhone)) {
+                    feedback.innerHTML = `<span style="color: #10B981; font-weight: 600;">✓ Valid 10-digit mobile</span> <span style="color: var(--text-muted);">(New Customer)</span>`;
+                }
             }
         }
 
@@ -4295,6 +4453,18 @@
                     State.cart.push({ med: matched, qty: it.qty || 10 });
                 }
             });
+
+            if (rx.patient_name) {
+                const nameEl = document.getElementById("cust-name");
+                if (nameEl) nameEl.value = rx.patient_name;
+            }
+            if (rx.patient_phone) {
+                const phoneInput = document.getElementById("cust-phone");
+                if (phoneInput) {
+                    phoneInput.value = rx.patient_phone.replace(/\D/g, "").slice(0, 10);
+                    handleCustomerPhoneInput(phoneInput);
+                }
+            }
 
             closeModal();
             renderCartUI();
@@ -5330,7 +5500,7 @@
                     <div class="form-row">
                         <div>
                             <label class="form-label">Customer Contact</label>
-                            <input type="text" id="new-deliv-phone" class="form-control" placeholder="+91 98201 12345" required>
+                            <input type="tel" id="new-deliv-phone" class="form-control" placeholder="9820112345" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)" required>
                         </div>
                         <div>
                             <label class="form-label">Cash on Delivery (COD ₹)</label>
@@ -5366,7 +5536,12 @@
         }
 
         async function submitCreateDelivery() {
-            const phoneVal = (document.getElementById("new-deliv-phone") ? document.getElementById("new-deliv-phone").value.trim() : "") || "+91 98201 12345";
+            const rawPhone = (document.getElementById("new-deliv-phone") ? document.getElementById("new-deliv-phone").value.trim() : "");
+            const phoneVal = rawPhone.replace(/\D/g, "").slice(0, 10);
+            if (!phoneVal || phoneVal.length !== 10 || !/^[6-9]/.test(phoneVal)) {
+                showToast("Invalid Mobile Number", "Delivery requires a valid 10-digit customer mobile number starting with 6, 7, 8, or 9.", "warning");
+                return;
+            }
             const amtVal = parseFloat(document.getElementById("new-deliv-amt").value) || 0.0;
             const delivData = {
                 order_id: document.getElementById("new-deliv-id").value.trim(),

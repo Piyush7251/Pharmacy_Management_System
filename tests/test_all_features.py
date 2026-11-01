@@ -721,6 +721,48 @@ class TestTQMPharmFeatures(unittest.TestCase):
         self.assertIn("total_profit_earned", b_summary)
         self.assertIn("total_balance_due", b_summary)
 
+    # --- 13. PHONE VALIDATION & SANITIZATION ---
+    def test_20_phone_validation_and_sanitization(self):
+        import re
+
+        def validate_phone(raw):
+            digits = "".join(ch for ch in str(raw) if ch.isdigit())
+            if len(digits) == 12 and digits.startswith("91"):
+                digits = digits[2:]
+            elif len(digits) == 11 and digits.startswith("0"):
+                digits = digits[1:]
+            digits = digits[:10]
+            is_valid = len(digits) == 10 and bool(re.match(r"^[6-9]\d{9}$", digits))
+            return digits, is_valid
+
+        # Valid 10-digit cases
+        d1, v1 = validate_phone("9876543210")
+        self.assertEqual(d1, "9876543210")
+        self.assertTrue(v1)
+
+        d2, v2 = validate_phone("+91 98765 43210")
+        self.assertEqual(d2, "9876543210")
+        self.assertTrue(v2)
+
+        d3, v3 = validate_phone("09876543210")
+        self.assertEqual(d3, "9876543210")
+        self.assertTrue(v3)
+
+        # Truncation beyond 10 digits
+        d4, v4 = validate_phone("98765432109999")
+        self.assertEqual(len(d4), 10)
+        self.assertEqual(d4, "9876543210")
+
+        # Invalid cases (incomplete, non 6-9 leading digit)
+        _, v5 = validate_phone("98765")
+        self.assertFalse(v5)
+
+        _, v6 = validate_phone("1234567890")
+        self.assertFalse(v6)
+
+        _, v7 = validate_phone("abcdefghij")
+        self.assertFalse(v7)
+
 if __name__ == "__main__":
     unittest.main()
 

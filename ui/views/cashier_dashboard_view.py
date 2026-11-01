@@ -138,7 +138,7 @@ class CashierDashboardView(ctk.CTkFrame):
         
         self.ent_phone = ctk.CTkEntry(
             cust_strip,
-            placeholder_text="Enter phone number (e.g. 9876543210)",
+            placeholder_text="Enter 10-digit mobile (e.g. 9876543210)",
             font=FONTS["small"],
             width=240,
             height=28,
@@ -147,6 +147,7 @@ class CashierDashboardView(ctk.CTkFrame):
             border_color=COLORS["border"]
         )
         self.ent_phone.grid(row=0, column=1, sticky="w", padx=(0, 6), pady=6)
+        self.ent_phone.bind("<KeyRelease>", self._on_phone_input_validate)
         self.ent_phone.bind("<Return>", lambda e: self.lookup_customer())
         
         btn_lookup = ctk.CTkButton(
@@ -468,8 +469,36 @@ class CashierDashboardView(ctk.CTkFrame):
         self.add_to_cart(matched)
         show_toast(self, "📷 Barcode Scanned", f"Matched SKU [{matched['batch']}]: {matched['name']} added to cart.", "info")
 
+    def _on_phone_input_validate(self, event=None):
+        raw = self.ent_phone.get()
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        if len(digits) == 12 and digits.startswith("91"):
+            digits = digits[2:]
+        elif len(digits) == 11 and digits.startswith("0"):
+            digits = digits[1:]
+        digits = digits[:10]
+
+        if raw != digits:
+            self.ent_phone.delete(0, "end")
+            self.ent_phone.insert(0, digits)
+
+        if len(digits) == 10:
+            if digits[0] in "6789":
+                self.ent_phone.configure(border_color=COLORS["success"])
+                self.lookup_customer()
+            else:
+                self.ent_phone.configure(border_color=COLORS["danger"])
+                self.lbl_cust_info.configure(text="⚠️ Mobile number must start with 6, 7, 8, or 9", text_color=COLORS["danger"])
+        elif len(digits) > 0:
+            self.ent_phone.configure(border_color=COLORS["warning"])
+            self.lbl_cust_info.configure(text=f"Entering Mobile: {len(digits)}/10 digits (Incomplete)", text_color=COLORS["text_muted"])
+        else:
+            self.ent_phone.configure(border_color=COLORS["border"])
+            self.lbl_cust_info.configure(text="Walk-in Customer (General)", text_color=COLORS["text_dim"])
+
     def lookup_customer(self):
-        phone = self.ent_phone.get().strip()
+        raw_phone = self.ent_phone.get().strip()
+        phone = "".join(ch for ch in raw_phone if ch.isdigit())[:10]
         if not phone:
             self.lbl_cust_info.configure(text="Walk-in Customer (General)", text_color=COLORS["text_dim"])
             self.current_patient = None
@@ -477,6 +506,10 @@ class CashierDashboardView(ctk.CTkFrame):
             self.chk_loyalty.configure(state="disabled")
             return
             
+        if len(phone) < 10:
+            self.lbl_cust_info.configure(text=f"⚠️ Incomplete Mobile ({len(phone)}/10 digits)", text_color=COLORS["warning"])
+            return
+
         patient = get_patient_by_phone(phone)
         if patient:
             self.current_patient = patient
@@ -652,6 +685,10 @@ class CashierDashboardView(ctk.CTkFrame):
         self.discount_pct = 0.0
         self.loyalty_discount = 0.0
         self.chk_loyalty.deselect()
+        self.ent_phone.delete(0, "end")
+        self.ent_phone.configure(border_color=COLORS["border"])
+        self.lbl_cust_info.configure(text="Walk-in Customer (General)", text_color=COLORS["text_dim"])
+        self.current_patient = None
         self.update_cart()
 
     def open_import_rx_modal(self):
@@ -823,6 +860,19 @@ class CashierDashboardView(ctk.CTkFrame):
         if not self.cart:
             return
             
+        cust_phone_raw = self.ent_phone.get().strip()
+        cust_phone = "".join(ch for ch in cust_phone_raw if ch.isdigit())
+        if cust_phone:
+            if len(cust_phone) != 10:
+                show_toast(self, "Invalid Phone", f"Mobile number must be 10 digits (currently {len(cust_phone)}).", "danger")
+                return
+            if cust_phone[0] not in "6789":
+                show_toast(self, "Invalid Phone", "Mobile number must start with 6, 7, 8, or 9.", "danger")
+                return
+        if self.chk_delivery.get() == 1 and not cust_phone:
+            show_toast(self, "Phone Required", "Customer 10-digit mobile number is required for Home Delivery dispatch.", "warning")
+            return
+
         subtotal = sum(i["med"]["mrp"] * i["qty"] for i in self.cart)
         discount_amt = subtotal * (self.discount_pct / 100.0) + self.loyalty_discount
         net_amount = max(0.0, subtotal - discount_amt)
