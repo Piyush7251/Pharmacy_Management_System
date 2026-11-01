@@ -28,6 +28,57 @@ def get_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+
+DEFAULT_SYSTEM_FEATURES = [
+    # Master Workstation Modules (Super Admin can enable/disable entire dashboards)
+    ("dashboard.admin", "dashboard", "Store Admin HQ", "Executive operations, staff RBAC, daily Z-report and system audit trail", 1, "admin"),
+    ("dashboard.pharmacist", "dashboard", "Clinical Pharmacist Station", "Prescription queue, CDSS drug interactions, and Schedule X NDPS register", 1, "pharmacist"),
+    ("dashboard.cashier", "dashboard", "Cashier (POS) Station", "Express checkout counter, barcode scanning, split payments, and receipt printer", 1, "cashier"),
+    ("dashboard.inventory", "dashboard", "Inventory & Supply Chain Hub", "Multi-batch FEFO stock ledger, low stock alerts, GRN inwarding, and IoT cold-chain", 1, "inventory"),
+    ("dashboard.delivery", "dashboard", "Home Delivery Fleet Kanban", "Live dispatch board, route tracking, cold-bag checklist, and 4-digit OTP proof", 1, "delivery"),
+
+    # Cashier POS Features
+    ("cashier.auto_refresh", "cashier", "Real-Time Stock Auto-Refresh", "Automatic background polling (every 3s) for live inventory synchronization without reload", 1, "cashier"),
+    ("cashier.quick_add_med", "cashier", "Quick '+ Add New Medicine'", "Allows cashier to create urgent new medicine SKUs directly from POS billing screen", 1, "cashier"),
+    ("cashier.import_rx", "cashier", "Import Approved Prescriptions", "Allows cashier to import clinically-verified doctor prescriptions into billing cart with 1 click", 1, "cashier"),
+    ("cashier.sales_ledger", "cashier", "Sales Ledger & Past Receipts", "Historical sales invoice ledger search and instant thermal receipt reprinting", 1, "cashier"),
+    ("cashier.z_report", "cashier", "End-of-Day Till Close / Z-Report", "Cashier terminal end-of-shift reconciliation and cash drawer variance tracking", 1, "cashier"),
+    ("cashier.home_delivery", "cashier", "Route to Home Delivery Fleet", "Option to dispatch sale orders directly to bike fleet delivery kanban queue", 1, "cashier"),
+    ("cashier.loyalty", "cashier", "Customer Loyalty Points", "Redeem loyalty reward points for discounts on counter medicine bills", 1, "cashier"),
+    ("cashier.split_payment", "cashier", "Multi-Mode Split Payment", "Supports Cash, Dynamic UPI QR Code, and Credit/Debit Card payments", 1, "cashier"),
+
+    # Clinical Pharmacist Features
+    ("pharma.cdss_alerts", "pharma", "CDSS Drug Interaction Shield", "Real-time clinical alerts for contraindications, major drug-drug interactions & allergy collisions", 1, "pharmacist"),
+    ("pharma.narcotics_register", "pharma", "Schedule X / NDPS Narcotic Sign-Off", "Controlled substances physical register, tamper-proof sign-off and doctor council verification", 1, "pharmacist"),
+    ("pharma.rx_verification", "pharma", "Digital Prescription Intake & Verification", "Full clinical review lifecycle: Pending -> Clinically Verified -> Dispensing Approval", 1, "pharmacist"),
+    ("pharma.refill_adherence", "pharma", "Chronic Medication Refill Adherence", "Automatic refill scheduling and adherence alerts for diabetic & cardiac patients", 1, "pharmacist"),
+
+    # Inventory Features
+    ("inventory.fefo_enforcement", "inventory", "FEFO Expiry Prioritization", "First-Expiry-First-Out automated batch sorting and near-expiry risk indicators", 1, "inventory"),
+    ("inventory.consignment_payout", "inventory", "Pay-on-Sale Consignment Ledger", "Vendor consignment accounting: tracks accrued liability and generates supplier payouts", 1, "inventory"),
+    ("inventory.po_grn", "inventory", "Purchase Orders & GRN Inwarding", "Formal supplier procurement workflow: Draft -> Approved -> Inward Goods Receipt Note", 1, "inventory"),
+    ("inventory.cold_chain_iot", "inventory", "IoT Cold-Chain Telemetry (2-8°C)", "Live IoT sensor feeds from pharmacy medical refrigerators with out-of-range alarm triggers", 1, "inventory"),
+    ("inventory.low_stock_alerts", "inventory", "Automated Safety Stock Alerts", "Calculates Reorder Point (ROP) and highlights products below minimum shelf quantity", 1, "inventory"),
+
+    # Store Admin Features
+    ("admin.staff_rbac", "admin", "Staff Role-Based User Management", "Create, edit, reset passwords, and suspend staff accounts across all 5 roles", 1, "admin"),
+    ("admin.daily_z_report", "admin", "Executive Daily Z-Report", "Official daily financial closing summary, tax liability breakdown, and drawer sign-off", 1, "admin"),
+    ("admin.immutable_audit", "admin", "Immutable Forensic Audit Trail", "Tamper-evident activity logging for all clinical, inventory, and financial events", 1, "admin"),
+    ("admin.db_backup", "admin", "Automated Database Backup & Export", "Snapshot database to backup directory and export encrypted system data files", 1, "admin"),
+    ("admin.supervisor_inspect", "admin", "Live Workstation Inspection", "Allows supervisors to view real-time operation of any station in audit mode", 1, "admin"),
+
+    # Delivery Fleet Features
+    ("delivery.otp_verification", "delivery", "4-Digit OTP Proof-of-Delivery", "Requires customer one-time password verification before completing medicine handoff", 1, "delivery"),
+    ("delivery.cold_pack_checklist", "delivery", "Cold-Bag Checklist for Temperature Drugs", "Enforces verified insulated ice-pack packaging before insulin/vaccine dispatch", 1, "delivery"),
+    ("delivery.live_kanban", "delivery", "Live Delivery Dispatch Board", "3-Stage Kanban queue: Packaging & Verification -> In Transit -> Delivered & Settled", 1, "delivery"),
+
+    # Global Quality & Safety Policies (TQM Policies)
+    ("policy.strict_phone_validation", "policy", "Strict 10-Digit Phone Validation", "Enforces exactly 10-digit numeric mobile starting with 6-9 across all counter transactions", 1, "system"),
+    ("policy.fefo_strict_block", "policy", "Block Expired Batch Dispensing", "Hard stops cashier from adding expired or < 30 days batches to billing cart", 1, "system"),
+    ("policy.narcotic_doctor_reg", "policy", "Mandatory Doctor Registration No.", "Requires verified Medical Council Registration number for Schedule H and X drugs", 1, "system"),
+    ("policy.maintenance_mode", "policy", "Pharmacy Maintenance Mode", "Displays system maintenance broadcast banner across all operational terminals", 0, "system")
+]
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
@@ -310,6 +361,19 @@ def init_db():
     );
     """)
 
+    # 17. System Features & Modular Dashboard Governance
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS system_features (
+        feature_key TEXT PRIMARY KEY,
+        category TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        enabled INTEGER DEFAULT 1,
+        dashboard_id TEXT,
+        updated_at TEXT
+    );
+    """)
+
     # Seed initial default data
     seed_initial_data(cursor)
     
@@ -317,6 +381,25 @@ def init_db():
     conn.close()
 
 def seed_initial_data(cursor):
+    # Ensure Super Admin account exists in staff
+    cursor.execute("SELECT COUNT(*) as count FROM staff WHERE username = 'superadmin'")
+    if cursor.fetchone()["count"] == 0:
+        cursor.execute("""
+        INSERT INTO staff (id, name, role, username, password, email, phone, branch, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            "STF-00", "Chief System Architect", "Super Admin", "superadmin", "super123",
+            "superadmin@tqmpharm.com", "9820000000", "Apex Enterprise HQ & Franchise Governance", "Active"
+        ))
+
+    # Ensure all default system features are seeded in system_features
+    now_feature_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for f in DEFAULT_SYSTEM_FEATURES:
+        cursor.execute("""
+        INSERT OR IGNORE INTO system_features (feature_key, category, name, description, enabled, dashboard_id, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (f[0], f[1], f[2], f[3], f[4], f[5], now_feature_str))
+
     # 1. Staff default users
     cursor.execute("SELECT COUNT(*) as count FROM staff")
     if cursor.fetchone()["count"] == 0:
@@ -1608,3 +1691,86 @@ def get_supplier_payouts(supplier_name=None, limit=100):
     rows = cur.fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# --- SYSTEM FEATURE FLAGS & ENTERPRISE GOVERNANCE ---
+
+def get_all_system_features():
+    """Retrieve all system feature and dashboard module flags."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT feature_key, category, name, description, enabled, dashboard_id, updated_at FROM system_features ORDER BY category ASC, name ASC")
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_feature_flag(feature_key, default=True):
+    """Check if a specific feature or dashboard is enabled."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT enabled FROM system_features WHERE feature_key = ?", (feature_key,))
+    row = cur.fetchone()
+    conn.close()
+    if row is not None:
+        return bool(row["enabled"])
+    return default
+
+def update_feature_flag(feature_key, enabled):
+    """Toggle an individual feature or dashboard module flag."""
+    conn = get_connection()
+    cur = conn.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    val = 1 if enabled else 0
+    cur.execute("UPDATE system_features SET enabled = ?, updated_at = ? WHERE feature_key = ?", (val, now_str, feature_key))
+    success = cur.rowcount > 0
+    conn.commit()
+    conn.close()
+    return success
+
+def update_bulk_features(features_dict):
+    """Update multiple feature flags in a single transaction."""
+    conn = get_connection()
+    cur = conn.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for key, enabled in features_dict.items():
+        val = 1 if enabled else 0
+        cur.execute("UPDATE system_features SET enabled = ?, updated_at = ? WHERE feature_key = ?", (val, now_str, key))
+    conn.commit()
+    conn.close()
+    return True
+
+def get_system_overview_stats():
+    """Comprehensive system metrics, table record counts, and database storage telemetry."""
+    conn = get_connection()
+    cur = conn.cursor()
+    tables = [
+        "staff", "medicines", "prescriptions", "invoices", "delivery_orders",
+        "patients", "narcotic_register", "purchase_orders", "suppliers",
+        "temperature_logs", "refill_schedules", "z_reports",
+        "consignment_batches", "supplier_payouts", "audit_logs", "system_features"
+    ]
+    counts = {}
+    for t in tables:
+        try:
+            cur.execute(f"SELECT COUNT(*) as count FROM {t}")
+            counts[t] = cur.fetchone()["count"]
+        except Exception:
+            counts[t] = 0
+            
+    cur.execute("SELECT COUNT(*) as count FROM active_sessions WHERE status = 'Online'")
+    counts["active_sessions"] = cur.fetchone()["count"]
+
+    conn.close()
+
+    db_path = DB_PATH
+    db_size_kb = 0
+    if os.path.exists(db_path):
+        db_size_kb = round(os.path.getsize(db_path) / 1024, 1)
+
+    return {
+        "db_path": db_path,
+        "db_size_kb": db_size_kb,
+        "db_size_mb": round(db_size_kb / 1024, 2),
+        "table_counts": counts,
+        "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }

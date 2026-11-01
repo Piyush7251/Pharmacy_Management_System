@@ -23,7 +23,8 @@ from core.db import (
     get_temperature_logs, add_temperature_log,
     get_refill_schedules, update_refill_status,
     get_dashboard_analytics, get_active_sessions, update_session_heartbeat,
-    get_daily_z_report_data, save_closed_z_report, get_all_z_reports
+    get_daily_z_report_data, save_closed_z_report, get_all_z_reports,
+    get_all_system_features, get_feature_flag, update_feature_flag, update_bulk_features, get_system_overview_stats
 )
 from config.settings import get_settings, save_settings, reset_to_defaults
 from core.logger import (
@@ -101,7 +102,7 @@ class PharmacyBridge:
             return {"success": False, "error": "Authentication required. Please sign in to a workstation first."}
 
         # Regulatory & Security Compliance: In production, non-admin staff cannot switch identity without logging out
-        if self._current_user.get("role") != "Admin":
+        if self._current_user.get("role") not in ("Admin", "Super Admin"):
             log_activity(
                 action="Unauthorized Role Switch Attempt",
                 details=f"{self._current_user.get('name')} ({self._current_user.get('role')}) attempted to switch to {role_name}.",
@@ -184,7 +185,7 @@ class PharmacyBridge:
 
     def delete_medicine(self, med_id: str) -> Dict[str, Any]:
         """Remove medicine item from inventory (Inventory Manager or Admin Only)."""
-        if self._current_user and self._current_user.get("role") not in ("Admin", "Inventory Manager"):
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin", "Inventory Manager"):
             return {"success": False, "error": "Access Denied: Only Inventory Managers and Administrators can delete items from catalog."}
         success = delete_medicine(med_id)
         if success:
@@ -261,7 +262,7 @@ class PharmacyBridge:
 
     def add_narcotic_record(self, rec_data: Dict[str, Any]) -> Dict[str, Any]:
         """Record Schedule X double sign-off into official register (Pharmacist or Admin Only)."""
-        if self._current_user and self._current_user.get("role") not in ("Admin", "Pharmacist"):
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin", "Pharmacist"):
             return {"success": False, "error": "Access Denied: Schedule X NDPS dispensation requires a Registered Pharmacist."}
         success = add_narcotic_record(rec_data)
         if success:
@@ -521,7 +522,7 @@ class PharmacyBridge:
 
     def create_staff_user(self, staff_id: str, name: str, role: str, username: str, password: str, email: str, phone: str, branch: str) -> Dict[str, Any]:
         """Create new staff account (Admin Only)."""
-        if self._current_user and self._current_user.get("role") != "Admin":
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin"):
             return {"success": False, "error": "Access Denied: Only Store Administrators can manage staff accounts."}
         success, err = create_staff_user(staff_id, name, role, username, password, email, phone, branch)
         if success:
@@ -537,7 +538,7 @@ class PharmacyBridge:
 
     def update_staff_user(self, staff_id: str, name: str, role: str, username: str, password: str, email: str, phone: str, branch: str, status: str = "Active") -> Dict[str, Any]:
         """Update existing staff account (Admin Only)."""
-        if self._current_user and self._current_user.get("role") != "Admin":
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin"):
             return {"success": False, "error": "Access Denied: Only Store Administrators can manage staff accounts."}
         success, err = update_staff_user(staff_id, name, role, username, password, email, phone, branch, status)
         if success:
@@ -553,7 +554,7 @@ class PharmacyBridge:
 
     def delete_staff_user(self, staff_id: str) -> Dict[str, Any]:
         """Delete staff account (Admin Only)."""
-        if self._current_user and self._current_user.get("role") != "Admin":
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin"):
             return {"success": False, "error": "Access Denied: Only Store Administrators can delete staff accounts."}
         success = delete_staff_user(staff_id)
         if success:
@@ -575,7 +576,7 @@ class PharmacyBridge:
 
     def save_settings(self, settings_data: Dict[str, Any]) -> Dict[str, Any]:
         """Persist updated system configuration (Admin Only)."""
-        if self._current_user and self._current_user.get("role") != "Admin":
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin"):
             return {"success": False, "error": "Access Denied: Only Store Administrators can modify system configuration."}
         success = save_settings(settings_data)
         if success:
@@ -591,7 +592,7 @@ class PharmacyBridge:
 
     def reset_settings(self) -> Dict[str, Any]:
         """Reset system configuration back to factory defaults (Admin Only)."""
-        if self._current_user and self._current_user.get("role") != "Admin":
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin"):
             return {"success": False, "error": "Access Denied: Only Store Administrators can reset system configuration."}
         cfg = reset_to_defaults()
         log_activity(
@@ -620,7 +621,7 @@ class PharmacyBridge:
 
     def backup_database(self) -> Dict[str, Any]:
         """Create timestamped snapshot of central database (Admin Only)."""
-        if self._current_user and self._current_user.get("role") != "Admin":
+        if self._current_user and self._current_user.get("role") not in ("Admin", "Super Admin"):
             return {"success": False, "error": "Access Denied: Only Store Administrators can perform database backups."}
         success, result_path = backup_sqlite_database()
         return {"success": success, "path": result_path if success else "", "error": "" if success else result_path}
@@ -630,3 +631,46 @@ class PharmacyBridge:
         u_name = self._current_user.get("name", "User") if self._current_user else "User"
         role = self._current_user.get("role", "Staff") if self._current_user else "Staff"
         log_activity(action, details, u_name, role, level)
+
+
+    # --- 11. SUPER ADMIN ENTERPRISE GOVERNANCE & MODULE TOGGLES ---
+
+    def get_system_features(self) -> List[Dict[str, Any]]:
+        """Retrieve all modular dashboards and feature toggle flags."""
+        return get_all_system_features()
+
+    def update_feature_flag(self, feature_key: str, enabled: bool) -> Dict[str, Any]:
+        """Enable or disable a specific dashboard module or feature (Super Admin only)."""
+        if self._current_user and self._current_user.get("role") != "Super Admin":
+            return {"success": False, "error": "Access Denied: Only Super Admin can modify system feature flags."}
+        success = update_feature_flag(feature_key, enabled)
+        if success:
+            u_name = self._current_user.get("name", "Super Admin")
+            log_activity(
+                action="Feature Flag Updated",
+                details=f"{u_name} set feature '{feature_key}' to {'ENABLED' if enabled else 'DISABLED'}.",
+                user_name=u_name,
+                role="Super Admin",
+                level="WARN"
+            )
+        return {"success": success, "feature_key": feature_key, "enabled": enabled}
+
+    def update_bulk_features(self, features: Dict[str, Any]) -> Dict[str, Any]:
+        """Batch update modular feature flags (Super Admin only)."""
+        if self._current_user and self._current_user.get("role") != "Super Admin":
+            return {"success": False, "error": "Access Denied: Only Super Admin can modify system feature flags."}
+        success = update_bulk_features(features)
+        if success:
+            u_name = self._current_user.get("name", "Super Admin")
+            log_activity(
+                action="Bulk Features Updated",
+                details=f"{u_name} updated {len(features)} system feature flags.",
+                user_name=u_name,
+                role="Super Admin",
+                level="WARN"
+            )
+        return {"success": success}
+
+    def get_system_overview_stats(self) -> Dict[str, Any]:
+        """Comprehensive telemetry, table sizes, and system storage metrics."""
+        return get_system_overview_stats()

@@ -615,6 +615,68 @@
             background-color: var(--bg-hover);
         }
 
+        /* --- TOGGLE SWITCH & SUPER ADMIN BADGES --- */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            vertical-align: middle;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border);
+            transition: .25s ease-in-out;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #FFFFFF;
+            transition: .25s ease-in-out;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+        input:checked + .slider {
+            background-color: #10B981;
+        }
+        input:checked + .slider.slider-purple {
+            background-color: #7C3AED;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .role-badge-SuperAdmin {
+            background: linear-gradient(135deg, #7C3AED, #4F46E5);
+            color: #FFFFFF !important;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .super-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .super-card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+        
+        
         /* --- BADGES --- */
         @keyframes pulseDot {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
@@ -1287,11 +1349,22 @@
                                 <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main);">Workstation Dashboard Portal</h2>
                                 <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 3px;">Select your operational station tile below to automatically prepare credentials.</p>
                             </div>
-                            <span class="badge badge-info" style="font-size: 11px;">5 Stations Ready</span>
+                            <span class="badge badge-info" style="font-size: 11px;">6 Stations Ready</span>
                         </div>
 
                         <!-- Role Station Tiles -->
                         <div class="station-list">
+                            <div class="station-tile" id="tile-SuperAdmin" onclick="selectStationRole('Super Admin', 'superadmin', 'super123')" style="border-left: 4px solid #7C3AED; background: rgba(124, 58, 237, 0.04);">
+                                <div class="station-tile-info">
+                                    <div class="station-icon" style="background: rgba(124, 58, 237, 0.12); color: #7C3AED;">⚡</div>
+                                    <div class="station-details">
+                                        <h4 style="color: #7C3AED;">Super Admin <span class="badge" style="font-size: 10px; background: linear-gradient(135deg, #7C3AED, #4F46E5); color: #fff;">Governance HQ</span></h4>
+                                        <p>Pharmacy module toggles, feature matrix control, store licensing & master audit</p>
+                                    </div>
+                                </div>
+                                <div class="station-creds-chip" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED; font-weight: 700;">superadmin / super123</div>
+                            </div>
+
                             <div class="station-tile active" id="tile-Admin" onclick="selectStationRole('Admin', 'admin', 'admin123')">
                                 <div class="station-tile-info">
                                     <div class="station-icon">👑</div>
@@ -1454,12 +1527,103 @@
             activeAdminTab: "overview",
             activePharmaTab: "rxs",
             activeInvTab: "catalog",
+            activeSuperAdminTab: "modules",
+            systemFeatures: [],
+            featuresMap: {},
             autoSyncEnabled: true,
             lastStockSignature: "",
             isSyncing: false
         };
 
         // --- BACKEND BRIDGE CALL WRAPPER (DESKTOP RPC + WEB REST HYBRID) ---
+                // --- SUPER ADMIN FEATURE FLAGS & GOVERNANCE HELPERS ---
+        function isFeatureEnabled(featureKey, defaultVal = true) {
+            if (State.featuresMap && State.featuresMap[featureKey] !== undefined) {
+                return Boolean(State.featuresMap[featureKey]);
+            }
+            return defaultVal;
+        }
+
+        async function loadSystemFeatures() {
+            try {
+                const features = await callBridge("get_system_features");
+                if (Array.isArray(features)) {
+                    State.systemFeatures = features;
+                    State.featuresMap = {};
+                    features.forEach(f => {
+                        State.featuresMap[f.feature_key] = Boolean(f.enabled);
+                    });
+                    updateLoginTilesState();
+                }
+            } catch (err) {
+                console.warn("[SuperAdmin] Failed to load feature flags:", err);
+            }
+        }
+
+        function updateLoginTilesState() {
+            const tileMap = {
+                "dashboard.admin": "tile-Admin",
+                "dashboard.pharmacist": "tile-Pharmacist",
+                "dashboard.cashier": "tile-Cashier",
+                "dashboard.inventory": "tile-Inventory",
+                "dashboard.delivery": "tile-Delivery"
+            };
+            for (const [featKey, tileId] of Object.entries(tileMap)) {
+                const el = document.getElementById(tileId);
+                if (el) {
+                    const enabled = isFeatureEnabled(featKey, true);
+                    if (!enabled) {
+                        el.style.opacity = "0.45";
+                        el.style.filter = "grayscale(70%)";
+                        let badge = el.querySelector(".station-disabled-tag");
+                        if (!badge) {
+                            badge = document.createElement("span");
+                            badge.className = "station-disabled-tag badge badge-danger";
+                            badge.style.cssText = "font-size: 9px; margin-left: 6px; background: #EF4444; color: white;";
+                            badge.textContent = "⛔ Disabled by Super Admin";
+                            const h4 = el.querySelector("h4");
+                            if (h4) h4.appendChild(badge);
+                        }
+                    } else {
+                        el.style.opacity = "1";
+                        el.style.filter = "none";
+                        const badge = el.querySelector(".station-disabled-tag");
+                        if (badge) badge.remove();
+                    }
+                }
+            }
+        }
+
+        async function toggleFeatureFlag(featureKey, enabled) {
+            const res = await callBridge("update_feature_flag", featureKey, enabled);
+            if (res && res.success) {
+                State.featuresMap[featureKey] = enabled;
+                const match = (State.systemFeatures || []).find(f => f.feature_key === featureKey);
+                if (match) match.enabled = enabled ? 1 : 0;
+                showToast("Feature Policy Updated", `${match ? match.name : featureKey} is now ${enabled ? 'ENABLED' : 'DISABLED'}.`, enabled ? "success" : "warning");
+                updateLoginTilesState();
+
+                // If currently on Super Admin dashboard, update any counters or badges
+                if (State.currentUser && State.currentUser.role === "Super Admin") {
+                    const statusPill = document.getElementById(`status-pill-${featureKey.replace(/\./g, '-')}`);
+                    if (statusPill) {
+                        statusPill.className = `badge ${enabled ? 'badge-success' : 'badge-danger'}`;
+                        statusPill.textContent = enabled ? 'ACTIVE & ENABLED' : 'DISABLED';
+                    }
+                }
+            } else {
+                showToast("Update Failed", (res && res.error) || "Could not update feature flag.", "error");
+                const toggleEl = document.getElementById(`toggle-${featureKey.replace(/\./g, '-')}`);
+                if (toggleEl) toggleEl.checked = !enabled;
+            }
+        }
+
+        function switchSuperAdminTab(tabName) {
+            State.activeSuperAdminTab = tabName;
+            updateSidebarForRole("Super Admin");
+            renderSuperAdminDashboard();
+        }
+
         async function callBridge(method, ...args) {
             try {
                 if (window.pywebview && window.pywebview.api && typeof window.pywebview.api[method] === "function") {
@@ -1509,6 +1673,7 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+        loadSystemFeatures();
 
         // --- AUTOMATIC STOCK REFRESH ENGINE (3s Periodic + Focus Events) ---
         setInterval(() => {
@@ -1600,10 +1765,12 @@
         // --- LOGIN DASHBOARD & AUTHENTICATION HANDLERS ---
         function selectStationRole(role, username, password) {
             document.querySelectorAll(".station-tile").forEach(t => t.classList.remove("active"));
-            const targetTile = document.getElementById(`tile-${role.split(" ")[0]}`);
+            const tileKey = role === "Super Admin" ? "SuperAdmin" : role.split(" ")[0];
+            const targetTile = document.getElementById(`tile-${tileKey}`);
             if (targetTile) targetTile.classList.add("active");
 
             const badgeMap = {
+                "Super Admin": "⚡ Enterprise Super Admin (Governance HQ)",
                 "Admin": "👑 Store Admin Station (HQ)",
                 "Pharmacist": "🩺 Clinical Pharmacist Station",
                 "Cashier": "💳 Cashier POS Express Station",
@@ -1732,6 +1899,7 @@
             const terminalEl = document.getElementById("user-terminal-tag");
 
             const roleIcons = {
+                "Super Admin": "⚡",
                 "Admin": "👑",
                 "Store Admin": "👑",
                 "Pharmacist": "🩺",
@@ -1739,7 +1907,7 @@
                 "Inventory Manager": "📦",
                 "Delivery Agent": "🛵"
             };
-            const roleShort = user.role.includes("Inventory") ? "Inventory" : (user.role.includes("Delivery") ? "Delivery" : user.role);
+            const roleShort = user.role.replace(/\s+/g, "");
 
             if (nameEl) nameEl.textContent = user.name;
             if (staffIdEl) staffIdEl.textContent = user.id || "STF-XX";
@@ -1766,7 +1934,47 @@
             if (!sidebar) return;
 
             let html = "";
-            if (role === "Admin" || role === "Store Admin") {
+            if (role === "Super Admin") {
+                const curTab = State.activeSuperAdminTab || "modules";
+                html = `
+                    <div class="nav-section-title">Super Admin Authority</div>
+                    <a class="nav-item ${curTab === 'modules' ? 'active' : ''}" onclick="switchSuperAdminTab('modules')">
+                        <span class="nav-icon">⚡</span> Dashboard Modules
+                    </a>
+                    <a class="nav-item ${curTab === 'features' ? 'active' : ''}" onclick="switchSuperAdminTab('features')">
+                        <span class="nav-icon">⚙️</span> Feature Flags Matrix
+                    </a>
+                    <a class="nav-item ${curTab === 'policies' ? 'active' : ''}" onclick="switchSuperAdminTab('policies')">
+                        <span class="nav-icon">🛡️</span> TQM Safety Policies
+                    </a>
+                    <a class="nav-item ${curTab === 'store' ? 'active' : ''}" onclick="switchSuperAdminTab('store')">
+                        <span class="nav-icon">🏥</span> Pharmacy Profile & DL
+                    </a>
+                    <a class="nav-item ${curTab === 'diagnostics' ? 'active' : ''}" onclick="switchSuperAdminTab('diagnostics')">
+                        <span class="nav-icon">📊</span> System Diagnostics & DB
+                    </a>
+                    <a class="nav-item ${curTab === 'staff' ? 'active' : ''}" onclick="switchSuperAdminTab('staff')">
+                        <span class="nav-icon">👥</span> Master Staff Authority
+                    </a>
+
+                    <div class="nav-section-title" style="margin-top: 14px;">Workstation Inspection</div>
+                    <a class="nav-item" onclick="supervisorInspect('Admin')">
+                        <span class="nav-icon">👑</span> Store Admin HQ
+                    </a>
+                    <a class="nav-item" onclick="supervisorInspect('Pharmacist')">
+                        <span class="nav-icon">🩺</span> Clinical Station
+                    </a>
+                    <a class="nav-item" onclick="supervisorInspect('Cashier')">
+                        <span class="nav-icon">💳</span> Cashier POS
+                    </a>
+                    <a class="nav-item" onclick="supervisorInspect('Inventory Manager')">
+                        <span class="nav-icon">📦</span> Inventory Vault
+                    </a>
+                    <a class="nav-item" onclick="supervisorInspect('Delivery Agent')">
+                        <span class="nav-icon">🛵</span> Delivery Fleet
+                    </a>
+                `;
+            } else if (role === "Admin" || role === "Store Admin") {
                 html = `
                     <div class="nav-section-title">Executive Operations</div>
                     <a class="nav-item active" data-role="Admin" onclick="navigateRole('Admin')">
@@ -1866,7 +2074,9 @@
         }
 
         function supervisorInspect(role) {
-            if (!State.currentUser || (State.currentUser.role !== "Admin" && State.currentUser.role !== "Store Admin")) {
+            const isSuper = State.currentUser && State.currentUser.role === "Super Admin";
+            const isAdmin = State.currentUser && (State.currentUser.role === "Admin" || State.currentUser.role === "Store Admin");
+            if (!State.currentUser || (!isAdmin && !isSuper)) {
                 showToast("Access Denied", "Supervisor inspection requires Store Administrator clearance.", "error");
                 return;
             }
@@ -1906,8 +2116,8 @@
                         <div class="supervisor-text">
                             Inspecting <strong>${role} Workstation</strong> under Administrative Oversight (<strong>${State.currentUser.name}</strong> • ${State.currentUser.id || 'STF-01'}). All view interactions are audit-logged.
                         </div>
-                        <button class="btn-return-admin" onclick="navigateRole('Admin')">
-                            🔙 Return to Admin HQ
+                        <button class="btn-return-admin" onclick="navigateRole(State.currentUser.role === 'Super Admin' ? 'Super Admin' : 'Admin')">
+                            🔙 Return to ${State.currentUser.role === 'Super Admin' ? 'Super Admin Console' : 'Admin HQ'}
                         </button>
                     `;
                     main.insertBefore(banner, main.firstChild);
@@ -1921,7 +2131,10 @@
                 return;
             }
 
-            const isUserAdmin = State.currentUser.role === "Admin" || State.currentUser.role === "Store Admin";
+            const isSuperAdmin = State.currentUser.role === "Super Admin";
+            const isStoreAdmin = State.currentUser.role === "Admin" || State.currentUser.role === "Store Admin";
+            const isUserAdmin = isSuperAdmin || isStoreAdmin;
+
             if (!isUserAdmin && role !== State.currentUser.role) {
                 showToast(
                     "Access Denied",
@@ -1942,6 +2155,9 @@
             });
 
             switch (role) {
+                case "Super Admin":
+                    renderSuperAdminDashboard();
+                    break;
                 case "Admin":
                 case "Store Admin":
                     renderAdminDashboard();
@@ -1966,6 +2182,651 @@
         // =========================================================================
         // 1. ADMIN DASHBOARD VIEW
         // =========================================================================
+        
+        // =========================================================================
+        // 0. SUPER ADMIN ENTERPRISE GOVERNANCE & MODULE CONTROL
+        // =========================================================================
+
+        async function renderSuperAdminDashboard() {
+            const main = document.getElementById("main-content");
+            if (!main) return;
+
+            main.innerHTML = `
+                <div style="text-align: center; padding: 50px 20px; color: var(--text-muted);">
+                    <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+                    <div style="font-size: 15px; font-weight: 600;">Loading Super Admin Enterprise Governance Console...</div>
+                </div>
+            `;
+
+            const [features, stats, staffList, cfg] = await Promise.all([
+                callBridge("get_system_features"),
+                callBridge("get_system_overview_stats"),
+                callBridge("get_all_staff"),
+                callBridge("get_system_settings")
+            ]);
+
+            State.systemFeatures = features || [];
+            State.featuresMap = {};
+            (features || []).forEach(f => {
+                State.featuresMap[f.feature_key] = Boolean(f.enabled);
+            });
+
+            const activeTab = State.activeSuperAdminTab || "modules";
+            const totalFeatures = (features || []).length;
+            const enabledFeatures = (features || []).filter(f => f.enabled).length;
+            const activeDashboards = (features || []).filter(f => f.category === 'dashboard' && f.enabled).length;
+
+            let html = `
+                <!-- Super Admin Header Banner -->
+                <div class="card" style="margin-bottom: 20px; border-left: 5px solid #7C3AED; background: linear-gradient(135deg, rgba(124, 58, 237, 0.06), transparent);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 28px;">⚡</span>
+                                <h2 style="font-size: 22px; font-weight: 800; color: #7C3AED; margin: 0;">Enterprise Super Admin Console</h2>
+                                <span class="badge" style="background: linear-gradient(135deg, #7C3AED, #4F46E5); color: #FFF; font-weight: 700; font-size: 11px;">Master System Authority</span>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 13px; margin: 4px 0 0 38px;">
+                                Configure which workstations & features are enabled for the pharmacy, manage store licensing, and govern TQM quality policies.
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn-secondary" onclick="loadSystemFeatures(); renderSuperAdminDashboard();" title="Reload all feature flags and database stats">
+                                🔄 Refresh Policies
+                            </button>
+                            <button class="btn-secondary" onclick="openActivityLogView()" title="Inspect complete forensic activity logs">
+                                📜 Forensic Audit
+                            </button>
+                            <button class="btn-primary" style="background: #7C3AED; border-color: #6D28D9;" onclick="openBackupModal()" title="Take full database snapshot backup">
+                                💾 Backup Snapshot
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Metrics Header Strip -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <div class="super-card" style="border-top: 3px solid #10B981;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Workstations Active</div>
+                            <div style="font-size: 22px; font-weight: 800; color: #10B981; margin-top: 4px;">${activeDashboards} / 5 Stations</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Operational Workstation Modules</div>
+                        </div>
+                        <div class="super-card" style="border-top: 3px solid #7C3AED;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Feature Flags</div>
+                            <div style="font-size: 22px; font-weight: 800; color: #7C3AED; margin-top: 4px;">${enabledFeatures} / ${totalFeatures} Enabled</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Granular Feature Governance</div>
+                        </div>
+                        <div class="super-card" style="border-top: 3px solid #0EA5E9;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Database Storage</div>
+                            <div style="font-size: 22px; font-weight: 800; color: #0EA5E9; margin-top: 4px;">${stats ? stats.db_size_kb : 320} KB</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">17 SQLite Encrypted Tables</div>
+                        </div>
+                        <div class="super-card" style="border-top: 3px solid #F59E0B;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Staff Users</div>
+                            <div style="font-size: 22px; font-weight: 800; color: #F59E0B; margin-top: 4px;">${(staffList || []).length} Accounts</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Across 5 Department Roles</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="tabs-container" style="margin-bottom: 20px;">
+                    <div class="tab-button ${activeTab === 'modules' ? 'active' : ''}" onclick="switchSuperAdminTab('modules')">
+                        🎛️ Dashboard Workstations (${activeDashboards}/5)
+                    </div>
+                    <div class="tab-button ${activeTab === 'features' ? 'active' : ''}" onclick="switchSuperAdminTab('features')">
+                        ⚙️ Feature Flags Matrix (${totalFeatures})
+                    </div>
+                    <div class="tab-button ${activeTab === 'policies' ? 'active' : ''}" onclick="switchSuperAdminTab('policies')">
+                        🛡️ TQM Safety Policies
+                    </div>
+                    <div class="tab-button ${activeTab === 'store' ? 'active' : ''}" onclick="switchSuperAdminTab('store')">
+                        🏥 Pharmacy Profile & DL
+                    </div>
+                    <div class="tab-button ${activeTab === 'diagnostics' ? 'active' : ''}" onclick="switchSuperAdminTab('diagnostics')">
+                        📊 System Diagnostics & DB
+                    </div>
+                    <div class="tab-button ${activeTab === 'staff' ? 'active' : ''}" onclick="switchSuperAdminTab('staff')">
+                        👥 Master Staff Authority
+                    </div>
+                </div>
+
+                <!-- Tab Body Content -->
+                <div id="super-admin-tab-body">
+                    ${renderSuperAdminTabBody(activeTab, features, stats, staffList, cfg)}
+                </div>
+            `;
+
+            main.innerHTML = html;
+        }
+
+        function renderSuperAdminTabBody(tab, features, stats, staffList, cfg) {
+            if (tab === "modules") {
+                const modules = [
+                    {
+                        key: "dashboard.admin",
+                        name: "Store Admin HQ Command",
+                        icon: "👑",
+                        role: "Store Admin",
+                        desc: "Executive command, staff user management, daily Z-report, cash reconciliation & system audit trail.",
+                        items: ["Staff RBAC Authority", "Financial P&L Ledger", "Executive Daily Z-Report", "Audit Trail & Snapshots"]
+                    },
+                    {
+                        key: "dashboard.pharmacist",
+                        name: "Clinical Pharmacist Station",
+                        icon: "🩺",
+                        role: "Clinical Pharmacist",
+                        desc: "Digital prescription intake queue, CDSS drug interaction shield, Schedule X narcotic sign-off, patient EHR.",
+                        items: ["Clinical Prescription Queue", "CDSS Interaction Shield", "Schedule X NDPS Register", "Refill Adherence Reminders"]
+                    },
+                    {
+                        key: "dashboard.cashier",
+                        name: "Cashier (POS) Express Billing",
+                        icon: "💳",
+                        role: "Cashier",
+                        desc: "Barcode lookup, FEFO batch selection, split payments (Cash, UPI QR, Card), GST tax invoice printer.",
+                        items: ["Express Billing Counter", "Auto-Stock Refresh (3s)", "10-Digit Mobile Validation", "Home Delivery Routing"]
+                    },
+                    {
+                        key: "dashboard.inventory",
+                        name: "Inventory & Supply Chain Hub",
+                        icon: "📦",
+                        role: "Inventory Manager",
+                        desc: "Multi-batch FEFO ledger, low stock alerts, Purchase Orders, Goods Receipt Note (GRN), IoT cold-chain 2-8°C.",
+                        items: ["FEFO Stock Expiry Ledger", "PO & GRN Inwarding", "Consignment Pay-on-Sale", "IoT Cold-Chain Telemetry"]
+                    },
+                    {
+                        key: "dashboard.delivery",
+                        name: "Home Delivery Fleet Kanban",
+                        icon: "🛵",
+                        role: "Delivery Agent",
+                        desc: "Route dispatch board, cold-bag insulated packaging checklist, customer 4-digit OTP delivery proof.",
+                        items: ["3-Stage Dispatch Kanban", "4-Digit Customer OTP Proof", "Cold-Pack Verification", "Rider Fleet Navigation"]
+                    }
+                ];
+
+                let cardsHtml = modules.map(m => {
+                    const isEnabled = isFeatureEnabled(m.key, true);
+                    return `
+                        <div class="card" style="border-top: 4px solid ${isEnabled ? '#10B981' : '#EF4444'}; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(124, 58, 237, 0.1); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                                            ${m.icon}
+                                        </div>
+                                        <div>
+                                            <h3 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main);">${m.name}</h3>
+                                            <small style="color: var(--text-muted);">Assigned Role: <strong>${m.role}</strong></small>
+                                        </div>
+                                    </div>
+                                    <label class="switch" title="Toggle workstation active status">
+                                        <input type="checkbox" id="toggle-${m.key.replace(/\./g, '-')}" ${isEnabled ? 'checked' : ''} onchange="toggleFeatureFlag('${m.key}', this.checked)">
+                                        <span class="slider slider-purple"></span>
+                                    </label>
+                                </div>
+
+                                <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+                                    ${m.desc}
+                                </p>
+
+                                <div style="background: var(--bg-hover); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px;">
+                                    <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Included Capabilities</div>
+                                    <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: var(--text-main); line-height: 1.6;">
+                                        ${m.items.map(it => `<li>${it}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 12px;">
+                                <span id="status-pill-${m.key.replace(/\./g, '-')}" class="badge ${isEnabled ? 'badge-success' : 'badge-danger'}" style="font-size: 10.5px;">
+                                    ${isEnabled ? '🟢 ACTIVE & ACCESSIBLE' : '🔴 DISABLED BY POLICY'}
+                                </span>
+                                <button class="btn-secondary" style="padding: 4px 10px; font-size: 11.5px;" onclick="supervisorInspect('${m.role}')">
+                                    👁️ Launch Station
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px;">
+                        ${cardsHtml}
+                    </div>
+                `;
+            }
+
+            else if (tab === "features") {
+                const categoryLabels = {
+                    "all": "All Features",
+                    "cashier": "💳 Cashier POS",
+                    "pharma": "🩺 Clinical Pharmacist",
+                    "inventory": "📦 Inventory Hub",
+                    "admin": "👑 Store Admin",
+                    "delivery": "🛵 Delivery Fleet",
+                    "policy": "🛡️ TQM Safety Policies"
+                };
+
+                let rowsHtml = (features || []).map(f => {
+                    const isEnabled = Boolean(f.enabled);
+                    const catBadgeClass = f.category === 'cashier' ? 'badge-warning' : (f.category === 'pharma' ? 'badge-success' : (f.category === 'inventory' ? 'badge-info' : 'badge-neutral'));
+                    return `
+                        <tr data-category="${f.category}" class="feature-row">
+                            <td style="font-weight: 700; color: var(--text-main);">
+                                ${f.name}
+                                <br><small style="color: var(--text-dim); font-family: monospace;">${f.feature_key}</small>
+                            </td>
+                            <td>
+                                <span class="badge ${catBadgeClass}">${f.category.toUpperCase()}</span>
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 12.5px; max-width: 380px;">
+                                ${f.description}
+                            </td>
+                            <td>
+                                <strong style="font-size: 12px;">${f.dashboard_id || 'System'}</strong>
+                            </td>
+                            <td>
+                                <span id="status-pill-${f.feature_key.replace(/\./g, '-')}" class="badge ${isEnabled ? 'badge-success' : 'badge-danger'}" style="font-size: 10px;">
+                                    ${isEnabled ? 'ACTIVE' : 'DISABLED'}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-${f.feature_key.replace(/\./g, '-')}" ${isEnabled ? 'checked' : ''} onchange="toggleFeatureFlag('${f.feature_key}', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <button class="btn-secondary active" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('all', this)">All</button>
+                                <button class="btn-secondary" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('cashier', this)">Cashier POS</button>
+                                <button class="btn-secondary" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('pharma', this)">Clinical</button>
+                                <button class="btn-secondary" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('inventory', this)">Inventory</button>
+                                <button class="btn-secondary" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('admin', this)">Admin HQ</button>
+                                <button class="btn-secondary" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('delivery', this)">Delivery</button>
+                                <button class="btn-secondary" style="padding: 5px 12px; font-size: 12px;" onclick="filterFeatureCategory('policy', this)">Policies</button>
+                            </div>
+                            <div style="width: 260px;">
+                                <input type="text" id="feature-search" class="form-control" placeholder="🔍 Search features..." oninput="filterFeatureTable(this.value)" style="padding: 6px 12px; font-size: 12.5px;">
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table id="feature-matrix-table">
+                                <thead>
+                                    <tr>
+                                        <th>Feature / Capability</th>
+                                        <th>Category</th>
+                                        <th>Description & Purpose</th>
+                                        <th>Assigned Station</th>
+                                        <th>Status</th>
+                                        <th style="text-align: right;">Toggle Control</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            else if (tab === "policies") {
+                const policies = [
+                    {
+                        key: "policy.strict_phone_validation",
+                        title: "Strict 10-Digit Phone Number Validation",
+                        icon: "📱",
+                        desc: "Enforces standard Indian 10-digit mobile number format (starts with 6, 7, 8, or 9) across POS Express billing, Customer lookup, and Delivery order creation. Rejects incomplete or invalid numbers.",
+                        impact: "Prevents corrupt customer records, ensures SMS refill delivery reliability."
+                    },
+                    {
+                        key: "policy.fefo_strict_block",
+                        title: "Strict FEFO Expiry Lock (Block Near-Expiry Sales)",
+                        icon: "⏳",
+                        desc: "Hard-stops cashiers from dispensing batches expiring in less than 30 days without an explicit supervisor clinical override.",
+                        impact: "Zero expired medicine dispenses to patients (TQM Quality Standard)."
+                    },
+                    {
+                        key: "policy.narcotic_doctor_reg",
+                        title: "Mandatory Council Reg. No. for Schedule H & X Drugs",
+                        icon: "📑",
+                        desc: "Enforces strict validation of prescribing physician's State Medical Council Registration number before narcotic sign-off.",
+                        impact: "Full FDA regulatory readiness and tamper-proof NDPS log compliance."
+                    },
+                    {
+                        key: "policy.maintenance_mode",
+                        title: "Pharmacy System Maintenance Lockdown",
+                        icon: "🚧",
+                        desc: "Displays an enterprise maintenance broadcast across all terminals and pauses non-essential billing transactions during database migration.",
+                        impact: "Ensures data integrity during maintenance or audits."
+                    }
+                ];
+
+                let policyCards = policies.map(p => {
+                    const isEnabled = isFeatureEnabled(p.key, false);
+                    return `
+                        <div class="card" style="margin-bottom: 14px; border-left: 4px solid ${isEnabled ? '#7C3AED' : 'var(--border)'};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
+                                <div style="display: flex; gap: 14px;">
+                                    <div style="font-size: 26px; padding-top: 2px;">${p.icon}</div>
+                                    <div>
+                                        <h3 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--text-main);">${p.title}</h3>
+                                        <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin: 4px 0 8px 0;">
+                                            ${p.desc}
+                                        </p>
+                                        <span class="badge badge-info" style="font-size: 10px;">Quality Target: ${p.impact}</span>
+                                    </div>
+                                </div>
+                                <label class="switch" style="margin-top: 4px;">
+                                    <input type="checkbox" id="toggle-${p.key.replace(/\./g, '-')}" ${isEnabled ? 'checked' : ''} onchange="toggleFeatureFlag('${p.key}', this.checked)">
+                                    <span class="slider slider-purple"></span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div style="max-width: 860px;">
+                        ${policyCards}
+                    </div>
+                `;
+            }
+
+            else if (tab === "store") {
+                const s = (cfg && cfg.store) || {};
+                const inv = (cfg && cfg.inventory) || {};
+                return `
+                    <div class="card" style="max-width: 800px;">
+                        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text-main);">
+                            🏥 Master Pharmacy Profile & Regulatory Drug Licensing
+                        </h3>
+                        <form onsubmit="event.preventDefault(); saveStoreProfileFromSuperAdmin();">
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Pharmacy Legal Name</label>
+                                    <input type="text" id="sp-name" class="form-control" value="${s.name || 'Apex Central Pharmacy'}" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">Branch Designation</label>
+                                    <input type="text" id="sp-branch" class="form-control" value="${s.branch || 'Branch #01, Navi Mumbai'}" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Drug License Number (DL)</label>
+                                    <input type="text" id="sp-dl" class="form-control" value="${s.dl_number || 'MH-TZ2-441902'}" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">GSTIN Identification</label>
+                                    <input type="text" id="sp-gstin" class="form-control" value="${s.gstin || '27AABCS1429B1Z2'}" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Contact Mobile / Phone</label>
+                                    <input type="tel" id="sp-phone" class="form-control" value="${s.phone || '9820012345'}" maxlength="10">
+                                </div>
+                                <div>
+                                    <label class="form-label">Official Support Email</label>
+                                    <input type="email" id="sp-email" class="form-control" value="${s.email || 'support@apexpharmacy.com'}">
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 14px;">
+                                <label class="form-label">Physical Premises Address</label>
+                                <input type="text" id="sp-addr" class="form-control" value="${s.address || 'Shop 4-5, Commercial Complex, Sector 15, Navi Mumbai, MH 400614'}" required>
+                            </div>
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Billing Currency Symbol</label>
+                                    <input type="text" id="sp-curr" class="form-control" value="${s.currency_symbol || '₹'}" style="max-width: 100px;">
+                                </div>
+                                <div>
+                                    <label class="form-label">Default GST Tax Percent (%)</label>
+                                    <input type="number" step="0.5" id="sp-gst" class="form-control" value="${inv.default_gst_percent || 12.0}" style="max-width: 140px;">
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                                <button type="submit" class="btn-primary" style="background: #7C3AED; border-color: #6D28D9;">
+                                    💾 Save Master Profile Changes
+                                </button>
+                                <button type="button" class="btn-secondary" onclick="renderSuperAdminDashboard()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+            }
+
+            else if (tab === "diagnostics") {
+                const tc = (stats && stats.table_counts) || {};
+                const tableItems = [
+                    { name: "Medicines Master", count: tc.medicines || 0, icon: "💊" },
+                    { name: "Sales Invoices", count: tc.invoices || 0, icon: "🧾" },
+                    { name: "Prescriptions Queue", count: tc.prescriptions || 0, icon: "📋" },
+                    { name: "Delivery Orders", count: tc.delivery_orders || 0, icon: "🛵" },
+                    { name: "Registered Patients", count: tc.patients || 0, icon: "👤" },
+                    { name: "Purchase Orders", count: tc.purchase_orders || 0, icon: "📑" },
+                    { name: "Consignment Batches", count: tc.consignment_batches || 0, icon: "📦" },
+                    { name: "Supplier Payouts", count: tc.supplier_payouts || 0, icon: "💵" },
+                    { name: "Cold-Chain Telemetry", count: tc.temperature_logs || 0, icon: "❄️" },
+                    { name: "Narcotic Register Logs", count: tc.narcotic_register || 0, icon: "🔒" },
+                    { name: "End-of-Day Z-Reports", count: tc.z_reports || 0, icon: "📊" },
+                    { name: "Forensic Audit Logs", count: tc.audit_logs || 0, icon: "📡" },
+                    { name: "Staff User Accounts", count: tc.staff || 0, icon: "👥" },
+                    { name: "Feature Flags Active", count: tc.system_features || 0, icon: "⚙️" },
+                ];
+
+                let tableTiles = tableItems.map(t => `
+                    <div class="super-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span style="font-size: 20px;">${t.icon}</span>
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">${t.name}</span>
+                        </div>
+                        <span class="badge badge-info" style="font-size: 12px; font-weight: 700;">${t.count}</span>
+                    </div>
+                `).join('');
+
+                return `
+                    <div>
+                        <!-- DB File Info -->
+                        <div class="card" style="margin-bottom: 18px;">
+                            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 10px; color: var(--text-main);">
+                                💾 Database Storage Engine & File Metrics
+                            </h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px;">
+                                <div>
+                                    <span style="color: var(--text-muted);">Database Path:</span> 
+                                    <code style="background: var(--bg-hover); padding: 3px 6px; border-radius: 4px; font-size: 11.5px;">${stats ? stats.db_path : '~/.tqmpharm/pharmacy_system.db'}</code>
+                                </div>
+                                <div>
+                                    <span style="color: var(--text-muted);">File Size:</span> 
+                                    <strong>${stats ? stats.db_size_kb : 320} KB (${stats ? stats.db_size_mb : 0.31} MB)</strong>
+                                </div>
+                                <div>
+                                    <span style="color: var(--text-muted);">Active Online Sessions:</span> 
+                                    <span class="badge badge-success">${stats ? stats.active_sessions : 1} Connected</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table Row Counts Grid -->
+                        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">
+                            📊 Live Record Counts across Central Database Tables (17 Tables)
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 22px;">
+                            ${tableTiles}
+                        </div>
+
+                        <!-- Maintenance & System Tools -->
+                        <div class="card" style="border-top: 3px solid #7C3AED;">
+                            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 10px;">
+                                🛠️ Master Database Administration Tools
+                            </h4>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="btn-secondary" onclick="openBackupModal()">
+                                    💾 Create Snapshot Backup
+                                </button>
+                                <button class="btn-secondary" onclick="openActivityLogView()">
+                                    📜 View Forensic Activity Trail
+                                </button>
+                                <button class="btn-danger" onclick="openSuperAdminResetDemoModal()">
+                                    ⚠️ Re-Seed Sample Demo Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            else if (tab === "staff") {
+                let staffRows = (staffList || []).map(s => {
+                    const isSuper = s.role === "Super Admin";
+                    const isStaffActive = s.status === "Active";
+                    return `
+                        <tr>
+                            <td><strong>${s.id}</strong></td>
+                            <td>
+                                <strong>${s.name}</strong>
+                                <br><small style="color: var(--text-muted);">${s.email || 'No email'}</small>
+                            </td>
+                            <td>
+                                <span class="badge ${isSuper ? 'badge-danger' : 'badge-info'}" style="${isSuper ? 'background: linear-gradient(135deg, #7C3AED, #4F46E5); color: #fff;' : ''}">${s.role}</span>
+                            </td>
+                            <td><code>${s.username}</code></td>
+                            <td><span style="font-family: monospace; letter-spacing: 2px;">••••••••</span></td>
+                            <td>${s.phone || '-'}</td>
+                            <td>
+                                <span class="badge ${isStaffActive ? 'badge-success' : 'badge-neutral'}">${s.status || 'Active'}</span>
+                            </td>
+                            <td>
+                                <button class="btn-secondary" style="padding: 3px 8px; font-size: 11px;" onclick="openEditStaffModal('${s.id}')">✏️ Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-main);">👥 Master Staff Authority & RBAC Directory</h3>
+                                <p style="font-size: 12.5px; color: var(--text-muted); margin: 2px 0 0 0;">Manage credentials, passwords, and permissions for all staff members across the pharmacy.</p>
+                            </div>
+                            <button class="btn-primary" style="background: #7C3AED; border-color: #6D28D9;" onclick="openAddStaffModal()">
+                                + Add Staff Account
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Staff ID</th>
+                                        <th>Staff Name</th>
+                                        <th>Role Authority</th>
+                                        <th>Username</th>
+                                        <th>Password</th>
+                                        <th>Contact Mobile</th>
+                                        <th>Account Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${staffRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `<div style="padding: 20px;">Tab content</div>`;
+        }
+
+        // --- FILTER HELPERS FOR FEATURE MATRIX ---
+        function filterFeatureCategory(cat, btn) {
+            document.querySelectorAll("#super-admin-tab-body .btn-secondary").forEach(b => b.classList.remove("active"));
+            if (btn) btn.classList.add("active");
+
+            const rows = document.querySelectorAll("#feature-matrix-table .feature-row");
+            rows.forEach(r => {
+                if (cat === "all" || r.getAttribute("data-category") === cat) {
+                    r.style.display = "";
+                } else {
+                    r.style.display = "none";
+                }
+            });
+        }
+
+        function filterFeatureTable(q) {
+            const query = (q || "").toLowerCase().trim();
+            const rows = document.querySelectorAll("#feature-matrix-table .feature-row");
+            rows.forEach(r => {
+                const text = r.innerText.toLowerCase();
+                r.style.display = text.includes(query) ? "" : "none";
+            });
+        }
+
+        async function saveStoreProfileFromSuperAdmin() {
+            const payload = {
+                store: {
+                    name: document.getElementById("sp-name").value.trim(),
+                    branch: document.getElementById("sp-branch").value.trim(),
+                    dl_number: document.getElementById("sp-dl").value.trim(),
+                    gstin: document.getElementById("sp-gstin").value.trim(),
+                    phone: document.getElementById("sp-phone").value.trim(),
+                    email: document.getElementById("sp-email").value.trim(),
+                    address: document.getElementById("sp-addr").value.trim(),
+                    currency_symbol: document.getElementById("sp-curr").value.trim()
+                },
+                inventory: {
+                    default_gst_percent: parseFloat(document.getElementById("sp-gst").value) || 12.0
+                }
+            };
+
+            const res = await callBridge("update_system_settings", payload);
+            if (res && res.success) {
+                showToast("Store Profile Saved", "Pharmacy profile and regulatory licensing information updated successfully.", "success");
+            } else {
+                showToast("Save Failed", (res && res.error) || "Error saving store settings.", "error");
+            }
+        }
+
+        function openSuperAdminResetDemoModal() {
+            openModal(
+                "⚠️ Confirm Demo Data Re-Seed",
+                `
+                <div style="font-size: 13px; color: var(--text-main); line-height: 1.6;">
+                    <p style="color: #EF4444; font-weight: 700;">
+                        Are you sure you want to re-seed the sample demo data?
+                    </p>
+                    <p>
+                        This will ensure all seed medicines, sample prescriptions, consignment batches, and supplier accounts are fresh and ready for demonstration. Existing custom invoices and sales logs will be preserved.
+                    </p>
+                </div>
+                `,
+                `<button class="btn-danger" onclick="confirmSuperAdminResetDemo()">Confirm Re-Seed</button>
+                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>`
+            );
+        }
+
+        async function confirmSuperAdminResetDemo() {
+            closeModal();
+            await callBridge("init_db");
+            await loadSystemFeatures();
+            showToast("System Re-Seeded", "Demo pharmacy catalog, verified prescriptions, and consignment batches are fresh.", "success");
+            renderSuperAdminDashboard();
+        }
+
         async function renderAdminDashboard() {
             const main = document.getElementById("main-content");
             main.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Loading Command Center Telemetry...</div>`;
@@ -2976,8 +3837,8 @@
                         <p>Clinical decision support (CDSS), allergy cross-checking, e-Prescription intake & Schedule X NDPS register</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-danger" onclick="openAddNarcoticModal()">🔒 Schedule X Sign-off</button>
-                        <button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>
+                        ${isFeatureEnabled('pharma.narcotics_register') ? `<button class="btn-danger" onclick="openAddNarcoticModal()">🔒 Schedule X Sign-off</button>` : ''}
+                        ${isFeatureEnabled('pharma.rx_verification') ? `<button class="btn-primary" onclick="openAddRxModal()">+ New Prescription Intake</button>` : ''}
                     </div>
                 </div>
 
@@ -2986,15 +3847,18 @@
                     <button class="tab-btn ${currentTab === 'rxs' ? 'active' : ''}" onclick="switchPharmacistTab('rxs')">
                         🩺 Prescription Verification (${(rxList || []).length})
                     </button>
+                    ${isFeatureEnabled('pharma.cdss_alerts') ? `
                     <button class="tab-btn ${currentTab === 'cdss' ? 'active' : ''}" onclick="switchPharmacistTab('cdss')">
                         ⚠️ Drug Interactions (CDSS)
-                    </button>
+                    </button>` : ''}
+                    ${isFeatureEnabled('pharma.narcotics_register') ? `
                     <button class="tab-btn ${currentTab === 'narcotics' ? 'active' : ''}" onclick="switchPharmacistTab('narcotics')">
                         📑 Schedule X NDPS Register (${(narcotics || []).length})
-                    </button>
+                    </button>` : ''}
+                    ${isFeatureEnabled('pharma.refill_adherence') ? `
                     <button class="tab-btn ${currentTab === 'refills' ? 'active' : ''}" onclick="switchPharmacistTab('refills')">
                         💬 Refill Adherence (${(refills || []).length})
-                    </button>
+                    </button>` : ''}
                 </div>
 
                 <div id="pharmacist-tab-content">
@@ -3716,10 +4580,10 @@
                             <span class="live-dot" style="width: 8px; height: 8px; background: #10B981; border-radius: 50%; display: inline-block;"></span>
                             <span id="pos-auto-sync-text">⚡ Auto-Refresh: ON</span>
                         </span>
-                        <button class="btn-primary" onclick="openAddMedicineModal()">➕ Add New Medicine</button>
+                        ${isFeatureEnabled('cashier.quick_add_med') ? `<button class="btn-primary" onclick="openAddMedicineModal()">➕ Add New Medicine</button>` : ''}
                         <button class="btn-secondary" onclick="refreshPosCatalog()">🔄 Refresh Catalog</button>
-                        <button class="btn-secondary" id="pos-btn-import-rx" onclick="openImportRxModal()">📋 Import Approved Rx (${State.approvedPrescriptions.length})</button>
-                        <button class="btn-secondary" onclick="openSalesHistoryModal()">🧾 Sales Ledger</button>
+                        ${isFeatureEnabled('cashier.import_rx') ? `<button class="btn-secondary" id="pos-btn-import-rx" onclick="openImportRxModal()">📋 Import Approved Rx (${State.approvedPrescriptions.length})</button>` : ''}
+                        ${isFeatureEnabled('cashier.sales_ledger') ? `<button class="btn-secondary" onclick="openSalesHistoryModal()">🧾 Sales Ledger</button>` : ''}
                     </div>
                 </div>
 
@@ -3809,6 +4673,7 @@
                             </div>
 
                             <!-- Deliver to Home Fleet Checkbox -->
+                            ${isFeatureEnabled('cashier.home_delivery') ? `
                             <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px;">
                                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--brand-primary); margin: 0;">
                                     <input type="checkbox" id="pos-route-delivery" style="width: 16px; height: 16px; accent-color: var(--brand-primary);" onchange="togglePosDeliveryFields(this.checked)">
@@ -3818,7 +4683,7 @@
                                     <label class="form-label" style="font-size: 11px;">Delivery Destination Address</label>
                                     <input type="text" id="pos-deliv-address" class="form-control" style="font-size: 12px; padding: 6px 10px;" placeholder="Flat / Street Address" value="402, Green Glen Heights, Sector 14, Navi Mumbai">
                                 </div>
-                            </div>
+                            </div>` : ''}
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                                 <button class="btn-success" onclick="checkout('Cash')">💵 Cash</button>

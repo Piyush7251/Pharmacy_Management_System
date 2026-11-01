@@ -763,6 +763,51 @@ class TestTQMPharmFeatures(unittest.TestCase):
         _, v7 = validate_phone("abcdefghij")
         self.assertFalse(v7)
 
+    # --- 14. SUPER ADMIN ENTERPRISE GOVERNANCE & MODULE CONTROL ---
+    def test_21_super_admin_feature_flags_and_governance(self):
+        from core.db import (
+            authenticate_user, get_all_system_features,
+            get_feature_flag, update_feature_flag, get_system_overview_stats
+        )
+        from core.bridge import PharmacyBridge
+
+        # 1. Super Admin authentication
+        sa_user = authenticate_user("superadmin", "super123")
+        self.assertIsNotNone(sa_user, "Super Admin account must authenticate successfully")
+        self.assertEqual(sa_user["role"], "Super Admin")
+
+        # 2. System Features Retrieval
+        features = get_all_system_features()
+        self.assertGreaterEqual(len(features), 30, "System features must contain all modular feature flags")
+        dashboards = [f for f in features if f["category"] == "dashboard"]
+        self.assertEqual(len(dashboards), 5, "Must govern 5 master workstation dashboards")
+
+        # 3. Feature Flag Toggle in DB
+        key = "cashier.quick_add_med"
+        init_val = get_feature_flag(key, True)
+        update_success = update_feature_flag(key, not init_val)
+        self.assertTrue(update_success)
+        self.assertEqual(get_feature_flag(key), not init_val)
+        # Restore
+        update_feature_flag(key, init_val)
+        self.assertEqual(get_feature_flag(key), init_val)
+
+        # 4. Bridge Super Admin RPC Operations
+        bridge = PharmacyBridge()
+        bridge.login("superadmin", "super123")
+        self.assertEqual(bridge._current_user["role"], "Super Admin")
+
+        # Super admin can update features via bridge
+        b_res = bridge.update_feature_flag("delivery.otp_verification", False)
+        self.assertTrue(b_res.get("success"))
+        bridge.update_feature_flag("delivery.otp_verification", True)
+
+        # System overview stats
+        stats = bridge.get_system_overview_stats()
+        self.assertIn("table_counts", stats)
+        self.assertIn("system_features", stats["table_counts"])
+        self.assertIn("db_size_kb", stats)
+
 if __name__ == "__main__":
     unittest.main()
 
