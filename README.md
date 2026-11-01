@@ -31,6 +31,7 @@ The application boots directly to a high-performance **Workstation Login Dashboa
 
 | Role | Username | Password | Assigned Dashboard & Responsibilities |
 | :--- | :--- | :--- | :--- |
+| **⚡ Super Admin** | `superadmin` | `super123` | **Enterprise Governance Console**: Pharmacy-wide module toggles, 34 granular feature flags, store licensing profile, TQM quality policies, database metrics & master audit. |
 | **👑 Store Admin** | `admin` | `admin123` | **Admin Command Center**: Create/manage user IDs & passwords, assign roles, monitor live online staff/terminals, view daily Z-Report cash reconciliation & live audit stream. |
 | **🩺 Pharmacist** | `pharmacist` | `pharma123` | **Clinical & Dispensing Station**: e-Prescription intake queue, CDSS drug interaction & patient allergy contraindication engine, Schedule X NDPS double sign-off, refill adherence, allergy EHR. |
 | **💳 Cashier** | `cashier` | `cash123` | **POS & Express Billing Terminal**: 1-click import of approved prescriptions, barcode search, FEFO batch selection, split payments (Cash / Dynamic UPI QR / Card), GST invoice generator & thermal receipt printing. |
@@ -45,6 +46,7 @@ The application boots directly to a high-performance **Workstation Login Dashboa
 graph TD
     Login["🔐 Unified Login Screen (app.py / main.py)<br/>Default Light/White Theme • Instant Theme Toggle"]
     
+    Login -->|Role: Super Admin| SA["⚡ Super Admin Console<br/>• Dashboard Module Enablement<br/>• 34 Granular Feature Flags<br/>• Store Licensing & Drug License DL<br/>• Global TQM Safety Policies<br/>• Database Metrics & Diagnostics"]
     Login -->|Role: Admin| AD["👑 Admin Command Center<br/>• Staff RBAC Management (Add/Edit Users)<br/>• Live Presence & Heartbeats<br/>• Daily Z-Report Cash/UPI Financials<br/>• Dead Stock Risk Analysis<br/>• System Security Audit Trail"]
     Login -->|Role: Pharmacist| PD["🩺 Pharmacist Clinical Dashboard<br/>• eRx Queue & CDSS Safety Engine<br/>• Patient Allergy Contraindications<br/>• Schedule X / NDPS Narcotic Sign-Off<br/>• Chronic Patient Refill Adherence<br/>• Patient EHR Allergy Profiles"]
     Login -->|Role: Cashier| CD["💳 Cashier POS & Express Billing<br/>• 1-Click Approved eRx Import<br/>• Barcode Scanner & FEFO Selection<br/>• Dynamic UPI QR & Cash Change Calculator<br/>• GST Tax Thermal Receipt Generator<br/>• Delivery Routing Dispatch"]
@@ -359,6 +361,8 @@ erDiagram
 - **Patient EHR Profiles**: Comprehensive allergy records, chronic conditions, and patient registration intake modal.
 
 ### 2. 💳 Cashier POS & Billing Terminal
+- **Automatic Real-Time Stock Refresh**: Background polling loop (every 3s) with signature checking that automatically synchronizes stock levels across multiple open counters and inward GRNs without page reloads or focus disruptions.
+- **Strict 10-Digit Mobile Input Validation**: Enforces standard Indian mobile format (`^[6-9]\d{9}$`), rejects invalid/incomplete numbers, automatically strips leading country codes (`+91` / `0`), and triggers real-time patient EHR lookup upon typing the 10th digit.
 - **1-Click eRx Import**: Instantly pull approved prescriptions from the pharmacist queue into the POS cart without manual re-entry.
 - **FEFO Batch Auto-Selection**: First-Expiry, First-Out batch picking guarantees dispensing nearest-expiry batches first.
 - **Multi-Tender Payments**:
