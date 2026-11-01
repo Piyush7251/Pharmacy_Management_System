@@ -808,6 +808,21 @@ class TestTQMPharmFeatures(unittest.TestCase):
         self.assertIn("system_features", stats["table_counts"])
         self.assertIn("db_size_kb", stats)
 
+        # 5. Verify Super Admin inspection of Store Admin HQ in HTML files
+        for html_rel in [("ui", "desktop", "index.html"), ("ui", "web", "index.html")]:
+            html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), *html_rel)
+            with open(html_path, "r", encoding="utf-8") as hf:
+                h_content = hf.read()
+            self.assertIn('ensureSupervisorBanner', h_content)
+            self.assertIn("supervisorInspect('Admin')", h_content)
+            self.assertIn('case "Admin":', h_content)
+            self.assertIn('case "Store Admin":', h_content)
+            self.assertIn('data-role="Admin"', h_content)
+            self.assertIn('data-role="Pharmacist"', h_content)
+            self.assertIn('data-role="Cashier"', h_content)
+            self.assertIn('data-role="Inventory Manager"', h_content)
+            self.assertIn('data-role="Delivery Agent"', h_content)
+
 if __name__ == "__main__":
     unittest.main()
 
